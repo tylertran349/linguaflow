@@ -5,7 +5,12 @@ import { supportedLanguages } from '../utils/languages';
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
-// Add the new onOpenTopicModal prop
+// --- UPDATED TTS OPTIONS ---
+const TTS_ENGINES = [
+  { value: "web-speech", label: "Web Speech API (Default)" },
+  { value: "google-translate", label: "Google Translate Voice (only works when running locally)" } // Changed from Google Cloud
+];
+
 function Settings({ settings, setSettings, onGenerate, onOpenApiKeyModal, onOpenTopicModal }) {
   const handleSettingChange = (e) => {
     const { name, value } = e.target;
@@ -13,9 +18,16 @@ function Settings({ settings, setSettings, onGenerate, onOpenApiKeyModal, onOpen
   };
 
   return (
-    <section className="settings-panel">
-      <h2>Settings</h2>
-      
+    <div className="settings-panel">
+      <div className="setting-item">
+        <label htmlFor="ttsEngine">Voice Engine</label>
+        <select name="ttsEngine" id="ttsEngine" value={settings.ttsEngine} onChange={handleSettingChange}>
+          {TTS_ENGINES.map(engine => (
+            <option key={engine.value} value={engine.value}>{engine.label}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="setting-item">
         <label htmlFor="nativeLanguage">Your Language:</label>
         <select name="nativeLanguage" id="nativeLanguage" value={settings.nativeLanguage} onChange={handleSettingChange}>
@@ -51,12 +63,13 @@ function Settings({ settings, setSettings, onGenerate, onOpenApiKeyModal, onOpen
           ))}
         </select>
       </div>
-
-      <button onClick={onGenerate}>Generate New Sentences</button>
-      {/* Add the new button here */}
-      <button onClick={onOpenTopicModal}>Set Topic</button>
-      <button onClick={onOpenApiKeyModal}>Set API Key</button>
-    </section>
+      
+      <div style={{ marginTop: 'auto' }}>
+        <button onClick={onGenerate} style={{ width: '100%', marginBottom: '1rem' }}>Generate New Sentences</button>
+        <button onClick={onOpenTopicModal} style={{ width: '100%', marginBottom: '1rem' }}>Set Topic</button>
+        <button onClick={onOpenApiKeyModal} style={{ width: '100%' }}>Set API Key</button>
+      </div>
+    </div>
   );
 }
 

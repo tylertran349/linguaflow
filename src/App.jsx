@@ -1,6 +1,5 @@
 // src/App.jsx
 import { useState, useEffect } from 'react';
-// Import the new stylesheet path
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from './services/geminiService';
@@ -13,22 +12,24 @@ import ApiKeyModal from './components/ApiKeyModal';
 import TopicModal from './components/TopicModal';
 
 function App() {
-  const [apiKey, setApiKey] = useLocalStorage('geminiApiKey', '');
+  const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
+  // REMOVED the ttsApiKey state
+
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
   
+  // UPDATED the settings object to use the new engine value
   const [settings, setSettings] = useLocalStorage('settings', {
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
     difficulty: "B2",
-    model: "gemini-2.5-pro" 
+    model: "gemini-2.5-pro",
+    ttsEngine: "web-speech" // Default remains the same
   });
 
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   
-  // State to manage sidebar visibility on mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTranslationVisible, setIsTranslationVisible] = useState(false);
@@ -41,24 +42,22 @@ function App() {
   useEffect(() => {
     setCurrentSentenceIndex(0);
   }, [sentences]);
-
-  useEffect(() => {
-    if (!apiKey) setIsApiKeyModalOpen(true);
-  }, [apiKey]);
   
+  useEffect(() => {
+    if (!geminiApiKey) setIsApiKeyModalOpen(true);
+  }, []); 
+
   const handleGenerate = async () => {
-    if (!apiKey) {
-      setError("API Key is not set. Please set your API key first.");
+    if (!geminiApiKey) {
+      setError("Gemini API Key is not set. Please set it first.");
       setIsApiKeyModalOpen(true);
       return;
     }
     setIsLoading(true);
     setError('');
-    setSentences([]);
-    // Close sidebar on mobile after clicking generate
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
     try {
-      const fetchedSentences = await fetchSentencesFromGemini(apiKey, settings, topic);
+      const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
       setSentences(fetchedSentences);
     } catch (err) {
       setError(err.message);
@@ -77,20 +76,32 @@ function App() {
     setIsTranslationVisible(false);
   };
 
+  // UPDATED to no longer pass the API key
   const handleSpeakSentence = () => {
-    if (currentSentence) speakText(currentSentence.target, targetLangCode);
+    if (currentSentence) {
+      speakText(
+        currentSentence.target, 
+        targetLangCode, 
+        settings.ttsEngine
+      );
+    }
   };
 
-  const handleSaveApiKey = (key) => setApiKey(key);
-  const handleSaveTopic = (newTopic) => setTopic(newTopic);
+  // SIMPLIFIED to handle only the Gemini key
+  const handleSaveApiKey = (key) => {
+    setGeminiApiKey(key);
+    setIsApiKeyModalOpen(false);
+  };
 
-  // This is the new JSX structure for the entire app
+  const handleSaveTopic = (newTopic) => {
+    setTopic(newTopic);
+    setIsTopicModalOpen(false);
+  }
+
   return (
     <div className="app-layout">
-      {/* Mobile-only overlay */}
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
 
-      {/* The Sidebar for settings */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Settings</h2>
@@ -104,14 +115,10 @@ function App() {
         />
       </aside>
 
-      {/* The Main Content Area */}
       <div className="main-content">
         <header className="app-header">
-          {/* Mobile-only Hamburger Menu Button */}
           <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span>
           </button>
           <div className="title-group">
             <h1>LinguaFlow</h1>
@@ -129,6 +136,7 @@ function App() {
                 sentence={currentSentence}
                 isTranslationVisible={isTranslationVisible}
                 targetLanguageName={settings.targetLanguage}
+                ttsEngine={settings.ttsEngine} // Still need to pass the engine choice
               />
               
               <div className="actions">
@@ -154,7 +162,13 @@ function App() {
         </main>
       </div>
 
-      {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
+      {isApiKeyModalOpen && 
+        <ApiKeyModal 
+          onSave={handleSaveApiKey} 
+          onClose={() => setIsApiKeyModalOpen(false)}
+          currentGeminiKey={geminiApiKey}
+        />
+      }
       {isTopicModalOpen && <TopicModal onSave={handleSaveTopic} onClose={() => setIsTopicModalOpen(false)} currentTopic={topic} />}
     </div>
   );
