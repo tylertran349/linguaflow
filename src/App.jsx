@@ -78,15 +78,16 @@ function App() {
     setIsTranslationVisible(false);
   };
 
-  // UPDATED to no longer pass the API key
   const handleSpeakSentence = () => {
-    if (currentSentence) {
-      speakText(
-        currentSentence.target, 
-        targetLangCode, 
-        settings.ttsEngine
-      );
-    }
+    // Just check if there's a sentence to play.
+    if (!currentSentence) return;
+    
+    // Call speakText. The service now handles interrupting itself.
+    speakText(
+      currentSentence.target,
+      targetLangCode,
+      settings.ttsEngine
+    );
   };
 
   // SIMPLIFIED to handle only the Gemini key
