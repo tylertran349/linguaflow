@@ -1,0 +1,46 @@
+/* src/styles/SentenceDisplay.css */
+
+.sentence-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 120px;
+  justify-content: center;
+}
+
+.target-sentence, .native-sentence {
+  line-height: 1.7; /* Improves readability of wrapped lines */
+  text-align: left;
+}
+
+.target-sentence {
+  font-size: 2rem; /* Larger font for emphasis */
+  font-weight: 500;
+}
+
+.native-sentence {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+}
+
+.target-sentence .word {
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  display: inline-block;
+  margin-right: 6px; /* Adds space between words */
+  padding: 2px 0;
+}
+
+.target-sentence .word:hover {
+  filter: brightness(1.3);
+}
+
+/* Responsive font sizes for smaller screens */
+@media (max-width: 767px) {
+  .target-sentence {
+    font-size: 1.5rem;
+  }
+  .native-sentence {
+    font-size: 1rem;
+  }
+}

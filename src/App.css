@@ -1,0 +1,164 @@
+/* src/styles/App.css */
+
+/* --- Main Layout: Desktop First Grid --- */
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: 100vh;
+  height: 100vh;
+}
+
+.sidebar {
+  grid-column: 1 / 2;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.main-content {
+  grid-column: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* --- App Header (Top bar) --- */
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  height: var(--header-height);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.title-group h1 {
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+.title-group p {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+/* --- Learning Content Area --- */
+.learning-container {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.sentence-card {
+  width: 100%;
+  max-width: 800px;
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.actions, .navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navigation span {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.status-message {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+.status-message.error {
+  color: var(--color-error);
+}
+
+/* --- Mobile Hamburger Menu & Overlay --- */
+.hamburger-menu {
+  display: none; /* Hidden on desktop */
+  background: none;
+  border: none;
+  padding: 10px;
+  margin-right: 1rem;
+  flex-direction: column;
+  gap: 5px;
+}
+.hamburger-menu span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background-color: var(--color-text-primary);
+  border-radius: 3px;
+}
+.overlay { display: none; }
+
+
+/* --- Responsive Breakpoint for Tablets & Phones --- */
+@media (max-width: 1023px) {
+  .app-layout {
+    display: block; /* Remove the grid layout */
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    width: var(--sidebar-width);
+    max-width: 90vw;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.2);
+  }
+
+  .hamburger-menu {
+    display: flex;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: block;
+  }
+
+  .app-header {
+    padding: 0 1rem;
+  }
+
+  .learning-container {
+    padding: 1rem;
+  }
+
+  .sentence-card {
+    padding: 1.5rem;
+  }
+}

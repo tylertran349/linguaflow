@@ -1,0 +1,54 @@
+/* src/styles/ApiKeyModal.css */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Ensure it's on top of everything */
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-surface);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-top: 4px solid var(--color-primary);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.modal-content p {
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.modal-content .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Reusing modal actions button styles for better consistency */
+.modal-actions button:first-child {
+  background-color: var(--color-surface-light);
+  color: var(--color-text-primary);
+}
+.modal-actions button:first-child:hover {
+  background-color: var(--color-border);
+}

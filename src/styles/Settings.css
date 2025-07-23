@@ -1,0 +1,31 @@
+/* src/styles/Settings.css */
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Increased gap for better spacing */
+  flex-grow: 1; /* Allow it to fill sidebar height */
+}
+
+.sidebar-header {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-header h2 {
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setting-item label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}

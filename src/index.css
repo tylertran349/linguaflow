@@ -1,0 +1,88 @@
+/* src/styles/index.css */
+
+/* 1. Import Google Font: Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+/* 2. Define Global Style Variables */
+:root {
+  /* Color Palette */
+  --color-background: #1a1a1a; /* A slightly softer black */
+  --color-surface: #242424;   /* Dark grey for cards/panels/sidebar */
+  --color-surface-light: #3a3a3a; /* Lighter grey for input fields */
+  --color-primary: #66FF00;      /* The vibrant lime green accent */
+  --color-primary-variant: #52cc00; /* Darker green for hover states */
+  --color-text-primary: #f5f5f5;   /* Off-white for primary text */
+  --color-text-secondary: #aaaaaa; /* Dimmer grey for secondary text/labels */
+  --color-error: #ff6b6b;        /* A readable red for error messages */
+  --color-border: #444444;       /* Border color for inputs/dividers */
+
+  /* Layout & Font */
+  --font-main: 'Inter', sans-serif;
+  --sidebar-width: 320px;
+  --header-height: 70px;
+  --border-radius: 8px;
+}
+
+/* 3. CSS Reset & Body Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 4. Global Styles for common elements */
+button {
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background-color: var(--color-primary);
+  color: #000000;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--color-primary-variant);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background-color: var(--color-surface-light);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+select, 
+textarea,
+input[type="password"], 
+input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-family: var(--font-main);
+  background-color: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease;
+}
+
+select:focus,
+textarea:focus,
+input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
