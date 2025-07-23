@@ -18,7 +18,7 @@
 
   /* Layout & Font */
   --font-main: 'Inter', sans-serif;
-  --sidebar-width: 320px;
+  --sidebar-width: 15%;
   --header-height: 70px;
   --border-radius: 8px;
 }
