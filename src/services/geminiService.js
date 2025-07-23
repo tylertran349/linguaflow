@@ -54,7 +54,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   const model = genAI.getGenerativeModel({ model: settings.model });
   
   const topicInstruction = (topic && topic.trim() !== '') 
-    ? `The sentences must be related to the following topic: "${topic}".`
+    ? `The sentences must be related to the following topic/theme: "${topic}".`
     : '';
 
   const prompt = `
