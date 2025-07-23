@@ -2,7 +2,14 @@
 import '../styles/Settings.css';
 import { supportedLanguages } from '../utils/languages';
 
-const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const CEFR_LEVELS = [
+  { value: "A1", label: "A1 (Beginner)" },
+  { value: "A2", label: "A2 (Upper Beginner)" },
+  { value: "B1", label: "B1 (Intermediate)" },
+  { value: "B2", label: "B2 (Upper Intermediate)" },
+  { value: "C1", label: "C1 (Advanced)" },
+  { value: "C2", label: "C2 (Native-like)" }
+];
 const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
 // --- UPDATED TTS OPTIONS ---
@@ -50,7 +57,7 @@ function Settings({ settings, setSettings, onGenerate, onOpenApiKeyModal, onOpen
         <label htmlFor="difficulty">Difficulty (CEFR):</label>
         <select name="difficulty" id="difficulty" value={settings.difficulty} onChange={handleSettingChange}>
           {CEFR_LEVELS.map(level => (
-            <option key={level} value={level}>{level}</option>
+            <option key={level.value} value={level.value}>{level.label}</option>
           ))}
         </select>
       </div>
