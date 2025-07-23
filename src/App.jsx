@@ -55,6 +55,7 @@ function App() {
     }
     setIsLoading(true);
     setError('');
+    setSentences([]);
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
     try {
       const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
