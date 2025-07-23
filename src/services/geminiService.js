@@ -51,7 +51,13 @@ function hexToHsl(hex) {
 
 export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: settings.model });
+  const model = genAI.getGenerativeModel({
+    model: settings.model,
+    // Add this generationConfig object to increase randomness
+    generationConfig: {
+      temperature: 0.9,
+    }
+  });
   
   const topicInstruction = (topic && topic.trim() !== '') 
     ? `The sentences must be related to the following topic/theme: "${topic}".`
