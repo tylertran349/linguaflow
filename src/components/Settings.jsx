@@ -70,6 +70,20 @@ function Settings({ settings, setSettings, onGenerate, onOpenApiKeyModal, onOpen
           ))}
         </select>
       </div>
+
+      <div className="setting-item">
+        <label htmlFor="sentenceCount">Number of Sentences</label>
+        <input
+          type="number"
+          id="sentenceCount"
+          name="sentenceCount"
+          min="1"
+          max="50"
+          value={settings.sentenceCount}
+          onChange={handleSettingChange}
+          style={{ padding: '12px' }} // Added for consistent styling with selects
+        />
+      </div>
       
       <div style={{ marginTop: 'auto' }}>
         <button onClick={onGenerate} style={{ width: '100%', marginBottom: '1rem' }}>Generate New Sentences</button>

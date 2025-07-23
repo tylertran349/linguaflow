@@ -58,7 +58,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
     : '';
 
   const prompt = `
-    You are an expert language tutor. Generate 20 sentences for a language learner.
+    You are an expert language tutor. Generate ${settings.sentenceCount} sentences for a language learner.
     The user's native language is ${settings.nativeLanguage}.
     The user wants to learn ${settings.targetLanguage}.
     The difficulty level should be ${settings.difficulty} (CEFR).

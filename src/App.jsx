@@ -20,12 +20,13 @@ function App() {
   
   // UPDATED the settings object to use the new engine value
   const [settings, setSettings] = useLocalStorage('settings', {
-    nativeLanguage: "English",
-    targetLanguage: "Vietnamese",
-    difficulty: "B2",
-    model: "gemini-2.5-pro",
-    ttsEngine: "web-speech" // Default remains the same
-  });
+  nativeLanguage: "English",
+  targetLanguage: "Vietnamese",
+  difficulty: "B2",
+  model: "gemini-2.5-pro",
+  ttsEngine: "web-speech", // Default to Web Speech API
+  sentenceCount: 20 // Add this line with the default value
+});
 
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   
