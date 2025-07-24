@@ -12,7 +12,7 @@ const speakWithWebSpeech = (text, langCode) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
     utterance.pitch = 1;
-    utterance.rate = 1;
+    utterance.rate = 0.5;
     utterance.volume = 1;
     synth.speak(utterance);
   } else {
