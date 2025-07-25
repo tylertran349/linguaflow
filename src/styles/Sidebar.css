@@ -1,0 +1,102 @@
+/* src/styles/Sidebar.css */
+.sidebar {
+  width: 15%;
+  min-width: 240px; /* Prevent it from getting too squished */
+  max-width: 300px;
+  background-color: var(--bg-white);
+  padding: var(--spacing-5) var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--border-color);
+  height: 100vh;
+  position: sticky; /* Makes it stick on scroll */
+  top: 0;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-color);
+  text-align: center;
+  margin-bottom: var(--spacing-6);
+}
+
+.activity-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.nav-button {
+  width: 100%;
+  padding: var(--spacing-3);
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-button:hover {
+  background-color: var(--bg-light-gray);
+}
+
+.nav-button.active {
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  font-weight: 700;
+}
+
+.nav-button svg { /* For react-icons */
+  font-size: 1.2rem;
+}
+
+.sidebar-bottom {
+  margin-top: auto; /* Pushes to the bottom */
+}
+
+
+/* ---- RESPONSIVE DESIGN ---- */
+
+/* Hide sidebar on smaller screens, it will be replaced by a top nav in App.jsx */
+@media (max-width: 56.25em) { /* 900px */
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    min-width: unset;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3);
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .logo {
+    display: none; /* Hide logo, it's in mobile-header now */
+  }
+
+  .activity-nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-button {
+    flex-grow: 1; /* Make buttons take up equal space */
+    justify-content: center;
+    padding: var(--spacing-2);
+  }
+  
+  .sidebar-bottom {
+    display: none; /* Hide desktop settings button */
+  }
+}

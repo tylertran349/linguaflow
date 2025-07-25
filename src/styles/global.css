@@ -1,0 +1,84 @@
+/* src/styles/global.css */
+
+/* Define CSS variables for easy theme management */
+:root {
+  --accent-color: #66FF00;
+  --text-color: #000000;
+  --bg-white: #FFFFFF;
+  --bg-light-gray: #f4f4f5; /* A light grey that stands out from white */
+  --border-color: #e4e4e7;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  
+  /* Spacing units */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 1rem;
+  --spacing-4: 1.5rem;
+  --spacing-5: 2rem;
+  --spacing-6: 3rem;
+}
+
+/* Basic Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* This makes 1rem = 10px, which can be easier to work with, but 62.5% is a common practice.
+     Alternatively, stick with the browser default (usually 16px) */
+  font-size: 100%; /* 1rem = 16px */
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg-light-gray);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Default styling for form elements for consistency */
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: var(--spacing-2);
+  background-color: var(--bg-white);
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  font-weight: 600;
+  padding: var(--spacing-2) var(--spacing-3);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  filter: brightness(110%);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+}

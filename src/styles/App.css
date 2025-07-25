@@ -1,0 +1,53 @@
+/* src/styles/App.css */
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex-grow: 1; /* Takes up remaining space */
+  padding: var(--spacing-5);
+  background-color: var(--bg-white);
+}
+
+.placeholder-content {
+  padding: var(--spacing-4);
+  background-color: var(--bg-light-gray);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mobile-header {
+  display: none; /* Hidden on desktop */
+}
+
+/* ---- RESPONSIVE DESIGN ---- */
+
+/* For tablets and smaller devices (e.g., screen width < 900px) */
+@media (max-width: 56.25em) { /* 900px / 16px = 56.25em */
+  .app-container {
+    flex-direction: column;
+  }
+
+  .main-content {
+    padding: var(--spacing-4);
+  }
+
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+  }
+
+  .mobile-logo {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+  }
+  
+  .mobile-settings-btn {
+    padding: var(--spacing-2);
+    font-size: 0.9rem;
+  }
+}

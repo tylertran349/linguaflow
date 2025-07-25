@@ -1,169 +1,119 @@
 /* src/styles/SettingsModal.css */
 
-/* The Modal Backdrop */
-/* This covers the entire screen and provides the dark, semi-transparent background. */
 .modal-backdrop {
-  position: fixed; /* Stay in place even when scrolling */
+  position: fixed;
+  z-index: 1000;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6); /* Black with 60% opacity */
-  display: flex; /* Use flexbox to easily center the modal content */
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's on top of all other content */
+  padding: var(--spacing-3);
+  backdrop-filter: blur(4px);
 }
 
-/* The Modal Content */
-/* This is the white box that holds the settings. */
 .modal-content {
-  background-color: #ffffff;
+  background-color: var(--bg-white);
   border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 650px; /* Prevents the modal from being too wide on large screens */
+  padding: var(--spacing-5);
+  width: 100%;
+  max-width: 650px; /* Max width for the modal */
+  max-height: 90vh; /* Max height to prevent overflow on small screens */
+  overflow-y: auto; /* Allow scrolling if content is too tall */
+  box-shadow: 0 10px 25px var(--shadow-color);
   display: flex;
   flex-direction: column;
-  max-height: 90vh; /* Prevents modal from being taller than the viewport */
 }
 
-/* Modal Header */
-/* Contains the title and the close button. */
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--spacing-3);
 }
 
 .modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #333;
+  font-size: 1.75rem;
 }
 
 .close-button {
-  background: none;
+  background: transparent;
   border: none;
   font-size: 2rem;
   line-height: 1;
   color: #888;
-  cursor: pointer;
-  padding: 0;
+  padding: 0 var(--spacing-2);
 }
 
 .close-button:hover {
-  color: #000;
+  color: var(--text-color);
 }
 
-/* Modal Body */
-/* This section will scroll if the content is too tall. */
 .modal-body {
-  padding: 1rem 1.5rem;
-  overflow-y: auto; /* Enable vertical scrolling for the body */
-}
-
-.modal-body fieldset {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 1rem;
-  margin: 0 0 1.5rem 0; /* No horizontal margin, bottom margin for spacing */
-}
-
-.modal-body legend {
-  font-weight: bold;
-  padding: 0 0.5em;
-  margin-left: 0.5em;
-  color: #333;
-}
-
-/* Individual Setting Item */
-/* Aligns the label and the input control. */
-.setting-item {
   display: flex;
-  flex-wrap: wrap; /* Allows items to stack on smaller screens */
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  margin-bottom: var(--spacing-5);
 }
 
-.setting-item:last-child {
-  margin-bottom: 0;
+fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 var(--spacing-2);
+  margin-left: var(--spacing-2);
+  color: var(--accent-color);
+}
+
+.setting-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+/* On larger screens, put label and input side-by-side */
+@media (min-width: 37.5em) { /* 600px */
+  .setting-item {
+    grid-template-columns: 1fr 2fr;
+  }
 }
 
 .setting-item label {
-  flex-basis: 180px; /* Give labels a consistent base width */
-  flex-shrink: 0;
-  color: #555;
   font-weight: 500;
 }
 
-/* Make form controls take up the remaining space */
 .setting-item input,
 .setting-item select,
 .setting-item textarea {
-  flex-grow: 1;
-  width: auto; /* Allow flex to control the width */
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-family: inherit;
+  width: 100%;
 }
 
-.setting-item input[type="password"] {
-  font-family: "Courier New", Courier, monospace;
-}
-
-.setting-item textarea {
-  resize: vertical; /* Allow vertical but not horizontal resizing */
-  min-height: 60px;
-}
-
-/* Modal Actions (Footer) */
-/* Contains the Cancel and Save buttons. */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  gap: var(--spacing-3);
+  margin-top: auto; /* Pushes actions to the bottom */
 }
 
-/* Generic button styling, can be reused from App.css if you have it */
-.modal-actions button {
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: 1px solid transparent;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-/* Save button (Primary) */
-.modal-actions button:last-child {
-  background-color: #007bff;
-  color: white;
-}
-
-.modal-actions button:last-child:hover {
-  background-color: #0056b3;
-}
-
-/* Cancel button (Secondary) */
 .button-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border-color: #ccc;
+  background-color: var(--bg-light-gray);
+  color: var(--text-color);
+  font-weight: 500;
 }
 
 .button-secondary:hover {
-  background-color: #e0e0e0;
+  background-color: var(--border-color);
 }

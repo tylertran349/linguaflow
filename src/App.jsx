@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './App.css';
+import './styles/App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from './services/geminiService';
 import { speakText } from './services/ttsService';
