@@ -1,13 +1,8 @@
 // src/App.jsx
 
-import { useState, useEffect, useRef } from 'react'; // Added useRef
+import { useState, useEffect } from 'react'; // Removed useRef
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
-// No longer needs fetchSentencesFromGemini or speakText
-// import { fetchSentencesFromGemini } from './services/geminiService';
-// import { speakText } from './services/ttsService';
-// No longer needs supportedLanguages
-// import { supportedLanguages } from './utils/languages';
 
 // --- Component Imports ---
 import SentenceDisplay from './components/SentenceDisplay';
@@ -30,15 +25,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  // --- All sentence-related state has been REMOVED ---
-  // const [sentences, setSentences] = ...
-  // const [currentSentenceIndex, setCurrentSentenceIndex] = ...
-  // const [isLoading, setIsLoading] = ...
-  // const [error, setError] = ...
-  // const [isTranslationVisible, setIsTranslationVisible] = ...
-
-  // Create a ref to access the SentenceDisplay component's imperative methods
-  const sentenceDisplayRef = useRef();
+  // --- ref and handleGenerate have been REMOVED ---
 
   // Open settings modal on first load if no API key exists.
   useEffect(() => {
@@ -46,16 +33,6 @@ function App() {
       setIsSettingsModalOpen(true);
     }
   }, []); 
-
-  // --- Handlers are now much simpler ---
-
-  const handleGenerate = () => {
-    // Call the 'generate' function inside SentenceDisplay using the ref
-    if (sentenceDisplayRef.current) {
-      sentenceDisplayRef.current.generate();
-    }
-    if (window.innerWidth < 1024) setIsSidebarOpen(false); // Close sidebar on mobile
-  };
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
@@ -73,13 +50,15 @@ function App() {
     <div className="app-layout">
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
 
+      {/* The Sidebar now only contains the settings button */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Menu</h2>
         </div>
         <div className="sidebar-controls">
-          <button onClick={handleGenerate} style={{ width: '100%', marginBottom: '1rem' }}>Generate New Sentences</button>
-          <button onClick={handleOpenSettings} style={{ width: '100%' }}>Open Settings</button>
+          <button onClick={handleOpenSettings} style={{ width: '100%' }}>
+            Settings
+          </button>
         </div>
       </aside>
 
@@ -94,13 +73,12 @@ function App() {
           </div>
         </header>
 
-        {/* The main content area now just renders the self-contained game */}
         <main className="learning-container">
           <SentenceDisplay
-            ref={sentenceDisplayRef}
             geminiApiKey={geminiApiKey}
             settings={settings}
             topic={topic}
+            onApiKeyMissing={handleOpenSettings} // Pass a way to open the settings modal
           />
         </main>
       </div>

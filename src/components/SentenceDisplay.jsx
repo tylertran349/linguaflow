@@ -1,15 +1,14 @@
 // src/components/SentenceDisplay.jsx
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect } from 'react'; // Removed useImperativeHandle, forwardRef
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/SentenceDisplay.css';
 
-// We wrap the component in forwardRef to allow the parent to call its functions.
-const SentenceDisplay = forwardRef(({ geminiApiKey, settings, topic }, ref) => {
-  // --- All state related to the sentence game is now here ---
+// The component is no longer wrapped in forwardRef
+function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,35 +18,33 @@ const SentenceDisplay = forwardRef(({ geminiApiKey, settings, topic }, ref) => {
   const currentSentence = sentences[currentSentenceIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
 
-  // --- Logic for handling the game is now here ---
   useEffect(() => {
-    // When a new set of sentences is generated, reset to the first one.
     setCurrentSentenceIndex(0);
     setIsTranslationVisible(false);
   }, [sentences]);
 
-  // Expose a 'generate' function to the parent component (App.jsx) via the ref
-  useImperativeHandle(ref, () => ({
-    async generate() {
-      // The API key check is now part of the component's own logic
-      if (!geminiApiKey) {
-        setError("Gemini API Key is not set. Please open settings to add it.");
-        // Consider passing a function prop from App to open the modal, e.g., `onApiKeyMissing()`
-        return;
+  // The generate function is now a standard async function within the component
+  const generate = async () => {
+    if (!geminiApiKey) {
+      setError("Gemini API Key is not set.");
+      // If the parent provided a way to open the settings, call it.
+      if (onApiKeyMissing) {
+        onApiKeyMissing();
       }
-      setIsLoading(true);
-      setError('');
-      setSentences([]); 
-      try {
-        const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
-        setSentences(fetchedSentences);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
+      return;
     }
-  }));
+    setIsLoading(true);
+    setError('');
+    setSentences([]); 
+    try {
+      const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
+      setSentences(fetchedSentences);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleNext = () => {
     setCurrentSentenceIndex(prev => Math.min(prev + 1, sentences.length - 1));
@@ -69,19 +66,30 @@ const SentenceDisplay = forwardRef(({ geminiApiKey, settings, topic }, ref) => {
     speakText(word, targetLangCode, settings.ttsEngine);
   };
 
-  // --- The component now renders its own UI, including status messages and controls ---
-  
   // Status Messages
   if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
-  if (error) return <p className="status-message error">Error: {error}</p>;
+  
+  // The initial state now contains the button
   if (sentences.length === 0) {
-    return <p className="status-message">Click "Generate New Sentences" in the menu to start.</p>;
+    return (
+      <div className="initial-state-container">
+        {error && <p className="status-message error">Error: {error}</p>}
+        <p className="status-message">
+          Ready to learn? Set your options in the menu and click the button to start.
+        </p>
+        <button className="generate-button" onClick={generate}>
+          Generate Sentences
+        </button>
+      </div>
+    );
   }
 
   // Main Game UI
   return (
     <div className="sentence-card">
+      {error && <p className="status-message error small">Error: {error}</p>}
       <article className="sentence-container">
+        {/* ... existing sentence rendering logic ... */}
         <section className="target-sentence">
           {currentSentence.chunks.map((chunk, index) => (
             <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
@@ -110,6 +118,8 @@ const SentenceDisplay = forwardRef(({ geminiApiKey, settings, topic }, ref) => {
         <button onClick={handleSpeakSentence}>
           Pronounce Sentence
         </button>
+        {/* Add a button to generate a new set directly from the card */}
+        <button onClick={generate}>Generate New Sentences</button>
       </div>
 
       <div className="navigation">
@@ -119,6 +129,6 @@ const SentenceDisplay = forwardRef(({ geminiApiKey, settings, topic }, ref) => {
       </div>
     </div>
   );
-});
+}
 
 export default SentenceDisplay;
