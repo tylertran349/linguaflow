@@ -1,10 +1,11 @@
 // src/App.jsx
 
-import { useState, useEffect } from 'react'; // Removed useRef
+import { useState, useEffect } from 'react';
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 // --- Component Imports ---
+import Sidebar from './components/Sidebar'; // Import the new Sidebar
 import SentenceDisplay from './components/SentenceDisplay';
 import SettingsModal from './components/SettingsModal';
 
@@ -22,21 +23,22 @@ function App() {
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   
   // --- App-level UI state ---
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on desktop
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  
+  // --- New state to manage the active game view ---
+  const [activeGame, setActiveGame] = useState(null);
 
-  // --- ref and handleGenerate have been REMOVED ---
-
-  // Open settings modal on first load if no API key exists.
   useEffect(() => {
     if (!geminiApiKey) {
       setIsSettingsModalOpen(true);
     }
   }, []); 
 
+  // --- Handlers ---
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
-    setIsSidebarOpen(false);
+    setIsSidebarOpen(false); // Close sidebar when settings open
   };
 
   const handleSaveSettings = (data) => {
@@ -45,41 +47,61 @@ function App() {
     setTopic(data.topic);
     setIsSettingsModalOpen(false);
   };
+  
+  // New handler to set the active game from the sidebar
+  const handleNavigate = (gameId) => {
+    setActiveGame(gameId);
+    // Auto-close sidebar on navigation, especially useful on mobile
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const renderActiveGame = () => {
+    switch (activeGame) {
+      case 'sentence-generator':
+        return (
+          <SentenceDisplay
+            geminiApiKey={geminiApiKey}
+            settings={settings}
+            topic={topic}
+            onApiKeyMissing={handleOpenSettings}
+          />
+        );
+      // case 'flashcards': // Example for a future game
+      //   return <FlashcardsComponent />;
+      default:
+        return (
+          <div className="initial-state-container">
+            <h2>Welcome to LinguaFlow!</h2>
+            <p>Select a game from the menu to begin.</p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="app-layout">
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
 
-      {/* The Sidebar now only contains the settings button */}
-      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2>Menu</h2>
-        </div>
-        <div className="sidebar-controls">
-          <button onClick={handleOpenSettings} style={{ width: '100%' }}>
-            Settings
-          </button>
-        </div>
-      </aside>
+      <Sidebar 
+        isOpen={isSidebarOpen}
+        activeGame={activeGame}
+        onNavigate={handleNavigate}
+        onOpenSettings={handleOpenSettings}
+      />
 
       <div className="main-content">
         <header className="app-header">
           <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <span></span><span></span><span></span>
           </button>
-          <div className="title-group">
-            <h1>LinguaFlow</h1>
-            <p>Master languages, one sentence at a time.</p>
-          </div>
+          {/* The title can now be more dynamic or removed if redundant */}
         </header>
 
+        {/* The main content area now renders based on the activeGame state */}
         <main className="learning-container">
-          <SentenceDisplay
-            geminiApiKey={geminiApiKey}
-            settings={settings}
-            topic={topic}
-            onApiKeyMissing={handleOpenSettings} // Pass a way to open the settings modal
-          />
+          {renderActiveGame()}
         </main>
       </div>
 
