@@ -63,9 +63,16 @@ function App() {
             onApiKeyMissing={handleOpenSettings}
           />
         );
-      // --- 2. ADD THE CASE FOR THE NEW GAME ---
       case 'unscramble-words':
-        return <UnscrambleWords />;
+        // FIX: Pass all the required props to the UnscrambleWords component
+        return (
+          <UnscrambleWords
+            geminiApiKey={geminiApiKey}
+            settings={settings}
+            topic={topic}
+            onApiKeyMissing={handleOpenSettings}
+          />
+        );
       default:
         return (
           <div className="initial-state-container">
