@@ -49,11 +49,11 @@ function hexToHsl(hex) {
 }
 
 
+// --- THIS FUNCTION REMAINS UNCHANGED FOR SentenceDisplay.jsx ---
 export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: settings.model,
-    // Add this generationConfig object to increase randomness
     generationConfig: {
       temperature: 0.9,
     }
@@ -106,7 +106,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
       ]
     }
 
-    Now, generate the 20 sentences based on my request. Remember to only output the JSON array.
+    Now, generate the ${settings.sentenceCount} sentences based on my request. Remember to only output the JSON array.
   `;
 
   try {
@@ -129,20 +129,13 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
         const numChunks = sentence.chunks.length;
         const paletteSize = RAINBOW_HEX_PALETTE.length;
 
-        // --- UPDATED COLOR LOGIC ---
-
-        // MODE 1: Sentence is short enough for the direct rainbow palette.
         if (numChunks <= paletteSize) {
           sentence.chunks.forEach((chunk, index) => {
-            // Simply assign the HEX code string directly. This works!
             chunk.color = RAINBOW_HEX_PALETTE[index];
           });
         }
-        // MODE 2: Sentence is too long, so we generate shades.
         else {
-          // Get the base color as a HEX string.
           const baseHexColor = RAINBOW_HEX_PALETTE[shadeColorIndex];
-          // Use our helper to convert it to HSL on the fly.
           const baseHslColor = hexToHsl(baseHexColor);
           
           const hue = baseHslColor.h;
@@ -154,7 +147,6 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
 
           sentence.chunks.forEach((chunk, index) => {
             const lightness = Math.round(minLightness + (index * lightnessStep));
-            // Now we can correctly construct the HSL color string.
             chunk.color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
           });
 
@@ -168,5 +160,79 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   } catch (error) {
     console.error("Error fetching from Gemini:", error);
     throw new Error("Failed to generate sentences. Please check your API key and network connection. The model may also have returned an invalid format. Check the console for more details.");
+  }
+};
+
+
+// --- NEW FUNCTION ADDED FOR UnscrambleWords.jsx ---
+/**
+ * Fetches sentences with a simpler structure for the unscramble game.
+ * It only requests a 'target' and 'native' sentence pair.
+ */
+export const fetchUnscrambleSentences = async (apiKey, settings, topic) => {
+  // We reuse the same AI and model setup
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: settings.model,
+    generationConfig: {
+      temperature: 0.8, // Slightly less random might be better for this game
+    }
+  });
+
+  const topicInstruction = (topic && topic.trim() !== '')
+    ? `The sentences should be related to the following topic: "${topic}".`
+    : "The sentences can be about any common topic.";
+
+  // A new, simpler prompt tailored for this game's needs
+  const prompt = `
+    You are an expert language teacher creating sentences for a word-unscramble game.
+    Generate ${settings.sentenceCount} unique sentences for a language learner.
+    The user's native language is ${settings.nativeLanguage}.
+    The user is learning ${settings.targetLanguage}.
+    The user's proficiency level is ${settings.difficulty} on the CEFR scale.
+    ${topicInstruction}
+
+    Please provide the output as a single, valid JSON array of objects.
+    Each object in the array must have exactly two keys:
+    1. "target": The full, correct sentence in ${settings.targetLanguage}.
+    2. "native": The accurate, natural-sounding translation of the sentence in ${settings.nativeLanguage}.
+
+    **IMPORTANT**: Do not include 'chunks', 'color', or any other keys.
+
+    Example format:
+    [
+      {
+        "target": "Un exemple de phrase dans la langue cible.",
+        "native": "An example sentence in the target language."
+      },
+      {
+        "target": "Voici une autre phrase.",
+        "native": "Here is another sentence."
+      }
+    ]
+
+    Now, generate the ${settings.sentenceCount} sentences. Output only the raw JSON array and nothing else.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Reuse the same robust JSON cleaning and parsing logic
+    const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
+    const parsedSentences = JSON.parse(jsonString);
+
+    // Add a simple validation check
+    if (!Array.isArray(parsedSentences)) {
+      throw new Error("API response was not a valid JSON array.");
+    }
+    
+    // No color processing is needed, so we just return the data.
+    return parsedSentences;
+
+  } catch (error) {
+    console.error("Error fetching from Gemini for Unscramble game:", error);
+    throw new Error("Failed to generate unscramble sentences. Please check the console for details.");
   }
 };
