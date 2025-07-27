@@ -55,7 +55,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
-      temperature: 0.9,
+      temperature: 1,
     }
   });
   
@@ -89,9 +89,9 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
       "target": "J'aime apprendre de nouvelles langues.",
       "native": "I like to learn new languages.",
       "chunks": [
-        { "target_chunk": "J'aime", "native_chunk": "I like", "color": "#ff5733" },
-        { "target_chunk": "apprendre", "native_chunk": "to learn", "color": "#33ff57" },
-        { "target_chunk": "de nouvelles langues", "native_chunk": "new languages", "color": "#3357ff" }
+        { "target_chunk": "J'aime", "native_chunk": "I like", "color": "#f80c12" },
+        { "target_chunk": "apprendre", "native_chunk": "to learn", "color": "#008000" },
+        { "target_chunk": "de nouvelles langues", "native_chunk": "new languages", "color": "#0000FF" }
       ]
     }
 
@@ -100,9 +100,9 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
       "target": "Tôi đang học tiếng Việt.",
       "native": "I am learning Vietnamese.",
       "chunks": [
-        { "target_chunk": "Tôi", "native_chunk": "I", "color": "#8A2BE2" },
-        { "target_chunk": "đang học", "native_chunk": "am learning", "color": "#008080" },
-        { "target_chunk": "tiếng Việt", "native_chunk": "Vietnamese", "color": "#FF8C00" }
+        { "target_chunk": "Tôi", "native_chunk": "I", "color": "#3b1e86ff" },
+        { "target_chunk": "đang học", "native_chunk": "am learning", "color": "#1296a5ff" },
+        { "target_chunk": "tiếng Việt", "native_chunk": "Vietnamese", "color": "#ff9933" }
       ]
     }
 
