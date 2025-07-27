@@ -1,22 +1,21 @@
 // src/App.jsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Added useRef
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { fetchSentencesFromGemini } from './services/geminiService';
-import { speakText } from './services/ttsService';
-import { supportedLanguages } from './utils/languages';
+// No longer needs fetchSentencesFromGemini or speakText
+// import { fetchSentencesFromGemini } from './services/geminiService';
+// import { speakText } from './services/ttsService';
+// No longer needs supportedLanguages
+// import { supportedLanguages } from './utils/languages';
 
 // --- Component Imports ---
 import SentenceDisplay from './components/SentenceDisplay';
-// Import the new all-in-one modal
 import SettingsModal from './components/SettingsModal';
 
 function App() {
+  // --- App-level state (global settings) ---
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
-  const [sentences, setSentences] = useLocalStorage('sentences', []);
-  const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
-  
   const [settings, setSettings] = useLocalStorage('settings', {
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
@@ -25,24 +24,22 @@ function App() {
     ttsEngine: "web-speech",
     sentenceCount: 20
   });
-
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   
+  // --- App-level UI state ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isTranslationVisible, setIsTranslationVisible] = useState(false);
-
-  // --- State for the new unified modal ---
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  
-  const currentSentence = sentences[currentSentenceIndex];
-  const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
 
-  useEffect(() => {
-    setCurrentSentenceIndex(0);
-  }, [sentences]);
-  
+  // --- All sentence-related state has been REMOVED ---
+  // const [sentences, setSentences] = ...
+  // const [currentSentenceIndex, setCurrentSentenceIndex] = ...
+  // const [isLoading, setIsLoading] = ...
+  // const [error, setError] = ...
+  // const [isTranslationVisible, setIsTranslationVisible] = ...
+
+  // Create a ref to access the SentenceDisplay component's imperative methods
+  const sentenceDisplayRef = useRef();
+
   // Open settings modal on first load if no API key exists.
   useEffect(() => {
     if (!geminiApiKey) {
@@ -50,60 +47,32 @@ function App() {
     }
   }, []); 
 
-  const handleGenerate = async () => {
-    if (!geminiApiKey) {
-      setError("Gemini API Key is not set. Please open settings to add it.");
-      setIsSettingsModalOpen(true);
-      return;
+  // --- Handlers are now much simpler ---
+
+  const handleGenerate = () => {
+    // Call the 'generate' function inside SentenceDisplay using the ref
+    if (sentenceDisplayRef.current) {
+      sentenceDisplayRef.current.generate();
     }
-    setIsLoading(true);
-    setError('');
-    setSentences([]);
     if (window.innerWidth < 1024) setIsSidebarOpen(false); // Close sidebar on mobile
-    try {
-      const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
-      setSentences(fetchedSentences);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
-  const handleNext = () => {
-    setCurrentSentenceIndex(prev => Math.min(prev + 1, sentences.length - 1));
-    setIsTranslationVisible(false);
-  };
-
-  const handleBack = () => {
-    setCurrentSentenceIndex(prev => Math.max(prev - 1, 0));
-    setIsTranslationVisible(false);
-  };
-
-  const handleSpeakSentence = () => {
-    if (!currentSentence) return;
-    speakText(currentSentence.target, targetLangCode, settings.ttsEngine);
-  };
-
-  // --- New Handlers for the Settings Modal ---
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
-    setIsSidebarOpen(false); // Close sidebar when settings open
+    setIsSidebarOpen(false);
   };
 
-  // One function to save everything from the modal
   const handleSaveSettings = (data) => {
     setGeminiApiKey(data.apiKey);
     setSettings(data.settings);
     setTopic(data.topic);
-    setIsSettingsModalOpen(false); // Close modal on save
+    setIsSettingsModalOpen(false);
   };
 
   return (
     <div className="app-layout">
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
 
-      {/* --- The Sidebar is now much simpler --- */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Menu</h2>
@@ -125,41 +94,17 @@ function App() {
           </div>
         </header>
 
+        {/* The main content area now just renders the self-contained game */}
         <main className="learning-container">
-          {isLoading && <p className="status-message">Generating sentences, please wait...</p>}
-          {error && <p className="status-message error">Error: {error}</p>}
-
-          {sentences.length > 0 && !isLoading && (
-            <div className="sentence-card">
-              <SentenceDisplay 
-                sentence={currentSentence}
-                isTranslationVisible={isTranslationVisible}
-                targetLanguageName={settings.targetLanguage}
-                ttsEngine={settings.ttsEngine}
-              />
-              <div className="actions">
-                <button onClick={() => setIsTranslationVisible(prev => !prev)}>
-                  {isTranslationVisible ? 'Hide' : 'Show'} Translation
-                </button>
-                <button onClick={handleSpeakSentence} disabled={!currentSentence}>
-                  Pronounce Sentence
-                </button>
-              </div>
-              <div className="navigation">
-                <button onClick={handleBack} disabled={currentSentenceIndex === 0}>Back</button>
-                <span>{currentSentenceIndex + 1} / {sentences.length}</span>
-                <button onClick={handleNext} disabled={currentSentenceIndex === sentences.length - 1}>Next</button>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && sentences.length === 0 && !error && (
-            <p className="status-message">Click "Generate New Sentences" in the menu to start.</p>
-          )}
+          <SentenceDisplay
+            ref={sentenceDisplayRef}
+            geminiApiKey={geminiApiKey}
+            settings={settings}
+            topic={topic}
+          />
         </main>
       </div>
 
-      {/* --- Render the single, unified modal --- */}
       <SettingsModal 
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
