@@ -1,0 +1,72 @@
+/* src/styles/Sidebar.css */
+
+.sidebar {
+  background-color: #f4f4f8;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ddd;
+  transition: transform 0.3s ease-in-out;
+  /* Other existing sidebar styles... */
+}
+
+.sidebar-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.sidebar-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.sidebar-nav {
+  flex-grow: 1; /* Pushes the footer to the bottom */
+}
+
+.sidebar-nav h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #888;
+  margin: 0 0 0.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.sidebar-nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-footer {
+  margin-top: auto; /* Pushes itself to the bottom */
+}
+
+/* Style for all navigation/action buttons in the sidebar */
+.nav-item {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
+  background-color: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  color: #444;
+}
+
+.nav-item:hover {
+  background-color: #e8e8ee;
+}
+
+/* Style for the currently active game button */
+.nav-item.active {
+  background-color: #6a5acd; /* A nice purple accent */
+  color: white;
+  font-weight: 600;
+}
