@@ -5,12 +5,13 @@ import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 // --- Component Imports ---
-import Sidebar from './components/Sidebar'; // Import the new Sidebar
+import Sidebar from './components/Sidebar';
 import SentenceDisplay from './components/SentenceDisplay';
 import SettingsModal from './components/SettingsModal';
+import UnscrambleWords from './components/UnscrambleWords'; // <-- 1. IMPORT THE NEW COMPONENT
 
 function App() {
-  // --- App-level state (global settings) ---
+  // ... all existing state remains the same ...
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
   const [settings, setSettings] = useLocalStorage('settings', {
     nativeLanguage: "English",
@@ -21,24 +22,20 @@ function App() {
     sentenceCount: 20
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
-  
-  // --- App-level UI state ---
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  
-  // --- New state to manage the active game view ---
   const [activeGame, setActiveGame] = useState(null);
 
+  // ... all existing useEffect and handlers remain the same ...
   useEffect(() => {
     if (!geminiApiKey) {
       setIsSettingsModalOpen(true);
     }
   }, []); 
 
-  // --- Handlers ---
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
-    setIsSidebarOpen(false); // Close sidebar when settings open
+    setIsSidebarOpen(false);
   };
 
   const handleSaveSettings = (data) => {
@@ -48,10 +45,8 @@ function App() {
     setIsSettingsModalOpen(false);
   };
   
-  // New handler to set the active game from the sidebar
   const handleNavigate = (gameId) => {
     setActiveGame(gameId);
-    // Auto-close sidebar on navigation, especially useful on mobile
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }
@@ -68,8 +63,9 @@ function App() {
             onApiKeyMissing={handleOpenSettings}
           />
         );
-      // case 'flashcards': // Example for a future game
-      //   return <FlashcardsComponent />;
+      // --- 2. ADD THE CASE FOR THE NEW GAME ---
+      case 'unscramble-words':
+        return <UnscrambleWords />;
       default:
         return (
           <div className="initial-state-container">
@@ -80,6 +76,7 @@ function App() {
     }
   };
 
+  // ... the return/JSX part of the component remains the same ...
   return (
     <div className="app-layout">
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
@@ -96,10 +93,8 @@ function App() {
           <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <span></span><span></span><span></span>
           </button>
-          {/* The title can now be more dynamic or removed if redundant */}
         </header>
 
-        {/* The main content area now renders based on the activeGame state */}
         <main className="learning-container">
           {renderActiveGame()}
         </main>
