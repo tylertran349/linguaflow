@@ -4,27 +4,26 @@ import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchUnscrambleSentences } from '../services/geminiService';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import '../styles/UnscrambleWords.css'; // We will create this CSS file
+import '../styles/UnscrambleWords.css';
 
-// Helper function to shuffle an array
-const shuffleArray = (array) => {
-  return [...array].sort(() => Math.random() - 0.5);
-};
+const CORRECT_ADVANCE_DELAY = 1500; // 1.5 seconds
+
+const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
 function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [sentences, setSentences] = useLocalStorage('unscrambleSentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('unscrambleCurrentIndex', 0);
   const [userOrder, setUserOrder] = useState([]);
   const [isCorrect, setIsCorrect] = useState(null);
+  // --- New state to track if the solution was revealed by the user ---
+  const [isRevealed, setIsRevealed] = useState(false);
   const [incorrectIndices, setIncorrectIndices] = useState([]);
   const [isHintVisible, setIsHintVisible] = useState(false);
-  const [isSolutionVisible, setIsSolutionVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
+  
   const currentSentence = sentences[currentSentenceIndex];
 
-  // Effect to set up a new sentence whenever the index or data changes
   useEffect(() => {
     if (currentSentence) {
       const correctWords = currentSentence.target.split(' ');
@@ -32,12 +31,22 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       resetStateForNewSentence();
     }
   }, [currentSentence]);
+  
+  useEffect(() => {
+    // --- Auto-advance ONLY if the user solved it, NOT if the solution was revealed ---
+    if (isCorrect && !isRevealed) {
+      const timer = setTimeout(() => {
+        handleNav(1); // Move to next sentence
+      }, CORRECT_ADVANCE_DELAY);
+      return () => clearTimeout(timer);
+    }
+  }, [isCorrect, isRevealed]); // Add isRevealed to dependency array
 
   const resetStateForNewSentence = () => {
     setIsCorrect(null);
     setIncorrectIndices([]);
     setIsHintVisible(false);
-    setIsSolutionVisible(false);
+    setIsRevealed(false); // Also reset the revealed state
   };
 
   const generate = async () => {
@@ -52,7 +61,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     try {
       const fetched = await fetchUnscrambleSentences(geminiApiKey, settings, topic);
       setSentences(fetched);
-      setCurrentSentenceIndex(0); // Start from the first sentence
+      setCurrentSentenceIndex(0);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,8 +71,8 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const checkOrder = (currentWordOrder) => {
     const correctWords = currentSentence.target.split(' ');
-    let allCorrect = true;
     const newIncorrectIndices = [];
+    let allCorrect = true;
     
     currentWordOrder.forEach((word, index) => {
       if (word !== correctWords[index]) {
@@ -78,20 +87,19 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const handleOnDragEnd = (result) => {
     if (!result.destination) return;
-
     const items = Array.from(userOrder);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-
     setUserOrder(items);
-    checkOrder(items); // Check the new order after every drag
+    checkOrder(items);
   };
 
   const showSolution = () => {
     setUserOrder(currentSentence.target.split(' '));
-    setIsSolutionVisible(true);
-    setIsCorrect(true);
+    setIsCorrect(true); // Mark as correct for positive UI feedback
+    setIsRevealed(true); // Set the flag to prevent auto-advancing
     setIncorrectIndices([]);
+    // --- The automatic timeout to advance has been REMOVED ---
   };
 
   const handleNav = (direction) => {
@@ -100,12 +108,13 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       setCurrentSentenceIndex(newIndex);
     }
   };
-
-  // --- Render Logic ---
+  
+  // (The rest of the component's JSX rendering logic remains the same)
+  // ...
+  // --- The only change in the JSX is the `disabled` property on the "Next" button ---
   if (isLoading) {
     return <p className="status-message">Generating sentences, please wait...</p>;
   }
-
   if (sentences.length === 0) {
     return (
       <div className="initial-state-container">
@@ -118,17 +127,14 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       </div>
     );
   }
-
+  const dropzoneClassName = `word-bank ${isCorrect === true ? 'correct-dropzone' : isCorrect === false ? 'incorrect-dropzone' : ''}`;
   return (
     <div className="unscramble-container">
-      <div className="sentence-counter">
-        Sentence {currentSentenceIndex + 1} / {sentences.length}
-      </div>
-
+      <div className="sentence-counter">Sentence {currentSentenceIndex + 1} / {sentences.length}</div>
       <DragDropContext onDragEnd={handleOnDragEnd}>
         <Droppable droppableId="words" direction="horizontal">
           {(provided) => (
-            <div className="word-bank" {...provided.droppableProps} ref={provided.innerRef}>
+            <div className={dropzoneClassName} {...provided.droppableProps} ref={provided.innerRef}>
               {userOrder.map((word, index) => (
                 <Draggable key={`${word}-${index}`} draggableId={`${word}-${index}`} index={index}>
                   {(provided, snapshot) => (
@@ -136,9 +142,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`word-tile ${snapshot.isDragging ? 'dragging' : ''} ${
-                        !isCorrect && incorrectIndices.includes(index) ? 'incorrect' : ''
-                      }`}
+                      className={`word-tile ${snapshot.isDragging ? 'dragging' : ''} ${isCorrect === false && incorrectIndices.includes(index) ? 'incorrect' : ''}`}
                     >
                       {word}
                     </div>
@@ -150,28 +154,24 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
           )}
         </Droppable>
       </DragDropContext>
-      
-      {isCorrect === true && (
-        <div className="feedback-message correct">Correct! 🎉</div>
-      )}
-
+      {isCorrect === true && (<div className="feedback-message correct">Correct! 🎉</div>)}
       <div className="actions-panel">
-        <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>
-          {isHintVisible ? 'Hide Hint' : 'Show Hint'}
-        </button>
-        <button className="action-button" onClick={showSolution}>
-          Show Solution
-        </button>
+        <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>{isHintVisible ? 'Hide Hint' : 'Show Hint'}</button>
+        <button className="action-button" onClick={showSolution}>Show Solution</button>
+        <button className="action-button" onClick={generate}>Generate New Set</button>
       </div>
-      
-      {isHintVisible && <div className="hint-box">{currentSentence.native}</div>}
-      {isSolutionVisible && <div className="solution-box">Correct sentence: "{currentSentence.target}"</div>}
-
+      {isHintVisible && (
+        <div className="hint-box">
+          <span className="hint-label">{settings.nativeLanguage} translation:</span>{currentSentence.native}
+        </div>
+      )}
       <div className="navigation">
-        <button onClick={() => handleNav(-1)} disabled={currentSentenceIndex === 0}>
-          Back
-        </button>
-        <button onClick={() => handleNav(1)} disabled={currentSentenceIndex === sentences.length - 1}>
+        <button onClick={() => handleNav(-1)} disabled={currentSentenceIndex === 0}>Back</button>
+        <button 
+          onClick={() => handleNav(1)} 
+          // Disable "Next" only if it's the last sentence OR if the user solved it and the auto-advance is in progress.
+          disabled={currentSentenceIndex === sentences.length - 1 || (isCorrect && !isRevealed)}
+        >
           Next
         </button>
       </div>
