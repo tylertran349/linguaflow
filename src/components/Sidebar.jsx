@@ -1,18 +1,16 @@
 // src/components/Sidebar.jsx
 
 import React from 'react';
-import '../styles/Sidebar.css'; // We'll create this new CSS file
+import '../styles/Sidebar.css';
 
-// A list of games. This makes it easy to add more games in the future.
+// Add the new game to this list.
 const games = [
-  { id: 'sentence-generator', name: 'Sentence Generator' }
-  // { id: 'flashcards', name: 'Flashcards' }, // Example of a future game
+  { id: 'sentence-generator', name: 'Sentence Generator' },
+  { id: 'unscramble-words', name: 'Unscramble Words' } // <-- ADD THIS LINE
 ];
 
 function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {
   return (
-    // The <aside> tag itself is the root of this component.
-    // Its open/closed state is controlled by the `isOpen` prop from App.jsx.
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h1>LinguaFlow</h1>
