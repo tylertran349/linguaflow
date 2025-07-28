@@ -1,5 +1,3 @@
-/* src/components/UnscrambleWords.css */
-
 /* --- Main Game Container --- */
 .unscramble-container {
   display: flex;
@@ -11,6 +9,29 @@
   padding: 1rem;
 }
 
+.initial-state-container {
+  text-align: center;
+}
+
+.generate-button {
+  padding: 12px 25px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #6a5acd;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.generate-button:hover {
+  background-color: #5948b1;
+}
+
+.status-message.error {
+    color: #e53e3e;
+}
+
 .sentence-counter {
   font-size: 0.9rem;
   color: #666;
@@ -20,7 +41,7 @@
 /* --- Drag-and-Drop Area --- */
 .word-bank {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* This is key for multi-line support */
   justify-content: center;
   gap: 10px;
   padding: 20px;
@@ -53,6 +74,7 @@
   user-select: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  touch-action: none; /* Recommended for dnd-kit pointer sensor */
 }
 
 .word-tile.dragging {
