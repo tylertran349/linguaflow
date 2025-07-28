@@ -154,8 +154,25 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
 
   // --- JSX REMAINS LARGELY THE SAME ---
-  if (isLoading) { /* ... */ }
-  if (sentences.length === 0) { /* ... */ }
+  if (isLoading) {
+    return <p className="status-message">Generating sentences, please wait...</p>;
+  }
+
+  // 2. Second Priority: Handle the initial state before any sentences have been generated.
+  if (sentences.length === 0) {
+    return (
+      <div className="initial-state-container">
+        {error && <p className="status-message error">{error}</p>}
+        <h2>Unscramble Words</h2>
+        <p>Drag and drop the words to form a correct sentence.</p>
+        <button className="generate-button" onClick={generate}>
+          Start Game
+        </button>
+      </div>
+    );
+  }
+
+  // 3. If not loading and we have sentences, render the main game UI.
   const dropzoneClassName = `word-bank ${isCorrect === true ? 'correct-dropzone' : isCorrect === false ? 'incorrect-dropzone' : ''}`;
 
   return (
@@ -164,7 +181,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={handleDragStart} // Add onDragStart
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={userOrder} strategy={horizontalListSortingStrategy}>
@@ -180,7 +197,6 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
           </div>
         </SortableContext>
 
-        {/* --- ADD THE DRAG OVERLAY --- */}
         <DragOverlay>
           {activeItem ? (
             <div className="word-tile dragging">{activeItem.word}</div>
@@ -189,7 +205,6 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
       </DndContext>
 
-      {/* ... (The rest of the JSX is identical) ... */}
       {isCorrect === true && (<div className="feedback-message correct">Correct! 🎉</div>)}
 
       <div className="actions-panel">
