@@ -1,13 +1,11 @@
-// src/components/SentenceDisplay.jsx
-
-import { useState, useEffect } from 'react'; // Removed useImperativeHandle, forwardRef
+// 1. Removed useRef from the import
+import { useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/SentenceDisplay.css';
 
-// The component is no longer wrapped in forwardRef
 function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
@@ -15,19 +13,17 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [error, setError] = useState('');
   const [isTranslationVisible, setIsTranslationVisible] = useState(false);
 
+  // The useRef hook is no longer needed.
+
   const currentSentence = sentences[currentSentenceIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
 
-  useEffect(() => {
-    setCurrentSentenceIndex(0);
-    setIsTranslationVisible(false);
-  }, [sentences]);
+  // 2. The entire problematic useEffect hook has been REMOVED.
+  // No more automatic resets on page load.
 
-  // The generate function is now a standard async function within the component
   const generate = async () => {
     if (!geminiApiKey) {
       setError("Gemini API Key is not set.");
-      // If the parent provided a way to open the settings, call it.
       if (onApiKeyMissing) {
         onApiKeyMissing();
       }
@@ -35,10 +31,16 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     }
     setIsLoading(true);
     setError('');
-    setSentences([]); 
+    // We can also remove setSentences([]) here to prevent a brief flicker of the "Initial State" message.
     try {
       const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
       setSentences(fetchedSentences);
+      
+      // 3. Explicitly reset the index and visibility here.
+      // This logic now ONLY runs when a new set is successfully generated.
+      setCurrentSentenceIndex(0);
+      setIsTranslationVisible(false);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,11 +49,13 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   };
 
   const handleNext = () => {
+    // We can safely update the index without side effects.
     setCurrentSentenceIndex(prev => Math.min(prev + 1, sentences.length - 1));
     setIsTranslationVisible(false);
   };
 
   const handleBack = () => {
+    // We can safely update the index without side effects.
     setCurrentSentenceIndex(prev => Math.max(prev - 1, 0));
     setIsTranslationVisible(false);
   };
@@ -66,10 +70,9 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     speakText(word, targetLangCode, settings.ttsEngine);
   };
 
-  // Status Messages
+  // --- The rest of the component's JSX is unchanged and correct. ---
   if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
   
-  // The initial state now contains the button
   if (sentences.length === 0) {
     return (
       <div className="initial-state-container">
@@ -84,12 +87,10 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     );
   }
 
-  // Main Game UI
   return (
     <div className="sentence-card">
       {error && <p className="status-message error small">Error: {error}</p>}
       <article className="sentence-container">
-        {/* ... existing sentence rendering logic ... */}
         <section className="target-sentence">
           {currentSentence.chunks.map((chunk, index) => (
             <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
@@ -118,7 +119,6 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
         <button onClick={handleSpeakSentence}>
           Pronounce Sentence
         </button>
-        {/* Add a button to generate a new set directly from the card */}
         <button onClick={generate}>Generate New Sentences</button>
       </div>
 
