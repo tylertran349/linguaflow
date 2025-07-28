@@ -13,7 +13,7 @@ const CEFR_LEVELS = [
   { value: "C1", label: "C1 (Advanced)" },
   { value: "C2", label: "C2 (Native-like)" }
 ];
-const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
 const TTS_ENGINES = [
   { value: "web-speech", label: "Web Speech API (Default)" },
   { value: "google-translate", label: "Google Translate Voice (local only)" }
