@@ -9,16 +9,18 @@ export function SortableWord({ id, word, isIncorrect }) {
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging, // This property tells us if this specific item is being dragged
   } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    // When this item is being dragged, hide it. The DragOverlay will render the clone.
+    opacity: isDragging ? 0 : 1,
   };
   
-  const className = `word-tile ${isIncorrect ? 'incorrect' : ''} ${isDragging ? 'dragging' : ''}`;
+  // We remove the 'dragging' class here since the overlay will handle the visual representation
+  const className = `word-tile ${isIncorrect ? 'incorrect' : ''}`;
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={className}>
