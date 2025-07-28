@@ -17,7 +17,7 @@ function App() {
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
     difficulty: "B2",
-    model: "gemini-2.5-pro",
+    model: "gemini-2.5-flash",
     ttsEngine: "web-speech",
     sentenceCount: 20
   });
