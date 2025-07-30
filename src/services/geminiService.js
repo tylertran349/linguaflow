@@ -186,7 +186,7 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic, history 
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
-      temperature: 0.8,
+      temperature: 1,
     }
   });
 
