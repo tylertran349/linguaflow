@@ -1,26 +1,29 @@
-// 1. Removed useRef from the import
-import { useState, useEffect } from 'react';
+// src/components/SentenceDisplay.jsx
+
+import { useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/SentenceDisplay.css';
 
+// We'll keep a history of the last 100 sentences to ensure variety.
+const MAX_HISTORY_SIZE = 100;
+
 function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
+  // --- NEW: State to store sentence history for generating varied vocabulary ---
+  const [sentenceHistory, setSentenceHistory] = useLocalStorage('sentenceHistory', []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTranslationVisible, setIsTranslationVisible] = useState(false);
 
-  // The useRef hook is no longer needed.
-
   const currentSentence = sentences[currentSentenceIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
 
-  // 2. The entire problematic useEffect hook has been REMOVED.
-  // No more automatic resets on page load.
-
+  // --- MODIFIED: The generate function now uses and updates the history ---
   const generate = async () => {
     if (!geminiApiKey) {
       setError("Gemini API Key is not set.");
@@ -31,13 +34,30 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     }
     setIsLoading(true);
     setError('');
-    // We can also remove setSentences([]) here to prevent a brief flicker of the "Initial State" message.
+    
     try {
-      const fetchedSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic);
+      // Pass the sentenceHistory to the service function
+      const fetchedSentences = await fetchSentencesFromGemini(
+        geminiApiKey, 
+        settings, 
+        topic, 
+        sentenceHistory
+      );
+
       setSentences(fetchedSentences);
+
+      // After a successful fetch, update the history
+      if (fetchedSentences && fetchedSentences.length > 0) {
+        // Get just the text of the new target sentences
+        const newTargets = fetchedSentences.map(s => s.target);
+        // Combine old and new, ensuring we don't exceed the max size
+        const combinedHistory = [...sentenceHistory, ...newTargets];
+        const updatedHistory = combinedHistory.slice(-MAX_HISTORY_SIZE);
+        // Save the updated history for the next generation
+        setSentenceHistory(updatedHistory);
+      }
       
-      // 3. Explicitly reset the index and visibility here.
-      // This logic now ONLY runs when a new set is successfully generated.
+      // Explicitly reset the index and visibility for the new set
       setCurrentSentenceIndex(0);
       setIsTranslationVisible(false);
 
@@ -49,13 +69,11 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   };
 
   const handleNext = () => {
-    // We can safely update the index without side effects.
     setCurrentSentenceIndex(prev => Math.min(prev + 1, sentences.length - 1));
     setIsTranslationVisible(false);
   };
 
   const handleBack = () => {
-    // We can safely update the index without side effects.
     setCurrentSentenceIndex(prev => Math.max(prev - 1, 0));
     setIsTranslationVisible(false);
   };
@@ -70,7 +88,7 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     speakText(word, targetLangCode, settings.ttsEngine);
   };
 
-  // --- The rest of the component's JSX is unchanged and correct. ---
+  // --- The component's JSX is unchanged and correct. ---
   if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
   
   if (sentences.length === 0) {

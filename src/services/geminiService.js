@@ -48,9 +48,21 @@ function hexToHsl(hex) {
   return { h, s, l };
 }
 
+// Helper to create the history instruction for the prompt
+const createHistoryInstruction = (history) => {
+  if (!history || history.length === 0) {
+    return '';
+  }
+  // We only send a sample of the history to keep the prompt size reasonable
+  const historySample = history.slice(-50); 
+  return `
+    **Vocabulary History (for avoidance):** To ensure the user learns new words, please AVOID using the primary nouns, verbs, and adjectives from this list of previously generated sentences:
+    ${JSON.stringify(historySample)}
+  `;
+};
 
-// --- THIS FUNCTION REMAINS UNCHANGED FOR SentenceDisplay.jsx ---
-export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
+
+export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: settings.model,
@@ -62,13 +74,18 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
   const topicInstruction = (topic && topic.trim() !== '') 
     ? `The sentences must be related to the following topic/theme: "${topic}".`
     : '';
+  
+  const historyInstruction = createHistoryInstruction(history);
 
   const prompt = `
-    You are an expert language tutor. Generate ${settings.sentenceCount} sentences for a language learner.
+    You are an expert language tutor. Generate ${settings.sentenceCount} unique sentences for a language learner.
     The user's native language is ${settings.nativeLanguage}.
     The user wants to learn ${settings.targetLanguage}.
     The difficulty level should be ${settings.difficulty} (CEFR).
     ${topicInstruction}
+
+    **Vocabulary Goal:** To maximize the learning opportunity, ensure the sentences use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives) across the different sentences in THIS new set.
+    ${historyInstruction}
 
     **IMPORTANT INSTRUCTIONS:**
     Return the data as a single valid JSON array. Do not include any text outside of the JSON array.
@@ -164,18 +181,12 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic) => {
 };
 
 
-// --- NEW FUNCTION ADDED FOR UnscrambleWords.jsx ---
-/**
- * Fetches sentences with a simpler structure for the unscramble game.
- * It only requests a 'target' and 'native' sentence pair.
- */
-export const fetchUnscrambleSentences = async (apiKey, settings, topic) => {
-  // We reuse the same AI and model setup
+export const fetchUnscrambleSentences = async (apiKey, settings, topic, history = []) => {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
-      temperature: 0.8, // Slightly less random might be better for this game
+      temperature: 0.8,
     }
   });
 
@@ -183,7 +194,8 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic) => {
     ? `The sentences should be related to the following topic: "${topic}".`
     : "The sentences can be about any common topic.";
 
-  // A new, simpler prompt tailored for this game's needs
+  const historyInstruction = createHistoryInstruction(history);
+
   const prompt = `
     You are an expert language teacher creating sentences for a word-unscramble game.
     Generate ${settings.sentenceCount} unique sentences for a language learner.
@@ -191,6 +203,9 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic) => {
     The user is learning ${settings.targetLanguage}.
     The user's proficiency level is ${settings.difficulty} on the CEFR scale.
     ${topicInstruction}
+
+    **Vocabulary Goal:** To maximize the learning opportunity, ensure the sentences use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives) across the different sentences in THIS new set.
+    ${historyInstruction}
 
     Please provide the output as a single, valid JSON array of objects.
     Each object in the array must have exactly two keys:
@@ -219,16 +234,13 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic) => {
     const response = await result.response;
     const text = response.text();
 
-    // Reuse the same robust JSON cleaning and parsing logic
     const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
     const parsedSentences = JSON.parse(jsonString);
 
-    // Add a simple validation check
     if (!Array.isArray(parsedSentences)) {
       throw new Error("API response was not a valid JSON array.");
     }
     
-    // No color processing is needed, so we just return the data.
     return parsedSentences;
 
   } catch (error) {
