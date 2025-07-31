@@ -7,21 +7,29 @@ let currentPuterAudio = null;
 // This map now contains all the necessary options for each language,
 // including the correct engine type to avoid errors.
 const puterVoiceMap = {
-  // Russian is set to "standard" as required.
+  // --- Existing entries (unchanged as requested) ---
   "ru":    { language: "ru-RU", voice: "Maxim",  engine: "standard" },
-
-  // All other voices are set to "neural" for the highest quality.
+  "ro":    { language: "ro-RO", voice: "Carmen", engine: "standard" }, 
   "en":    { language: "en-US", voice: "Joanna", engine: "neural" },
-  "fr":    { language: "fr-FR", voice: "Remi",engine: "neural" },
+  "fr":    { language: "fr-FR", voice: "Remi",   engine: "neural" },
   "es":    { language: "es-ES", voice: "Sergio", engine: "neural" },
-  "de":    { language: "de-DE", voice: "Daniel",   engine: "neural" },
+  "de":    { language: "de-DE", voice: "Daniel", engine: "neural" },
   "it":    { language: "it-IT", voice: "Adriano",engine: "neural" },
   "ja":    { language: "ja-JP", voice: "Takumi", engine: "neural" },
   "ko":    { language: "ko-KR", voice: "Seoyeon",engine: "neural" },
   "zh-CN": { language: "cmn-CN",voice: "Zhiyu",  engine: "neural" },
   "ar":    { language: "ar-AE", voice: "Hala",   engine: "neural" },
-  "pt":    { language: "pt-PT", voice: "Ines", engine: "neural" },
-  "hi":    { language: "hi-IN", voice: "Kajal",  engine: "neural" }
+  "pt":    { language: "pt-PT", voice: "Ines",   engine: "neural" },
+  "hi":    { language: "hi-IN", voice: "Kajal",  engine: "neural" },
+
+  // --- New entries for newly supported languages ---
+  "da":    { language: "da-DK", voice: "Sofie",   engine: "neural" }, // Danish
+  "nl":    { language: "nl-NL", voice: "Laura",  engine: "neural" }, // Dutch
+  "fi":    { language: "fi-FI", voice: "Suvi",   engine: "neural" }, // Finnish
+  "no":    { language: "nb-NO", voice: "Ida",    engine: "neural" }, // Norwegian
+  "pl":    { language: "pl-PL", voice: "Ola",    engine: "neural" }, // Polish
+  "sv":    { language: "sv-SE", voice: "Elin",  engine: "neural" }, // Swedish
+  "tr":    { language: "tr-TR", voice: "Burcu",  engine: "neural" }, // Turkish
 };
 // --- END OF THE DEFINITIVE CONFIGURATION MAP ---
 
