@@ -1,13 +1,35 @@
-// Add this new variable at the very top of the file.
-// It will keep a reference to the currently playing Google Translate audio object.
-let currentGoogleAudio = null;
+// src/services/ttsService.js
 
-// Find the speakWithWebSpeech function and simplify it by removing the callback.
-// The synth.cancel() line already does exactly what we need.
+let currentGoogleAudio = null;
+let currentPuterAudio = null;
+
+// --- START OF THE DEFINITIVE CONFIGURATION MAP ---
+// This map now contains all the necessary options for each language,
+// including the correct engine type to avoid errors.
+const puterVoiceMap = {
+  // Russian is set to "standard" as required.
+  "ru":    { language: "ru-RU", voice: "Maxim",  engine: "standard" },
+
+  // All other voices are set to "neural" for the highest quality.
+  "en":    { language: "en-US", voice: "Joanna", engine: "neural" },
+  "fr":    { language: "fr-FR", voice: "Remi",engine: "neural" },
+  "es":    { language: "es-ES", voice: "Sergio", engine: "neural" },
+  "de":    { language: "de-DE", voice: "Daniel",   engine: "neural" },
+  "it":    { language: "it-IT", voice: "Adriano",engine: "neural" },
+  "ja":    { language: "ja-JP", voice: "Takumi", engine: "neural" },
+  "ko":    { language: "ko-KR", voice: "Seoyeon",engine: "neural" },
+  "zh-CN": { language: "cmn-CN",voice: "Zhiyu",  engine: "neural" },
+  "ar":    { language: "ar-AE", voice: "Hala",   engine: "neural" },
+  "pt":    { language: "pt-PT", voice: "Ines", engine: "neural" },
+  "hi":    { language: "hi-IN", voice: "Kajal",  engine: "neural" }
+};
+// --- END OF THE DEFINITIVE CONFIGURATION MAP ---
+
+
+// These individual functions do not need to change.
 const speakWithWebSpeech = (text, langCode) => {
   if ('speechSynthesis' in window) {
     const synth = window.speechSynthesis;
-    // This command stops any currently playing speech before starting the new one.
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
@@ -20,45 +42,66 @@ const speakWithWebSpeech = (text, langCode) => {
   }
 };
 
-// Find the speakWithGoogleTranslateProxy function and update its logic.
 const speakWithGoogleTranslateProxy = (text, langCode) => {
-  // --- START OF CHANGED BLOCK ---
-  // If an audio object is already playing, stop it and clear the reference.
-  if (currentGoogleAudio) {
-    currentGoogleAudio.pause();
-    currentGoogleAudio = null;
-  }
-
+  if (currentGoogleAudio) { currentGoogleAudio.pause(); currentGoogleAudio = null; }
+  if (currentPuterAudio) { currentPuterAudio.pause(); currentPuterAudio = null; }
   const url = `/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`;
   const audio = new Audio(url);
-
-  // Store the new audio object in our global reference.
   currentGoogleAudio = audio;
-
-  // When the audio finishes playing naturally, clear the reference.
-  audio.onended = () => {
-    currentGoogleAudio = null;
-  };
-
+  audio.onended = () => { currentGoogleAudio = null; };
   audio.play().catch(e => {
     console.error("Proxy TTS playback failed:", e);
-    alert("The Google Translate voice failed to play. This can happen due to browser security restrictions (CORS).");
-    // Also clear reference on error.
+    alert("The Google Translate voice failed to play.");
     currentGoogleAudio = null;
   });
-  // --- END OF CHANGED BLOCK ---
 };
 
-// Find the main speakText function and simplify it by removing the callback.
+// --- START OF UPDATED speakWithPuter FUNCTION ---
+// This function is now simpler. It just passes the configuration object.
+const speakWithPuter = async (text, puterOptions) => {
+  if (currentGoogleAudio) { currentGoogleAudio.pause(); currentGoogleAudio = null; }
+  if (currentPuterAudio) { currentPuterAudio.pause(); currentPuterAudio = null; }
+  try {
+    // The `puterOptions` object from our map is passed directly.
+    // It contains the correct language, voice, AND engine.
+    const audio = await puter.ai.txt2speech(text, puterOptions);
+
+    currentPuterAudio = audio;
+    audio.onended = () => { currentPuterAudio = null; };
+    await audio.play();
+  } catch (error) {
+    console.error("Puter TTS playback failed:", error);
+    const errorMessage = error?.message || JSON.stringify(error) || "An unknown error occurred.";
+    alert(`Puter AI TTS failed: ${errorMessage}`);
+    currentPuterAudio = null;
+  }
+};
+// --- END OF UPDATED speakWithPuter FUNCTION ---
+
+
+// The main exported function uses the map and requires no changes.
 export const speakText = (text, langCode, engine) => {
   if (!text || !langCode) {
     console.error("speakText: Text or language code is missing.");
     return;
   }
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
   if (engine === 'web-speech') {
     speakWithWebSpeech(text, langCode);
   } else if (engine === 'google-translate') {
     speakWithGoogleTranslateProxy(text, langCode);
+  } else if (engine === 'puter') {
+    const optionsForPuter = puterVoiceMap[langCode];
+    if (optionsForPuter) {
+      speakWithPuter(text, optionsForPuter);
+    } else {
+      alert(`The language "${langCode}" is not supported by the Puter AI voice engine in this app.`);
+      console.warn(`Puter TTS: Language code "${langCode}" not found in voice map.`);
+    }
   } else {
     console.error(`Unknown TTS engine selected: ${engine}`);
   }
