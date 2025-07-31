@@ -1,7 +1,7 @@
 // src/components/SettingsModal.jsx
 
 import { useState, useEffect } from 'react';
-import '../styles/ApiKeyModal.css'; // We can reuse the existing modal styles
+import '../styles/SettingsModal.css'; // We can reuse the existing modal styles
 import { supportedLanguages } from '../utils/languages';
 
 // --- Constants ---
