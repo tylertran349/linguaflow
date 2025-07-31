@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import '../styles/ApiKeyModal.css'; // We can reuse the existing modal styles
 import { supportedLanguages } from '../utils/languages';
 
-// --- Constants moved here from Settings.jsx ---
+// --- Constants ---
 const CEFR_LEVELS = [
   { value: "A1", label: "A1 (Beginner)" },
   { value: "A2", label: "A2 (Upper Beginner)" },
@@ -16,19 +16,19 @@ const CEFR_LEVELS = [
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
 const TTS_ENGINES = [
   { value: "web-speech", label: "Web Speech API (Default)" },
+  { value: "puter", label: "Puter AI (doesn't support some languages)" },
   { value: "google-translate", label: "Google Translate Voice (local only)" }
 ];
 
-function SettingsModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  currentSettings, 
-  currentApiKey, 
-  currentTopic 
+function SettingsModal({
+  isOpen,
+  onClose,
+  onSave,
+  currentSettings,
+  currentApiKey,
+  currentTopic
 }) {
   // --- Internal State Management ---
-  // The modal holds temporary state. It only updates the main app on "Save".
   const [tempSettings, setTempSettings] = useState(currentSettings);
   const [tempApiKey, setTempApiKey] = useState(currentApiKey);
   const [tempTopic, setTempTopic] = useState(currentTopic);
@@ -54,9 +54,9 @@ function SettingsModal({
       apiKey: tempApiKey,
       topic: tempTopic,
     });
-    onClose(); // The onSave handler in App.jsx will also call onClose. Redundant but safe.
+    onClose();
   };
-  
+
   // Don't render anything if the modal is not open.
   if (!isOpen) {
     return null;
@@ -66,8 +66,8 @@ function SettingsModal({
     <div className="modal-backdrop">
       <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <h2>Settings</h2>
-        
-        {/* --- API Key Section (from ApiKeyModal.jsx) --- */}
+
+        {/* --- API Key Section --- */}
         <div className="settings-section">
             <h3>API Key</h3>
             <p>Your key is stored in your browser's local storage.</p>
@@ -83,7 +83,7 @@ function SettingsModal({
             </div>
         </div>
 
-        {/* --- Topic Section (from TopicModal.jsx) --- */}
+        {/* --- Topic Section --- */}
         <div className="settings-section">
             <h3>Topic</h3>
             <p>Guide the sentence generation. Leave blank for random sentences.</p>
@@ -96,7 +96,7 @@ function SettingsModal({
             />
         </div>
 
-        {/* --- General Settings Section (from Settings.jsx) --- */}
+        {/* --- General Settings Section --- */}
         <div className="settings-section">
             <h3>Generation Options</h3>
             <div className="setting-item">
@@ -108,12 +108,14 @@ function SettingsModal({
             <div className="setting-item">
                 <label htmlFor="nativeLanguage">Your Language:</label>
                 <select name="nativeLanguage" id="nativeLanguage" value={tempSettings.nativeLanguage} onChange={handleSettingChange}>
+                    {/* This correctly uses the user-friendly name as the value to be stored in the app's state */}
                     {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
                 </select>
             </div>
             <div className="setting-item">
                 <label htmlFor="targetLanguage">Language to Learn:</label>
                 <select name="targetLanguage" id="targetLanguage" value={tempSettings.targetLanguage} onChange={handleSettingChange}>
+                    {/* This also correctly uses the user-friendly name as the value */}
                     {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
                 </select>
             </div>
@@ -142,7 +144,7 @@ function SettingsModal({
                 />
             </div>
         </div>
-        
+
         <div className="modal-actions">
           <button onClick={onClose}>Close</button>
           <button onClick={handleSave}>Save Settings</button>
