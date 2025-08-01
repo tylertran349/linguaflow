@@ -7,7 +7,8 @@ import Sidebar from './components/Sidebar';
 import SettingsModal from './components/SettingsModal';
 import SentenceDisplay from './components/SentenceDisplay';
 import UnscrambleWords from './components/UnscrambleWords';
-import ReadAndRespond from './components/ReadAndRespond'; // Already imported, which is great
+import ReadAndRespond from './components/ReadAndRespond';
+import WriteAResponse from './components/WriteAResponse';
 
 function App() {
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
@@ -81,7 +82,15 @@ function App() {
             onApiKeyMissing={handleOpenSettings}
           />
         );
-      // --- END OF THE FIX ---
+      case 'write-a-response':
+        return (
+          <WriteAResponse // Use the new component name here
+            geminiApiKey={geminiApiKey}
+            settings={settings}
+            topic={topic}
+            onApiKeyMissing={handleOpenSettings}
+          />
+        );
       default:
         return (
           <div className="initial-state-container">

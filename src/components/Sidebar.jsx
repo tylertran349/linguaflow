@@ -7,7 +7,8 @@ import '../styles/Sidebar.css';
 const games = [
   { id: 'sentence-generator', name: 'Sentence Generator' },
   { id: 'unscramble-words', name: 'Unscramble Words' },
-  { id: 'read-and-respond', name: 'Read & Respond' }
+  { id: 'read-and-respond', name: 'Read & Respond' },
+  { id: 'write-a-response', name: 'Write a Response' }
 ];
 
 function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {

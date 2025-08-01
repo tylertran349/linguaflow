@@ -2,8 +2,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// A curated list of vibrant, high-contrast colors that look good on a dark background.
-// We will use these instead of the random colors from Gemini.
+// A curated list of vibrant, high-contrast colors.
 const RAINBOW_HEX_PALETTE = [
   '#f80c12',
   '#C11C84',
@@ -16,6 +15,7 @@ const RAINBOW_HEX_PALETTE = [
   '#575757',
 ];
 
+// Helper to convert HEX to HSL for generating color shades.
 function hexToHsl(hex) {
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
@@ -48,12 +48,11 @@ function hexToHsl(hex) {
   return { h, s, l };
 }
 
-// Helper to create the history instruction for the prompt
+// Helper to create the history instruction for the prompt.
 const createHistoryInstruction = (history) => {
   if (!history || history.length === 0) {
     return '';
   }
-  // We only send a sample of the history to keep the prompt size reasonable
   const historySample = history.slice(-50); 
   return `
     **Vocabulary History (for avoidance):** To ensure the user learns new words, please AVOID using the primary nouns, verbs, and adjectives from this list of previously generated sentences:
@@ -61,7 +60,8 @@ const createHistoryInstruction = (history) => {
   `;
 };
 
-
+// --- PRIVATE CORE FUNCTION FOR JSON-BASED API CALLS ---
+// This function is not exported; it's a private helper for this module.
 const _callGeminiModel = async (apiKey, settings, topic, history, specificInstructions, errorMessage) => {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -78,13 +78,13 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   const historyInstruction = createHistoryInstruction(history);
 
   const prompt = `
-    You are an expert language tutor. Generate ${settings.sentenceCount} unique sentences for a language learner.
+    You are an expert language tutor. Generate ${settings.sentenceCount} unique items for a language learner.
     The user's native language is ${settings.nativeLanguage}.
     The user wants to learn ${settings.targetLanguage}.
     The difficulty level should be ${settings.difficulty} (CEFR).
     ${topicInstruction}
 
-    **Vocabulary Goal:** To maximize the learning opportunity, ensure the sentences use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives) across the different sentences in THIS new set.
+    **Vocabulary Goal:** To maximize the learning opportunity, ensure the items use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives) across the different items in THIS new set.
     ${historyInstruction}
 
     ---
@@ -93,7 +93,7 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
 
     ---
 
-    Now, generate the ${settings.sentenceCount} sentences based on my request. Remember to only output the JSON array.
+    Now, generate the ${settings.sentenceCount} items based on my request. Remember to only output the JSON array and nothing else.
   `;
 
   try {
@@ -101,7 +101,6 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
     const response = await result.response;
     const text = response.text();
     
-    // Standard cleanup for JSON response
     const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
     
     const parsedData = JSON.parse(jsonString);
@@ -114,53 +113,30 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
 
   } catch (error) {
     console.error(`Error calling Gemini: ${errorMessage}`, error);
-    // Use the specific error message passed to the function
     throw new Error(`${errorMessage} Please check your API key and network connection. The model may also have returned an invalid format. Check the console for more details.`);
   }
 };
 
 
-// --- REFACTORED: `fetchSentencesFromGemini` ---
+// --- PUBLIC EXPORTED FUNCTIONS ---
+
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
-  // 1. Define instructions specific to this function's task
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Return the data as a single valid JSON array. Do not include any text outside of the JSON array.
-    Each element in the array should be an object with three keys: "target", "native", and "chunks".
-    1.  "target": The full sentence in ${settings.targetLanguage}.
-    2.  "native": The full sentence in ${settings.nativeLanguage}.
-    3.  "chunks": An array of objects, where each object represents a corresponding word or phrase chunk. Each chunk object must have three keys: "target_chunk", "native_chunk", and "color".
-        - "target_chunk": A word or small phrase from the target sentence.
-        - "native_chunk": The corresponding translation of that chunk in the native language.
-        - "color": A unique hex color code for this chunk.
-
-    Make sure the chunks correctly cover the entire sentences. Group words into meaningful chunks where a direct one-to-one word translation is not accurate.
-
+    Return the data as a single valid JSON array. Each element should be an object with "target", "native", and "chunks" keys.
+    "chunks" must be an array of objects, where each object has "target_chunk", "native_chunk", and "color" keys.
     Example: { "target": "J'aime apprendre.", "native": "I like to learn.", "chunks": [{ "target_chunk": "J'aime", "native_chunk": "I like", "color": "#f80c12" }, { "target_chunk": "apprendre", "native_chunk": "to learn", "color": "#008000" }] }
   `;
+  const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
 
-  // 2. Call the core function
-  const sentences = await _callGeminiModel(
-    apiKey, 
-    settings, 
-    topic, 
-    history, 
-    specificInstructions, 
-    "Failed to generate chunked sentences."
-  );
-
-  // 3. Perform post-processing specific to this function (color assignment)
+  // Post-processing for colors
   let shadeColorIndex = 0;
   sentences.forEach(sentence => {
-    if (!sentence || !Array.isArray(sentence.chunks) || sentence.chunks.length === 0) {
-      return;
-    }
+    if (!sentence || !Array.isArray(sentence.chunks) || sentence.chunks.length === 0) return;
     const numChunks = sentence.chunks.length;
     const paletteSize = RAINBOW_HEX_PALETTE.length;
     if (numChunks <= paletteSize) {
-      sentence.chunks.forEach((chunk, index) => {
-        chunk.color = RAINBOW_HEX_PALETTE[index];
-      });
+      sentence.chunks.forEach((chunk, index) => { chunk.color = RAINBOW_HEX_PALETTE[index]; });
     } else {
       const baseHexColor = RAINBOW_HEX_PALETTE[shadeColorIndex];
       const baseHslColor = hexToHsl(baseHexColor);
@@ -180,71 +156,67 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 };
 
 
-// --- REFACTORED: `fetchUnscrambleSentences` ---
 export const fetchUnscrambleSentences = async (apiKey, settings, topic, history = []) => {
-  // 1. Define instructions specific to this function's task
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Provide the output as a single, valid JSON array of objects.
-    Each object in the array must have exactly two keys:
-    1. "target": The full, correct sentence in ${settings.targetLanguage}.
-    2. "native": The accurate, natural-sounding translation of the sentence in ${settings.nativeLanguage}.
-
-    DO NOT include 'chunks', 'color', or any other keys.
-
-    Example format:
-    [
-      {
-        "target": "Un exemple de phrase dans la langue cible.",
-        "native": "An example sentence in the target language."
-      }
-    ]
+    Provide the output as a single, valid JSON array of objects. Each object must have "target" and "native" keys.
+    Example: [{ "target": "Un exemple de phrase.", "native": "An example sentence." }]
   `;
-  
-  // 2. Call the core function and return the result directly
-  // No special post-processing is needed for this function.
-  return await _callGeminiModel(
-    apiKey, 
-    settings, 
-    topic, 
-    history, 
-    specificInstructions, 
-    "Failed to generate unscramble sentences."
-  );
+  return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate unscramble sentences.");
 };
+
 
 export const fetchComprehensionPassages = async (apiKey, settings, topic, history = []) => {
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Your goal is to create a reading comprehension exercise.
-    Generate a JSON array of objects. Each object must contain:
-    1. "passage": A short paragraph (2-4 sentences) in ${settings.targetLanguage}.
-    2. "question": A multiple-choice question about the passage, written in ${settings.targetLanguage}.
-    3. "options": An array of 3-4 possible answers (strings), also in ${settings.targetLanguage}. One must be correct.
-    4. "correctAnswer": The exact string of the correct answer from the "options" array.
+    Your goal is to create a reading comprehension exercise. Generate a JSON array of objects.
+    Each object must contain "passage", "question", "options" (an array of strings), and "correctAnswer" (the correct string from options).
+    Example: [{ "passage": "Hier, je suis allé au marché.", "question": "Où suis-je allé hier ?", "options": ["Au parc", "Au marché", "À l'école"], "correctAnswer": "Au marché" }]
+  `;
+  return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate comprehension passages.");
+};
 
-    The question should test understanding of the passage content, not just vocabulary.
-    Ensure the "options" include plausible but incorrect distractors.
 
-    **Example of the desired JSON structure:**
-    [
-      {
-        "passage": "Hier, je suis allé au marché avec ma mère. Nous avons acheté des pommes, des oranges et des bananes. C'était une belle journée ensoleillée et le marché était très animé.",
-        "question": "Qu'est-ce qui n'a pas été acheté au marché ?",
-        "options": ["Des pommes", "Des bananes", "Des fraises", "Des oranges"],
-        "correctAnswer": "Des fraises"
-      }
-    ]
+export const fetchPracticeQuestions = async (apiKey, settings, topic, history = []) => {
+  const specificInstructions = `
+    **IMPORTANT INSTRUCTIONS:**
+    Your goal is to act as a conversation starter. Generate a JSON array of unique and engaging questions.
+    The questions should encourage a response of 1-3 sentences, not just "yes" or "no".
+    The output must be a single, valid JSON array of strings.
+    Example: ["Quels sont tes passe-temps préférés ?", "Décris ton repas idéal."]
+  `;
+  return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate practice questions.");
+};
 
-    Now, generate ${settings.sentenceCount} unique passage/question sets based on my request. Output only the raw JSON array.
+
+export const fetchResponseFeedback = async (apiKey, settings, question, userResponse) => {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: settings.model });
+
+  const prompt = `
+    You are a friendly and encouraging language tutor.
+    A user learning ${settings.targetLanguage} was asked the following question:
+    **Question:** "${question}"
+
+    They provided this response:
+    **User's Response:** "${userResponse}"
+
+    Your task is to provide constructive feedback on their response in ${settings.nativeLanguage}.
+    Keep the feedback concise, positive, and focused on helping them improve.
+    - Point out one or two grammar mistakes if they exist, and suggest the correction.
+    - Suggest a more natural-sounding vocabulary word or phrasing if applicable.
+    - If the response is perfect, praise them and maybe offer an alternative way to phrase it to expand their knowledge.
+    
+    Address the user directly. Start with something like "Great job!" or "Good attempt!".
+    Do NOT return JSON. Return only a single string of plain text with your feedback.
   `;
 
-  return await _callGeminiModel(
-    apiKey,
-    settings,
-    topic,
-    history,
-    specificInstructions,
-    "Failed to generate comprehension passages."
-  );
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Error fetching feedback from Gemini:", error);
+    throw new Error("Failed to get feedback. The model may be unavailable or the content may have been blocked.");
+  }
 };
