@@ -80,7 +80,8 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const handleSpeakSentence = () => {
     if (!currentSentence) return;
-    speakText(currentSentence.target, targetLangCode, settings.ttsEngine);
+    // This now correctly passes the entire settings object
+    speakText(currentSentence.target, targetLangCode, settings);
   };
   
   const handleWordClick = (word) => {
@@ -112,13 +113,31 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       {error && <p className="status-message error small">Error: {error}</p>}
       <article className="sentence-container">
         <section className="target-sentence">
-          {currentSentence.chunks.map((chunk, index) => (
-            <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
-              {chunk.target_chunk.split(' ').map((word, wordIndex) => (
-                  <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">{word}</span>
+          <div className="sentence-text-wrapper">
+            {/*
+              THIS IS THE KEY CHANGE:
+              All the generated chunks are now wrapped in ONE single parent span.
+              This makes the entire sentence a single inline element.
+            */}
+            <span>
+              {currentSentence.chunks.map((chunk, index) => (
+                <span key={index} style={{ color: chunk.color }}>
+                  {chunk.target_chunk.split(' ').map((word, wordIndex, words) => (
+                    <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
+                      {word}
+                      {/* Add a space after each word except the last one in the chunk */}
+                      {wordIndex < words.length - 1 ? ' ' : ''}
+                    </span>
+                  ))}
+                  {' '} {/* Add a space between chunks */}
+                </span>
               ))}
             </span>
-          ))}
+          </div>
+          
+          <button onClick={handleSpeakSentence} className="speak-button" title="Pronounce Sentence">
+            🔊
+          </button>
         </section>
 
         {isTranslationVisible && (
@@ -135,9 +154,6 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       <div className="actions">
         <button onClick={() => setIsTranslationVisible(prev => !prev)}>
           {isTranslationVisible ? 'Hide' : 'Show'} Translation
-        </button>
-        <button onClick={handleSpeakSentence}>
-          Pronounce Sentence
         </button>
         <button onClick={generate}>Generate New Sentences</button>
       </div>
