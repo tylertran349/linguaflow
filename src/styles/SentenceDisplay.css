@@ -8,36 +8,72 @@
   justify-content: center;
 }
 
-.target-sentence, .native-sentence {
-  line-height: 1.7; /* Improves readability of wrapped lines */
-  text-align: left;
+/* --- MODIFIED --- */
+/* This is no longer a flex container. It's now a positioning context. */
+.target-sentence {
+  position: relative; /* Establishes a positioning context for the button */
+  /* Add padding on the right to make space for the absolutely positioned button, preventing overlap. */
+  padding-right: 52px; /* (button width 44px + 8px gap) */
 }
 
-.target-sentence {
-  font-size: 2rem; /* Larger font for emphasis */
+/* This wrapper's styles are now simpler. */
+.sentence-text-wrapper {
+  line-height: 1.7;
+  font-size: 2rem;
   font-weight: 500;
 }
 
 .native-sentence {
+  line-height: 1.7;
   font-size: 1.2rem;
   color: var(--color-text-secondary);
 }
 
-.target-sentence .word {
+.sentence-text-wrapper .word {
   cursor: pointer;
   transition: filter 0.2s ease;
-  display: inline-block;
-  margin-right: 6px; /* Adds space between words */
+  display: inline-block; /* keeps words on the same line where they fit */
+  margin-right: 6px;
   padding: 2px 0;
 }
 
-.target-sentence .word:hover {
+.sentence-text-wrapper .word:hover {
   filter: brightness(1.3);
 }
 
-/* Responsive font sizes for smaller screens */
+/* --- MODIFIED --- */
+/* The button is now positioned absolutely within the .target-sentence container. */
+.target-sentence .speak-button {
+  position: absolute; /* Position relative to the .target-sentence container */
+  right: 0; /* Anchor to the far right */
+  bottom: 4px; /* Anchor to the bottom. A few pixels from the bottom often aligns better with the text baseline. */
+
+  /* These styles are for appearance and remain mostly the same */
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.target-sentence .speak-button:hover {
+  background-color: var(--highlight-color);
+  transform: scale(1.1);
+}
+
+/* Responsive styles are unchanged */
 @media (max-width: 767px) {
-  .target-sentence {
+  .sentence-text-wrapper {
     font-size: 1.5rem;
   }
   .native-sentence {
