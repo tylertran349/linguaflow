@@ -85,7 +85,9 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   const handleWordClick = (word) => {
     if (!word) return;
-    speakText(word, targetLangCode, settings.ttsEngine);
+    // BEFORE (Incorrect): speakText(word, targetLangCode, settings.ttsEngine);
+    // AFTER (Correct):
+    speakText(word, targetLangCode, settings);
   };
 
   // --- The component's JSX is unchanged and correct. ---

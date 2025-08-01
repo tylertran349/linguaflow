@@ -84,11 +84,12 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   const handleWordClick = (word) => {
     if (!word) return;
-    // Clean up word in case it has punctuation attached
     const cleanedWord = word.replace(/[.,!?;:"]$/, '');
-    speakText(cleanedWord, targetLangCode, settings.ttsEngine);
+    // BEFORE (Incorrect): speakText(cleanedWord, targetLangCode, settings.ttsEngine);
+    // AFTER (Correct):
+    speakText(cleanedWord, targetLangCode, settings);
   };
-
+  
   // --- Helper for styling options ---
   const getOptionClassName = (option) => {
     if (!isAnswered) return 'mcq-option';
