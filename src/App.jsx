@@ -21,8 +21,6 @@ function App() {
     sentenceCount: 20,
     webSpeechRate: 1,
     googleTranslateRate: 1,
-    puterRate: 1,
-
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

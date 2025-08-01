@@ -50,7 +50,6 @@ function SettingsModal({
     const rates = {
       webSpeechRate: parseFloat(tempSettings.webSpeechRate),
       googleTranslateRate: parseFloat(tempSettings.googleTranslateRate),
-      puterRate: parseFloat(tempSettings.puterRate),
     };
     
     // Validate each rate
@@ -75,7 +74,6 @@ function SettingsModal({
         ...tempSettings,
         webSpeechRate: rates.webSpeechRate,
         googleTranslateRate: rates.googleTranslateRate,
-        puterRate: rates.puterRate,
         sentenceCount: parseInt(tempSettings.sentenceCount, 10) || 10,
       },
       apiKey: tempApiKey,
@@ -124,19 +122,6 @@ function SettingsModal({
                     className={errors.webSpeechRate ? 'input-error' : ''}
                 />
                 {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
-            </div>
-            <div className="setting-item">
-                <label htmlFor="puterRate">Puter AI TTS Speed</label>
-                <input
-                    type="number"
-                    id="puterRate"
-                    name="puterRate"
-                    min="0" max="2" step="0.1"
-                    value={tempSettings.puterRate}
-                    onChange={handleSettingChange}
-                    className={errors.puterRate ? 'input-error' : ''}
-                />
-                {errors.puterRate && <p className="error-text">{errors.puterRate}</p>}
             </div>
             <div className="setting-item">
                 <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>

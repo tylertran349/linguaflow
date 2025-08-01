@@ -76,14 +76,10 @@ const speakWithGoogleTranslateProxy = (text, langCode, rate = 1) => {
 };
 
 // --- MODIFIED: Removed redundant cancellation logic ---
-const speakWithPuter = async (text, puterOptions, rate = 1) => {
+const speakWithPuter = async (text, puterOptions) => {
   try {
-    // Combine the existing options with the new speed setting
-    const finalOptions = {
-      ...puterOptions,
-      speed: rate, // Add the speed property
-    };
-    const audio = await puter.ai.txt2speech(text, finalOptions);
+    // The options object is now passed directly without a speed parameter
+    const audio = await puter.ai.txt2speech(text, puterOptions);
     currentPuterAudio = audio;
     audio.onended = () => { currentPuterAudio = null; };
     await audio.play();
@@ -110,7 +106,7 @@ export const speakText = (text, langCode, settings) => {
   } else if (ttsEngine === 'puter') {
     const optionsForPuter = puterVoiceMap[langCode];
     if (optionsForPuter) {
-      speakWithPuter(text, optionsForPuter, settings.puterRate);
+      speakWithPuter(text, optionsForPuter);
     } else {
       alert(`The language "${langCode}" is not supported by the Puter AI voice engine in this app.`);
     }
