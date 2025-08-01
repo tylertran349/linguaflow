@@ -6,7 +6,8 @@ import '../styles/Sidebar.css';
 // Add the new game to this list.
 const games = [
   { id: 'sentence-generator', name: 'Sentence Generator' },
-  { id: 'unscramble-words', name: 'Unscramble Words' } // <-- ADD THIS LINE
+  { id: 'unscramble-words', name: 'Unscramble Words' },
+  { id: 'read-and-respond', name: 'Read & Respond' }
 ];
 
 function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {

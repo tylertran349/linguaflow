@@ -212,3 +212,39 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic, history 
     "Failed to generate unscramble sentences."
   );
 };
+
+export const fetchComprehensionPassages = async (apiKey, settings, topic, history = []) => {
+  const specificInstructions = `
+    **IMPORTANT INSTRUCTIONS:**
+    Your goal is to create a reading comprehension exercise.
+    Generate a JSON array of objects. Each object must contain:
+    1. "passage": A short paragraph (2-4 sentences) in ${settings.targetLanguage}.
+    2. "question": A multiple-choice question about the passage, written in ${settings.targetLanguage}.
+    3. "options": An array of 3-4 possible answers (strings), also in ${settings.targetLanguage}. One must be correct.
+    4. "correctAnswer": The exact string of the correct answer from the "options" array.
+
+    The question should test understanding of the passage content, not just vocabulary.
+    Ensure the "options" include plausible but incorrect distractors.
+
+    **Example of the desired JSON structure:**
+    [
+      {
+        "passage": "Hier, je suis allé au marché avec ma mère. Nous avons acheté des pommes, des oranges et des bananes. C'était une belle journée ensoleillée et le marché était très animé.",
+        "question": "Qu'est-ce qui n'a pas été acheté au marché ?",
+        "options": ["Des pommes", "Des bananes", "Des fraises", "Des oranges"],
+        "correctAnswer": "Des fraises"
+      }
+    ]
+
+    Now, generate ${settings.sentenceCount} unique passage/question sets based on my request. Output only the raw JSON array.
+  `;
+
+  return await _callGeminiModel(
+    apiKey,
+    settings,
+    topic,
+    history,
+    specificInstructions,
+    "Failed to generate comprehension passages."
+  );
+};
