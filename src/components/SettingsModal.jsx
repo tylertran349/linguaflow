@@ -18,39 +18,71 @@ function SettingsModal({
   const [tempSettings, setTempSettings] = useState(currentSettings);
   const [tempApiKey, setTempApiKey] = useState(currentApiKey);
   const [tempTopic, setTempTopic] = useState(currentTopic);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (isOpen) {
       setTempSettings(currentSettings);
       setTempApiKey(currentApiKey || '');
       setTempTopic(currentTopic || '');
+      setErrors({}); // Clear errors when modal opens
     }
   }, [isOpen, currentSettings, currentApiKey, currentTopic]);
 
   const handleSettingChange = (e) => {
     const { name, value } = e.target;
     setTempSettings(prev => ({ ...prev, [name]: value }));
+
+    // If there's an error for this specific field, clear it as the user types.
+    if (errors[name]) {
+      setErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleSave = () => {
-    const finalSettings = { ...tempSettings };
+    const newErrors = {};
 
-    finalSettings.webSpeechRate = parseFloat(finalSettings.webSpeechRate) || 1;
-    finalSettings.googleTranslateRate = parseFloat(finalSettings.googleTranslateRate) || 1;
-    finalSettings.puterRate = parseFloat(finalSettings.puterRate) || 1;
-
-    finalSettings.webSpeechRate = Math.max(0.5, Math.min(2, finalSettings.webSpeechRate));
-    finalSettings.googleTranslateRate = Math.max(0.5, Math.min(2, finalSettings.googleTranslateRate));
-    finalSettings.puterRate = Math.max(0.5, Math.min(2, finalSettings.puterRate));
+    // Parse rate values to numbers for validation
+    const rates = {
+      webSpeechRate: parseFloat(tempSettings.webSpeechRate),
+      googleTranslateRate: parseFloat(tempSettings.googleTranslateRate),
+      puterRate: parseFloat(tempSettings.puterRate),
+    };
     
-    finalSettings.sentenceCount = parseInt(finalSettings.sentenceCount, 10) || 10;
+    // Validate each rate
+    for (const key in rates) {
+      const rate = rates[key];
+      if (isNaN(rate) || rate < 0.1 || rate > 2.0) {
+        newErrors[key] = "Value must be between 0.1 and 2.0";
+      }
+    }
 
+    // If there are any errors, update the error state and stop.
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return; // Do not close the modal
+    }
+    
+    // If validation passes, clear any old errors and proceed to save.
+    setErrors({});
+    
     onSave({
-      settings: finalSettings,
+      settings: {
+        ...tempSettings,
+        webSpeechRate: rates.webSpeechRate,
+        googleTranslateRate: rates.googleTranslateRate,
+        puterRate: rates.puterRate,
+        sentenceCount: parseInt(tempSettings.sentenceCount, 10) || 10,
+      },
       apiKey: tempApiKey,
       topic: tempTopic,
     });
-    onClose();
+
+    onClose(); // Only close if validation was successful
   };
 
   if (!isOpen) {
@@ -79,18 +111,45 @@ function SettingsModal({
 
         <div className="settings-section">
             <h3>Voice Settings</h3>
-            <p>Control the playback speed for each voice engine (0.5 to 2.0).</p>
+            <p>Control the playback speed for each voice engine (0.1 to 2.0).</p>
             <div className="setting-item">
-                <label htmlFor="webSpeechRate">Web Speech API Speed</label>
-                <input type="number" id="webSpeechRate" name="webSpeechRate" min="0.1" max="2" step="0.1" value={tempSettings.webSpeechRate} onChange={handleSettingChange}/>
+                <label htmlFor="webSpeechRate">Web Speech API TTS Speed</label>
+                <input
+                    type="number"
+                    id="webSpeechRate"
+                    name="webSpeechRate"
+                    min="0" max="2" step="0.1"
+                    value={tempSettings.webSpeechRate}
+                    onChange={handleSettingChange}
+                    className={errors.webSpeechRate ? 'input-error' : ''}
+                />
+                {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
             </div>
             <div className="setting-item">
-                <label htmlFor="googleTranslateRate">Google Translate Speed</label>
-                <input type="number" id="googleTranslateRate" name="googleTranslateRate" min="0.1" max="2" step="0.1" value={tempSettings.googleTranslateRate} onChange={handleSettingChange}/>
+                <label htmlFor="puterRate">Puter AI TTS Speed</label>
+                <input
+                    type="number"
+                    id="puterRate"
+                    name="puterRate"
+                    min="0" max="2" step="0.1"
+                    value={tempSettings.puterRate}
+                    onChange={handleSettingChange}
+                    className={errors.puterRate ? 'input-error' : ''}
+                />
+                {errors.puterRate && <p className="error-text">{errors.puterRate}</p>}
             </div>
             <div className="setting-item">
-                <label htmlFor="puterRate">Puter AI Speed</label>
-                <input type="number" id="puterRate" name="puterRate" min="0.1" max="2" step="0.1" value={tempSettings.puterRate} onChange={handleSettingChange}/>
+                <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
+                <input
+                    type="number"
+                    id="googleTranslateRate"
+                    name="googleTranslateRate"
+                    min="0" max="2" step="0.1"
+                    value={tempSettings.googleTranslateRate}
+                    onChange={handleSettingChange}
+                    className={errors.googleTranslateRate ? 'input-error' : ''}
+                />
+                {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
             </div>
         </div>
 
