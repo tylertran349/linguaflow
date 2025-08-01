@@ -14,11 +14,15 @@ function App() {
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
   const [settings, setSettings] = useLocalStorage('settings', {
     nativeLanguage: "English",
-    targetLanguage: "French",
-    difficulty: "B1",
-    model: "gemini-1.5-flash",
+    targetLanguage: "Vietnamese",
+    difficulty: "B2",
+    model: "gemini-2.5-flash",
     ttsEngine: "web-speech",
-    sentenceCount: 5
+    sentenceCount: 20,
+    webSpeechRate: 1,
+    googleTranslateRate: 1,
+    puterRate: 1,
+
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

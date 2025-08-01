@@ -84,11 +84,13 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     speakText(currentQuestion, targetLangCode, settings.ttsEngine);
   };
   
-  const handleWordClick = (word) => {
-    if (!word) return;
-    const cleanedWord = word.replace(/[.,!?;:"]$/, '');
-    speakText(cleanedWord, targetLangCode, settings.ttsEngine);
-  };
+    const handleWordClick = (word) => {
+        if (!word) return;
+        const cleanedWord = word.replace(/[.,!?;:"]$/, '');
+        // BEFORE (Incorrect): speakText(cleanedWord, targetLangCode, settings.ttsEngine);
+        // AFTER (Correct):
+        speakText(cleanedWord, targetLangCode, settings);
+    };
   
   if (isLoadingQuestions) return <p className="status-message">Generating questions...</p>;
   
