@@ -1,32 +1,29 @@
-// src/App.jsx
-
 import { useState, useEffect } from 'react';
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 // --- Component Imports ---
 import Sidebar from './components/Sidebar';
-import SentenceDisplay from './components/SentenceDisplay';
 import SettingsModal from './components/SettingsModal';
-import UnscrambleWords from './components/UnscrambleWords'; // <-- 1. IMPORT THE NEW COMPONENT
+import SentenceDisplay from './components/SentenceDisplay';
+import UnscrambleWords from './components/UnscrambleWords';
+import ReadAndRespond from './components/ReadAndRespond'; // Already imported, which is great
 
 function App() {
-  // ... all existing state remains the same ...
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
   const [settings, setSettings] = useLocalStorage('settings', {
     nativeLanguage: "English",
-    targetLanguage: "Vietnamese",
-    difficulty: "B2",
-    model: "gemini-2.5-flash",
+    targetLanguage: "French",
+    difficulty: "B1",
+    model: "gemini-1.5-flash",
     ttsEngine: "web-speech",
-    sentenceCount: 20
+    sentenceCount: 5
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeGame, setActiveGame] = useState(null);
 
-  // ... all existing useEffect and handlers remain the same ...
   useEffect(() => {
     if (!geminiApiKey) {
       setIsSettingsModalOpen(true);
@@ -52,6 +49,7 @@ function App() {
     }
   };
 
+  // --- THIS IS THE CORRECTED FUNCTION ---
   const renderActiveGame = () => {
     switch (activeGame) {
       case 'sentence-generator':
@@ -64,7 +62,6 @@ function App() {
           />
         );
       case 'unscramble-words':
-        // FIX: Pass all the required props to the UnscrambleWords component
         return (
           <UnscrambleWords
             geminiApiKey={geminiApiKey}
@@ -73,17 +70,28 @@ function App() {
             onApiKeyMissing={handleOpenSettings}
           />
         );
+      // --- THE MISSING PIECE ---
+      // This case handles the 'read-and-respond' ID from the Sidebar
+      case 'read-and-respond':
+        return (
+          <ReadAndRespond
+            geminiApiKey={geminiApiKey}
+            settings={settings}
+            topic={topic}
+            onApiKeyMissing={handleOpenSettings}
+          />
+        );
+      // --- END OF THE FIX ---
       default:
         return (
           <div className="initial-state-container">
             <h2>Welcome to LinguaFlow!</h2>
-            <p>Select a game from the menu to begin.</p>
+            <p>Select an exercise from the menu to begin.</p>
           </div>
         );
     }
   };
 
-  // ... the return/JSX part of the component remains the same ...
   return (
     <div className="app-layout">
       {isSidebarOpen && <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>}
