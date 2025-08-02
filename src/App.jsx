@@ -19,7 +19,7 @@ function App() {
     model: "gemini-2.5-flash",
     ttsEngine: "web-speech",
     sentenceCount: 20,
-    webSpeechRate: 1,
+    webSpeechRate: 0.6,
     googleTranslateRate: 1,
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
