@@ -9,18 +9,17 @@
 }
 
 /* --- MODIFIED --- */
-/* This is no longer a flex container. It's now a positioning context. */
+/* This container just sets the text properties. No more flex or position! */
 .target-sentence {
-  position: relative; /* Establishes a positioning context for the button */
-  /* Add padding on the right to make space for the absolutely positioned button, preventing overlap. */
-  padding-right: 52px; /* (button width 44px + 8px gap) */
-}
-
-/* This wrapper's styles are now simpler. */
-.sentence-text-wrapper {
   line-height: 1.7;
   font-size: 2rem;
   font-weight: 500;
+  text-align: left; /* Ensures text aligns left if it wraps */
+}
+
+/* This is now just a simple inline wrapper and doesn't need its own rule. */
+.sentence-text-wrapper {
+  /* This rule can be empty or removed */
 }
 
 .native-sentence {
@@ -29,51 +28,45 @@
   color: var(--color-text-secondary);
 }
 
-.sentence-text-wrapper .word {
+/* The .word styling is now simpler, removing margin */
+.target-sentence .word {
   cursor: pointer;
   transition: filter 0.2s ease;
-  display: inline-block; /* keeps words on the same line where they fit */
-  margin-right: 6px;
   padding: 2px 0;
 }
 
-.sentence-text-wrapper .word:hover {
+.target-sentence .word:hover {
   filter: brightness(1.3);
 }
 
 /* --- MODIFIED --- */
-/* The button is now positioned absolutely within the .target-sentence container. */
+/* This is the key to the solution. The button is now an inline element. */
 .target-sentence .speak-button {
-  position: absolute; /* Position relative to the .target-sentence container */
-  right: 0; /* Anchor to the far right */
-  bottom: 4px; /* Anchor to the bottom. A few pixels from the bottom often aligns better with the text baseline. */
-
-  /* These styles are for appearance and remain mostly the same */
+  display: inline-block; /* Allows sizing while staying in the text flow */
+  vertical-align: middle; /* Aligns the button vertically with the text */
+  margin-left: 8px; /* Adds space after the last word */
+  
+  /* These are for appearance */
   background: none;
   border: none;
   font-size: 1.8rem;
-  line-height: 1;
-  padding: 0;
-  margin: 0;
   cursor: pointer;
   color: var(--text-color-secondary);
-  border-radius: 50%;
   width: 44px;
   height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s, transform 0.2s;
+  line-height: 44px; /* Helps vertically center the emoji */
+  text-align: center;
+  padding: 0;
+  transition: transform 0.2s;
 }
 
 .target-sentence .speak-button:hover {
-  background-color: var(--highlight-color);
   transform: scale(1.1);
 }
 
-/* Responsive styles are unchanged */
+/* Responsive styles */
 @media (max-width: 767px) {
-  .sentence-text-wrapper {
+  .target-sentence {
     font-size: 1.5rem;
   }
   .native-sentence {

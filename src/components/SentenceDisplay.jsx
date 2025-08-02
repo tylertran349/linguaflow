@@ -113,27 +113,22 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       {error && <p className="status-message error small">Error: {error}</p>}
       <article className="sentence-container">
         <section className="target-sentence">
-          <div className="sentence-text-wrapper">
-            {/*
-              THIS IS THE KEY CHANGE:
-              All the generated chunks are now wrapped in ONE single parent span.
-              This makes the entire sentence a single inline element.
-            */}
+          {/* --- MODIFIED: This is now a <span> to flow inline --- */}
+          <span className="sentence-text-wrapper">
             <span>
               {currentSentence.chunks.map((chunk, index) => (
                 <span key={index} style={{ color: chunk.color }}>
                   {chunk.target_chunk.split(' ').map((word, wordIndex, words) => (
                     <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
                       {word}
-                      {/* Add a space after each word except the last one in the chunk */}
                       {wordIndex < words.length - 1 ? ' ' : ''}
                     </span>
                   ))}
-                  {' '} {/* Add a space between chunks */}
+                  {' '}
                 </span>
               ))}
             </span>
-          </div>
+          </span>
           
           <button onClick={handleSpeakSentence} className="speak-button" title="Pronounce Sentence">
             🔊
