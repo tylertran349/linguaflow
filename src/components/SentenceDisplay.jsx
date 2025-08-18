@@ -137,11 +137,14 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
         {isTranslationVisible && (
           <section className="native-sentence">
-            {currentSentence.chunks.map((chunk, index) => (
-              <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
-                {chunk.native_chunk}
-              </span>
-            ))}
+            {[...currentSentence.chunks]
+              .sort((a, b) => a.native_display_order - b.native_display_order)
+              .map((chunk, index) => (
+                <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
+                  {chunk.native_chunk}
+                </span>
+              ))
+            }
           </section>
         )}
       </article>
