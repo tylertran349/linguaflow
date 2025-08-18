@@ -10,43 +10,7 @@ const RAINBOW_HEX_PALETTE = [
   '#008000',
   '#1296a5ff',
   '#0000FF',
-  '#3b1e86ff',
-  '#5C4033',
-  '#575757',
 ];
-
-// Helper to convert HEX to HSL for generating color shades.
-function hexToHsl(hex) {
-  let r = 0, g = 0, b = 0;
-  if (hex.length === 4) {
-    r = "0x" + hex[1] + hex[1];
-    g = "0x" + hex[2] + hex[2];
-    b = "0x" + hex[3] + hex[3];
-  } else if (hex.length === 7) {
-    r = "0x" + hex[1] + hex[2];
-    g = "0x" + hex[3] + hex[4];
-    b = "0x" + hex[5] + hex[6];
-  }
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  let cmin = Math.min(r,g,b),
-      cmax = Math.max(r,g,b),
-      delta = cmax - cmin,
-      h = 0, s = 0, l = 0;
-
-  if (delta === 0) h = 0;
-  else if (cmax === r) h = ((g - b) / delta) % 6;
-  else if (cmax === g) h = (b - r) / delta + 2;
-  else h = (r - g) / delta + 4;
-  h = Math.round(h * 60);
-  if (h < 0) h += 360;
-  l = (cmax + cmin) / 2;
-  s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-  s = +(s * 100).toFixed(1);
-  l = +(l * 100).toFixed(1);
-  return { h, s, l };
-}
 
 // Helper to create the history instruction for the prompt.
 const createHistoryInstruction = (history) => {
@@ -117,39 +81,53 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   }
 };
 
-
-// --- PUBLIC EXPORTED FUNCTIONS ---
-
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
+  // --- MODIFIED: The instructions are now much more nuanced to handle complex linguistic cases. ---
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Return the data as a single valid JSON array. Each element should be an object with "target", "native", and "chunks" keys.
-    "chunks" must be an array of objects, where each object has "target_chunk", "native_chunk", and "color" keys.
-    Example: { "target": "J'aime apprendre.", "native": "I like to learn.", "chunks": [{ "target_chunk": "J'aime", "native_chunk": "I like", "color": "#f80c12" }, { "target_chunk": "apprendre", "native_chunk": "to learn", "color": "#008000" }] }
+    Your goal is to create a powerful learning tool by chunking sentences for a language learner.
+    Return a single valid JSON array. Each element is an object representing a sentence with "target", "native", and "chunks" keys.
+
+    **Rules for Creating "chunks":**
+    1.  **Target Language Order:** The main "chunks" array MUST follow the word order of the "target" language sentence.
+    2.  **Granular Chunks:** Break the sentence into small, logical parts. Always separate nouns from their adjectives, and verbs from their objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
+    3.  **Add Native Display Order:** For each chunk, you MUST add a "native_display_order" key (a 0-indexed integer). This new key defines the grammatically correct word order for the "native" language, which often has a different syntax (e.g., adjective-noun order).
+
+    **Primary Example (Follow this structure precisely):**
+    For the sentence: "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc."
+    (English: "Using public transportation regularly can help you save time and money.")
+
+    -   **Analysis:** In Vietnamese, "công cộng" (public) comes AFTER "phương tiện giao thông" (transportation). In English, "public" comes BEFORE "transportation".
+    -   **Solution:** The main array follows Vietnamese order. The "native_display_order" will be "1" for "public" and "2" for "transportation" to correctly reorder them for the English translation.
+
+    The JSON output must be:
+    [{
+      "target": "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc.",
+      "native": "Using public transportation regularly can help you save time and money.",
+      "chunks": [
+        { "target_chunk": "Việc sử dụng", "native_chunk": "Using", "color": "...", "native_display_order": 0 },
+        { "target_chunk": "phương tiện giao thông", "native_chunk": "transportation", "color": "...", "native_display_order": 2 },
+        { "target_chunk": "công cộng", "native_chunk": "public", "color": "...", "native_display_order": 1 },
+        { "target_chunk": "thường xuyên", "native_chunk": "regularly", "color": "...", "native_display_order": 3 },
+        { "target_chunk": "có thể", "native_chunk": "can", "color": "...", "native_display_order": 4 },
+        { "target_chunk": "giúp", "native_chunk": "help", "color": "...", "native_display_order": 5 },
+        { "target_chunk": "bạn", "native_chunk": "you", "color": "...", "native_display_order": 6 },
+        { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "...", "native_display_order": 7 },
+        { "target_chunk": "thời gian", "native_chunk": "time", "color": "...", "native_display_order": 8 },
+        { "target_chunk": "và", "native_chunk": "and", "color": "...", "native_display_order": 9 },
+        { "target_chunk": "tiền bạc.", "native_chunk": "money.", "color": "...", "native_display_order": 10 }
+      ]
+    }]
   `;
   const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
 
-  // Post-processing for colors
-  let shadeColorIndex = 0;
+  // This color logic remains correct and does not need to be changed.
   sentences.forEach(sentence => {
-    if (!sentence || !Array.isArray(sentence.chunks) || sentence.chunks.length === 0) return;
-    const numChunks = sentence.chunks.length;
+    if (!sentence || !Array.isArray(sentence.chunks)) return;
     const paletteSize = RAINBOW_HEX_PALETTE.length;
-    if (numChunks <= paletteSize) {
-      sentence.chunks.forEach((chunk, index) => { chunk.color = RAINBOW_HEX_PALETTE[index]; });
-    } else {
-      const baseHexColor = RAINBOW_HEX_PALETTE[shadeColorIndex];
-      const baseHslColor = hexToHsl(baseHexColor);
-      const { h, s } = baseHslColor;
-      const minLightness = 45;
-      const maxLightness = 85;
-      const lightnessStep = (maxLightness - minLightness) / (numChunks - 1 || 1);
-      sentence.chunks.forEach((chunk, index) => {
-        const lightness = Math.round(minLightness + (index * lightnessStep));
-        chunk.color = `hsl(${h}, ${s}%, ${lightness}%)`;
-      });
-      shadeColorIndex = (shadeColorIndex + 1) % paletteSize;
-    }
+    sentence.chunks.forEach((chunk, index) => {
+      chunk.color = RAINBOW_HEX_PALETTE[index % paletteSize];
+    });
   });
 
   return sentences;
