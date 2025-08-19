@@ -113,20 +113,25 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       {error && <p className="status-message error small">Error: {error}</p>}
       <article className="sentence-container">
         <section className="target-sentence">
-          {/* --- MODIFIED: This is now a <span> to flow inline --- */}
           <span className="sentence-text-wrapper">
             <span>
-              {currentSentence.chunks.map((chunk, index) => (
-                <span key={index} style={{ color: chunk.color }}>
-                  {chunk.target_chunk.split(' ').map((word, wordIndex, words) => (
-                    <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
-                      {word}
-                      {wordIndex < words.length - 1 ? ' ' : ''}
-                    </span>
-                  ))}
-                  {' '}
-                </span>
-              ))}
+              {currentSentence.chunks.map((chunk, index) => {
+                const isLastChunk = index === currentSentence.chunks.length - 1;
+                const punctuation = isLastChunk ? (currentSentence.target.slice(-1).match(/[.?!]/) ? currentSentence.target.slice(-1) : '') : '';
+                
+                return (
+                  <span key={index} style={{ color: chunk.color }}>
+                    {chunk.target_chunk.split(' ').map((word, wordIndex, words) => (
+                      <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
+                        {word}
+                        {wordIndex < words.length - 1 ? ' ' : ''}
+                      </span>
+                    ))}
+                    {punctuation}
+                    {!isLastChunk && ' '}
+                  </span>
+                );
+              })}
             </span>
           </span>
           
@@ -137,14 +142,19 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
         {isTranslationVisible && (
           <section className="native-sentence">
-            {[...currentSentence.chunks]
-              .sort((a, b) => a.native_display_order - b.native_display_order)
-              .map((chunk, index) => (
-                <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
-                  {chunk.native_chunk}
-                </span>
-              ))
-            }
+            {(() => {
+              const sortedChunks = [...currentSentence.chunks].sort((a, b) => a.native_display_order - b.native_display_order);
+              return sortedChunks.map((chunk, index) => {
+                const isLastChunk = index === sortedChunks.length - 1;
+                const punctuation = isLastChunk ? (currentSentence.native.slice(-1).match(/[.?!]/) ? currentSentence.native.slice(-1) : '') : '';
+
+                return (
+                  <span key={index} style={{ color: chunk.color, marginRight: isLastChunk ? '0' : '5px' }}>
+                    {chunk.native_chunk}{punctuation}
+                  </span>
+                );
+              });
+            })()}
           </section>
         )}
       </article>
