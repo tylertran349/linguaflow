@@ -84,21 +84,19 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
   // --- MODIFIED: The instructions are now much more nuanced to handle complex linguistic cases. ---
   const specificInstructions = `
-    **IMPORTANT INSTRUCTIONS:**
+     **IMPORTANT INSTRUCTIONS:**
     Your goal is to create a powerful learning tool by chunking sentences for a language learner.
     Return a single valid JSON array. Each element is an object representing a sentence with "target", "native", and "chunks" keys.
 
     **Rules for Creating "chunks":**
     1.  **Target Language Order:** The main "chunks" array MUST follow the word order of the "target" language sentence.
-    2.  **Granular Chunks:** Break the sentence into small, logical parts. Always separate nouns from their adjectives, and verbs from their objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
-    3.  **Add Native Display Order:** For each chunk, you MUST add a "native_display_order" key (a 0-indexed integer). This new key defines the grammatically correct word order for the "native" language, which often has a different syntax (e.g., adjective-noun order).
+    2.  **Granular Chunks:** Break the sentence into small, logical parts. Always separate nouns from adjectives, and verbs from their objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
+    3.  **Add Native Display Order:** For each chunk, you MUST add a "native_display_order" key (a 0-indexed integer). This new key defines the grammatically correct word order for the "native" language.
+    4.  **CRITICAL PUNCTUATION RULE:** The individual "target_chunk" and "native_chunk" values must NOT contain any punctuation (like ".", "?", "!"). The punctuation should only be present in the top-level "target" and "native" full sentence strings.
 
     **Primary Example (Follow this structure precisely):**
     For the sentence: "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc."
-    (English: "Using public transportation regularly can help you save time and money.")
-
-    -   **Analysis:** In Vietnamese, "công cộng" (public) comes AFTER "phương tiện giao thông" (transportation). In English, "public" comes BEFORE "transportation".
-    -   **Solution:** The main array follows Vietnamese order. The "native_display_order" will be "1" for "public" and "2" for "transportation" to correctly reorder them for the English translation.
+    (Note how "tiền bạc" has no period in the chunk, but the full "native" sentence does.)
 
     The JSON output must be:
     [{
@@ -115,7 +113,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
         { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "...", "native_display_order": 7 },
         { "target_chunk": "thời gian", "native_chunk": "time", "color": "...", "native_display_order": 8 },
         { "target_chunk": "và", "native_chunk": "and", "color": "...", "native_display_order": 9 },
-        { "target_chunk": "tiền bạc.", "native_chunk": "money.", "color": "...", "native_display_order": 10 }
+        { "target_chunk": "tiền bạc", "native_chunk": "money", "color": "...", "native_display_order": 10 }
       ]
     }]
   `;
