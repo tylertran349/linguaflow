@@ -7,7 +7,7 @@
   flex-direction: column;
   border-right: 1px solid #ddd;
   transition: transform 0.3s ease-in-out;
-  /* Other existing sidebar styles... */
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -44,8 +44,9 @@
   margin-top: auto; /* Pushes itself to the bottom */
 }
 
-/* Style for all navigation/action buttons in the sidebar */
+/* MODIFIED: This style now ensures anchor tags look identical to buttons */
 .nav-item {
+  display: block; /* Ensures <a> tag takes full width like a button */
   width: 100%;
   padding: 0.8rem 1rem;
   margin-bottom: 0.5rem;
@@ -58,6 +59,7 @@
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   color: #444;
+  text-decoration: none; /* Removes the default underline from the link */
 }
 
 .nav-item:hover {
