@@ -84,38 +84,39 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
   // --- MODIFIED: The instructions are now much more nuanced to handle complex linguistic cases. ---
   const specificInstructions = `
-     **IMPORTANT INSTRUCTIONS:**
-    Your goal is to create a powerful learning tool by chunking sentences for a language learner.
+    **IMPORTANT INSTRUCTIONS:**
+    Your goal is to break down sentences into the smallest logical and semantic learning units for a language learner.
     Return a single valid JSON array. Each element is an object representing a sentence with "target", "native", and "chunks" keys.
 
     **Rules for Creating "chunks":**
-    1.  **Target Language Order:** The main "chunks" array MUST follow the word order of the "target" language sentence.
-    2.  **Granular Chunks:** Break the sentence into small, logical parts. Always separate nouns from adjectives, and verbs from their objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
-    3.  **Add Native Display Order:** For each chunk, you MUST add a "native_display_order" key (a 0-indexed integer). This new key defines the grammatically correct word order for the "native" language.
-    4.  **CRITICAL PUNCTUATION RULE:** The individual "target_chunk" and "native_chunk" values must NOT contain any punctuation (like ".", "?", "!"). The punctuation should only be present in the top-level "target" and "native" full sentence strings.
+    1. **Granular Target Chunks:** Break down the \`target\` sentence into small, logical parts. Always separate nouns from adjectives, and verbs from objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
+    2. **Natural Native Translation:** The \`native_chunk\`s, when read in order, MUST form the grammatically correct and natural \`native\` sentence. Word order is often different between languages. To solve this, you must rearrange the native language translation within the chunks.
+    3. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
 
     **Primary Example (Follow this structure precisely):**
     For the sentence: "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc."
-    (Note how "tiền bạc" has no period in the chunk, but the full "native" sentence does.)
+    (English: "Using public transportation regularly can help you save time and money.")
 
     The JSON output must be:
     [{
       "target": "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc.",
       "native": "Using public transportation regularly can help you save time and money.",
       "chunks": [
-        { "target_chunk": "Việc sử dụng", "native_chunk": "Using", "color": "...", "native_display_order": 0 },
-        { "target_chunk": "phương tiện giao thông", "native_chunk": "transportation", "color": "...", "native_display_order": 2 },
-        { "target_chunk": "công cộng", "native_chunk": "public", "color": "...", "native_display_order": 1 },
-        { "target_chunk": "thường xuyên", "native_chunk": "regularly", "color": "...", "native_display_order": 3 },
-        { "target_chunk": "có thể", "native_chunk": "can", "color": "...", "native_display_order": 4 },
-        { "target_chunk": "giúp", "native_chunk": "help", "color": "...", "native_display_order": 5 },
-        { "target_chunk": "bạn", "native_chunk": "you", "color": "...", "native_display_order": 6 },
-        { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "...", "native_display_order": 7 },
-        { "target_chunk": "thời gian", "native_chunk": "time", "color": "...", "native_display_order": 8 },
-        { "target_chunk": "và", "native_chunk": "and", "color": "...", "native_display_order": 9 },
-        { "target_chunk": "tiền bạc", "native_chunk": "money", "color": "...", "native_display_order": 10 }
+        { "target_chunk": "Việc sử dụng", "native_chunk": "Using", "color": "..."},
+        { "target_chunk": "phương tiện giao thông", "native_chunk": "transportation", "color": "..."},
+        { "target_chunk": "công cộng", "native_chunk": "public", "color": "..."},
+        { "target_chunk": "thường xuyên", "native_chunk": "regularly", "color": "..."},
+        { "target_chunk": "có thể", "native_chunk": "can", "color": "..."},
+        { "target_chunk": "giúp", "native_chunk": "help", "color": "..."},
+        { "target_chunk": "bạn", "native_chunk": "you", "color": "..."},
+        { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "..."},
+        { "target_chunk": "thời gian", "native_chunk": "time", "color": "..."},
+        { "target_chunk": "và", "native_chunk": "and", "color": "..."},
+        { "target_chunk": "tiền bạc", "native_chunk": "money", "color": "..."}
       ]
     }]
+
+    You can change the word order in the native language translated sentence if needed to make the native language translation sound natural in the native language. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
   `;
   const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
 
