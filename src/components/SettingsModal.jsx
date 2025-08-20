@@ -172,7 +172,7 @@ function SettingsModal({
             </div>
             <div className="setting-item">
                 <label htmlFor="sentenceCount">Number of Sentences</label>
-                <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="50" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
+                <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
             </div>
         </div>
 
