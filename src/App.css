@@ -135,6 +135,10 @@
     box-shadow: 5px 0 15px rgba(0,0,0,0.2);
   }
 
+  .sidebar.open .sidebar-header h1 {
+    font-size: 1.6rem; /* Make the font slightly smaller on mobile/tablet */
+  }
+
   .hamburger-menu {
     display: flex;
   }

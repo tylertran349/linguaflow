@@ -19,7 +19,16 @@
   margin: 0;
   font-size: 1.8rem;
   color: #333;
+  overflow-wrap: break-word;
 }
+
+@media (max-width: 1023px) {
+  .sidebar-header h1 {
+    /* On smaller screens, we simply reduce the font size */
+    font-size: 1.6rem;
+  }
+}
+
 
 .sidebar-nav {
   flex-grow: 1; /* Pushes the footer to the bottom */
