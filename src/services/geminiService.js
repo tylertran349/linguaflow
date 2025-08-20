@@ -116,6 +116,25 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
       ]
     }]
 
+    Another JSON output example:
+    [{
+      "target": "Dù có nhiều quan điểm trái chiều đề xuất về cơ chế phân phối công bằng vẫn được đưa ra thảo luận.",
+      "native": "Despite many opposing viewpoints, proposals for a fair distribution mechanism are still being put up for discussion.",
+      "chunks": [
+        { "target_chunk": "Dù", "native_chunk": "Despite", "color": "..."},
+        { "target_chunk": "có nhiều", "native_chunk": "many", "color": "..."},
+        { "target_chunk": "quan điểm", "native_chunk": "viewpoints,", "color": "..."},
+        { "target_chunk": "trái chiều", "native_chunk": "conflicting", "color": "..."},
+        { "target_chunk": "đề xuất", "native_chunk": "proposals", "color": "..."},
+        { "target_chunk": "về", "native_chunk": "for", "color": "..."},
+        { "target_chunk": "cơ chế phân phối", "native_chunk": "a distribution mechanism", "color": "..."},
+        { "target_chunk": "công bằng", "native_chunk": "fair", "color": "..."},
+        { "target_chunk": "vẫn được", "native_chunk": "are still being", "color": "..."},
+        { "target_chunk": "đưa ra", "native_chunk": "put up", "color": "..."},
+        { "target_chunk": "thảo luận", "native_chunk": "for discussion.", "color": "..."}
+      ]
+    }]
+
     You can change the word order in the native language translated sentence if needed to make the native language translation sound natural in the native language. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
   `;
   const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
