@@ -3,15 +3,15 @@
 import React from 'react';
 import '../styles/Sidebar.css';
 
-// The list of games is unchanged.
-const games = [
+// The list of modules is unchanged.
+const modules = [
   { id: 'sentence-generator', name: 'Sentence Generator' },
   { id: 'unscramble-words', name: 'Unscramble Words' },
   { id: 'read-and-respond', name: 'Read & Respond' },
   { id: 'write-a-response', name: 'Write a Response' }
 ];
 
-function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {
+function Sidebar({ isOpen, activemodule, onNavigate, onOpenSettings }) {
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
@@ -19,15 +19,15 @@ function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {
       </div>
 
       <nav className="sidebar-nav">
-        <h2>Games</h2>
+        <h2>Modules</h2>
         <ul>
-          {games.map(game => (
-            <li key={game.id}>
+          {modules.map(module => (
+            <li key={module.id}>
               <button
-                className={`nav-item ${activeGame === game.id ? 'active' : ''}`}
-                onClick={() => onNavigate(game.id)}
+                className={`nav-item ${activemodule === module.id ? 'active' : ''}`}
+                onClick={() => onNavigate(module.id)}
               >
-                {game.name}
+                {module.name}
               </button>
             </li>
           ))}
