@@ -3,7 +3,7 @@
 import React from 'react';
 import '../styles/Sidebar.css';
 
-// Add the new game to this list.
+// The list of games is unchanged.
 const games = [
   { id: 'sentence-generator', name: 'Sentence Generator' },
   { id: 'unscramble-words', name: 'Unscramble Words' },
@@ -38,6 +38,15 @@ function Sidebar({ isOpen, activeGame, onNavigate, onOpenSettings }) {
         <button className="nav-item" onClick={onOpenSettings}>
           Settings
         </button>
+        {/* --- NEW HELP BUTTON ADDED HERE --- */}
+        <a
+          href="https://github.com/tylertran349/linguaflow/blob/main/README.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="nav-item"
+        >
+          Help
+        </a>
       </div>
     </aside>
   );
