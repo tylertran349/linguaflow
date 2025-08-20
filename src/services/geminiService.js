@@ -124,7 +124,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
         { "target_chunk": "Dù", "native_chunk": "Despite", "color": "..."},
         { "target_chunk": "có nhiều", "native_chunk": "many", "color": "..."},
         { "target_chunk": "quan điểm", "native_chunk": "viewpoints,", "color": "..."},
-        { "target_chunk": "trái chiều", "native_chunk": "conflicting", "color": "..."},
+        { "target_chunk": "trái chiều", "native_chunk": "opposing", "color": "..."},
         { "target_chunk": "đề xuất", "native_chunk": "proposals", "color": "..."},
         { "target_chunk": "về", "native_chunk": "for", "color": "..."},
         { "target_chunk": "cơ chế phân phối", "native_chunk": "a distribution mechanism", "color": "..."},
