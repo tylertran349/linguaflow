@@ -26,7 +26,8 @@ body {
 
 /* --- App Header (Top bar) --- */
 .app-header {
-  display: flex;
+  /* MODIFICATION 2: Hide the header by default on desktop */
+  display: none;
   align-items: center;
   padding: 0 2rem;
   height: 70px; /* Example fixed height */
@@ -45,7 +46,8 @@ body {
   flex-grow: 1;
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Align to top for better feel */
+  /* MODIFICATION 1: Changed back to 'center' to vertically center the welcome message */
+  align-items: center;
   padding: 2rem;
 }
 
@@ -79,6 +81,11 @@ body {
 @media (max-width: 1023px) {
   .app-layout {
     display: block; /* Switch from grid to block layout */
+  }
+
+  /* MODIFICATION 2: Make the header visible ONLY on smaller screens */
+  .app-header {
+    display: flex;
   }
 
   .sidebar {
