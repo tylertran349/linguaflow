@@ -45,37 +45,31 @@ Before you begin, ensure you have the following software installed on your compu
 
 ### 2. Installation and Setup
 
-1.  **Clone the Repository:**
-    Open your terminal (e.g., Command Prompt, PowerShell, or Terminal on macOS/Linux) and run the following command to download the project files:
+1.  Open your terminal (e.g., Command Prompt, PowerShell, or Terminal on macOS/Linux) and run the following command to download the project files:
     ```bash
     git clone https://github.com/tylertran349/linguaflow.git
     ```
 
-2.  **Navigate to the Project Directory:**
-    Change your current location in the terminal to the newly created project folder:
+2.  Change your current location in the terminal to the newly created project folder:
     ```bash
     cd linguaflow
     ```
 
-3.  **Install Dependencies:**
-    Run the following command to install all the necessary software libraries the project relies on. This may take a few minutes.
+3.  Run the following command to install all the necessary software libraries the project relies on. This may take a few minutes.
     ```bash
     npm install
     ```
 
 ### 3. Launching the Application
 
-1.  **Start the Development Server:**
-    Once the installation is complete, run the following command to start the application:
+1.  Once the installation is complete, run the following command to start the application:
     ```bash
     npm start
     ```
 
-2.  **Open the Application:**
-    This command will start the application and automatically open it in your default web browser, typically at the address `http://localhost:3000`.
+2.  This command will start the application and automatically open it in your default web browser, typically at the address `http://localhost:3000`.
 
-3.  **Enter Your API Key:**
-    In the running application, navigate to the settings menu. Paste the Google Gemini API key you obtained earlier into the designated field to begin generating content.
+3.  In the running application, navigate to the settings menu. Paste the Google Gemini API key you obtained earlier into the designated field to begin generating content.
 ## How to Use
 
 1. Open the settings panel to select your native language, the language you want to learn, and the CEFR difficulty level. You can provide a topic/theme to guide the AI in generating more relevant content for you (optional).
