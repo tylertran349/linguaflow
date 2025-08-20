@@ -124,7 +124,7 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
                 
                 return (
                   <span key={index} style={{ color: chunk.color }}>
-                    {chunk.target_chunk.split(' ').map((word, wordIndex, words) => (
+                    {cleanChunkText.split(' ').map((word, wordIndex, words) => (
                       <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
                         {word}
                         {wordIndex < words.length - 1 ? ' ' : ''}
