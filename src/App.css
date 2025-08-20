@@ -1,5 +1,10 @@
 /* src/styles/App.css */
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 /* --- Main Layout: Desktop First Grid --- */
 .app-layout {
   display: grid;
