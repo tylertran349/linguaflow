@@ -48,7 +48,7 @@ body {
   justify-content: center;
   /* MODIFICATION 1: Changed back to 'center' to vertically center the welcome message */
   align-items: center;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 /* --- Mobile Hamburger Menu & Overlay --- */
@@ -122,9 +122,5 @@ body {
 
   .app-header {
     padding: 0 1rem;
-  }
-
-  .learning-container {
-    padding: 1rem;
   }
 }
