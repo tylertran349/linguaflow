@@ -8,7 +8,7 @@ body {
 /* --- Main Layout: Desktop First Grid --- */
 .app-layout {
   display: grid;
-  grid-template-columns: 15% 1fr;
+  grid-template-columns: auto 1fr;
   grid-template-rows: 100vh;
   height: 100vh;
 }
