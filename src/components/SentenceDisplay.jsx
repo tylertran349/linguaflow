@@ -118,6 +118,9 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
               {currentSentence.chunks.map((chunk, index) => {
                 const isLastChunk = index === currentSentence.chunks.length - 1;
                 const punctuation = isLastChunk ? (currentSentence.target.slice(-1).match(/[.?!]/) ? currentSentence.target.slice(-1) : '') : '';
+
+                // Remove any punctuation from the chunk itself before rendering
+                const cleanChunkText = chunk.target_chunk.replace(/[.?!]$/, '');
                 
                 return (
                   <span key={index} style={{ color: chunk.color }}>
@@ -142,19 +145,11 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
         {isTranslationVisible && (
           <section className="native-sentence">
-            {(() => {
-              const sortedChunks = [...currentSentence.chunks].sort((a, b) => a.native_display_order - b.native_display_order);
-              return sortedChunks.map((chunk, index) => {
-                const isLastChunk = index === sortedChunks.length - 1;
-                const punctuation = isLastChunk ? (currentSentence.native.slice(-1).match(/[.?!]/) ? currentSentence.native.slice(-1) : '') : '';
-
-                return (
-                  <span key={index} style={{ color: chunk.color, marginRight: isLastChunk ? '0' : '5px' }}>
-                    {chunk.native_chunk}{punctuation}
-                  </span>
-                );
-              });
-            })()}
+            {currentSentence.chunks.map((chunk, index) => (
+              <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
+                {chunk.native_chunk}
+              </span>
+            ))}
           </section>
         )}
       </article>
