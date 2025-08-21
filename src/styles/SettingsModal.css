@@ -14,7 +14,7 @@
 }
 
 .modal-content {
-  background-color: var(--color-surface);
+  background-color: #fff;
   padding: 2rem;
   border-radius: var(--border-radius);
   width: 100%;
