@@ -1,4 +1,5 @@
-/* src/styles/ApiKeyModal.css */
+/* src/styles/SettingsModal.css */
+
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -15,40 +16,130 @@
 
 .modal-content {
   background-color: #fff;
-  padding: 2rem;
-  border-radius: var(--border-radius);
+  padding: 1rem;
+  border-radius: 12px; /* A slightly larger radius often looks more modern */
   width: 100%;
-  max-width: 500px;
+  max-width: 550px; /* Increased max-width for better spacing */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  border-top: 4px solid var(--color-primary);
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .modal-content h2 {
   text-align: center;
-  color: var(--color-text-primary);
+  color: #333;
+  margin-top: 0; /* Removing default margin */
 }
 
-.modal-content p {
-  color: var(--color-text-secondary);
-  text-align: center;
+.modal-scroll-wrapper {
+  /* CHANGE THIS LINE from 'padding: 2rem;' */
+  padding: 1rem 1rem 1rem 1rem; /* top, right, bottom, left */
+  
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* --- NEW STYLES FOR FORM STRUCTURE --- */
+
+.settings-section {
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+
+/* This removes the border from the very first section */
+.settings-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.settings-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.settings-section p {
+  /* This overrides the centered style from the base modal paragraph */
+  text-align: left;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #666;
   line-height: 1.5;
 }
+
+/* This is the container for a single setting (label + input) */
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* --- THIS IS THE FIX YOU REQUESTED --- */
+  margin-bottom: 1.25rem; /* Adds vertical space between each setting */
+}
+
+.setting-item label {
+  font-weight: 500;
+  color: #444;
+}
+
+/* A single rule for all inputs, selects, and textareas */
+.setting-item input,
+.setting-item select,
+.settings-section textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  font-family: inherit; /* Ensures they use the app's font */
+}
+
+/* Style for when a user clicks into a field */
+.setting-item input:focus,
+.setting-item select:focus,
+.settings-section textarea:focus {
+  outline: 2px solid #6a5acd;
+  border-color: transparent; /* Hides the default border to make the outline look cleaner */
+}
+
+/* --- END OF NEW STYLES --- */
+
 
 .modal-content .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
+  border-top: 1px solid #eee; /* Add separator for actions */
+  padding-top: 1.5rem;
 }
 
-/* Reusing modal actions button styles for better consistency */
-.modal-actions button:first-child {
-  background-color: var(--color-surface-light);
-  color: var(--color-text-primary);
+/* A base style for all buttons in the modal footer */
+.modal-actions button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-.modal-actions button:first-child:hover {
-  background-color: var(--color-border);
+
+/* Style for the 'Close' button */
+.modal-actions button:first-of-type {
+  background-color: #e8e8ee;
+  color: #333;
+}
+.modal-actions button:first-of-type:hover {
+  background-color: #ddd;
+}
+
+/* Style for the primary 'Save Settings' button */
+.modal-actions button:last-of-type {
+    background-color: #6a5acd;
+    color: white;
+}
+.modal-actions button:last-of-type:hover {
+    background-color: #584aae;
 }

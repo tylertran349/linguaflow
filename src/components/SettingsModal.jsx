@@ -82,103 +82,115 @@ function SettingsModal({
 
     onClose(); // Only close if validation was successful
   };
+  
+  // --- NEW FUNCTION TO HANDLE CLICKING OUTSIDE THE MODAL ---
+  const handleBackdropClick = (e) => {
+    // This condition checks if the user clicked on the backdrop itself,
+    // and not on any of its children (like the modal content).
+    if (e.target.className === 'modal-backdrop') {
+      onClose();
+    }
+  };
 
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-        <h2>Settings</h2>
+    // --- ATTACH THE NEW ONCLICK HANDLER HERE ---
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
+      <div className="modal-content">
+        <div className="modal-scroll-wrapper" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+          <h2>Settings</h2>
 
-        <div className="settings-section">
-            <h3>API Key</h3>
-            <p>Your key is stored in your browser's local storage.</p>
-            <div className="setting-item">
-                <label htmlFor="gemini-key">Google Gemini API Key</label>
-                <input id="gemini-key" type="password" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key"/>
-            </div>
-        </div>
+          <div className="settings-section">
+              <h3>API Key</h3>
+              <p>Your key is stored in your browser's local storage.</p>
+              <div className="setting-item">
+                  <label htmlFor="gemini-key">Google Gemini API Key</label>
+                  <input id="gemini-key" type="password" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key"/>
+              </div>
+          </div>
 
-        <div className="settings-section">
-            <h3>Topic</h3>
-            <p>Guide the sentence generation. Leave blank for random sentences.</p>
-            <textarea value={tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="e.g., technology, travel, cooking..." rows="4" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'vertical' }}/>
-        </div>
+          <div className="settings-section">
+              <h3>Topic/Theme</h3>
+              <p>Specify a topic or theme to guide the sentence generation. If left blank, random sentences will be generated.</p>
+              <textarea value={tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="e.g., technology, travel, cooking..." rows="4" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'vertical' }}/>
+          </div>
 
-        <div className="settings-section">
-            <h3>Voice Settings</h3>
-            <p>Control the playback speed for each voice engine (0.1 to 2.0).</p>
-            <div className="setting-item">
-                <label htmlFor="webSpeechRate">Web Speech API TTS Speed</label>
-                <input
-                    type="number"
-                    id="webSpeechRate"
-                    name="webSpeechRate"
-                    min="0" max="2" step="0.1"
-                    value={tempSettings.webSpeechRate}
-                    onChange={handleSettingChange}
-                    className={errors.webSpeechRate ? 'input-error' : ''}
-                />
-                {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
-            </div>
-            <div className="setting-item">
-                <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
-                <input
-                    type="number"
-                    id="googleTranslateRate"
-                    name="googleTranslateRate"
-                    min="0" max="2" step="0.1"
-                    value={tempSettings.googleTranslateRate}
-                    onChange={handleSettingChange}
-                    className={errors.googleTranslateRate ? 'input-error' : ''}
-                />
-                {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
-            </div>
-        </div>
+          <div className="settings-section">
+              <h3>Voice Settings</h3>
+              <p>Control the playback speed for each voice engine (0.1 to 2.0).</p>
+              <div className="setting-item">
+                  <label htmlFor="webSpeechRate">Web Speech API TTS Speed</label>
+                  <input
+                      type="number"
+                      id="webSpeechRate"
+                      name="webSpeechRate"
+                      min="0" max="2" step="0.1"
+                      value={tempSettings.webSpeechRate}
+                      onChange={handleSettingChange}
+                      className={errors.webSpeechRate ? 'input-error' : ''}
+                  />
+                  {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
+                  <input
+                      type="number"
+                      id="googleTranslateRate"
+                      name="googleTranslateRate"
+                      min="0" max="2" step="0.1"
+                      value={tempSettings.googleTranslateRate}
+                      onChange={handleSettingChange}
+                      className={errors.googleTranslateRate ? 'input-error' : ''}
+                  />
+                  {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
+              </div>
+          </div>
 
-        <div className="settings-section">
-            <h3>Generation Options</h3>
-            <div className="setting-item">
-                <label htmlFor="ttsEngine">Voice Engine</label>
-                <select name="ttsEngine" id="ttsEngine" value={tempSettings.ttsEngine} onChange={handleSettingChange}>
-                    {TTS_ENGINES.map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
-                </select>
-            </div>
-            <div className="setting-item">
-                <label htmlFor="nativeLanguage">Your Language:</label>
-                <select name="nativeLanguage" id="nativeLanguage" value={tempSettings.nativeLanguage} onChange={handleSettingChange}>
-                    {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
-                </select>
-            </div>
-            <div className="setting-item">
-                <label htmlFor="targetLanguage">Language to Learn:</label>
-                <select name="targetLanguage" id="targetLanguage" value={tempSettings.targetLanguage} onChange={handleSettingChange}>
-                    {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
-                </select>
-            </div>
-            <div className="setting-item">
-                <label htmlFor="difficulty">Difficulty (CEFR):</label>
-                <select name="difficulty" id="difficulty" value={tempSettings.difficulty} onChange={handleSettingChange}>
-                    {CEFR_LEVELS.map(level => ( <option key={level.value} value={level.value}>{level.label}</option>))}
-                </select>
-            </div>
-            <div className="setting-item">
-                <label htmlFor="model">Gemini Model:</label>
-                <select name="model" id="model" value={tempSettings.model} onChange={handleSettingChange}>
-                    {GEMINI_MODELS.map(model => ( <option key={model} value={model}>{model}</option>))}
-                </select>
-            </div>
-            <div className="setting-item">
-                <label htmlFor="sentenceCount">Number of Sentences</label>
-                <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
-            </div>
-        </div>
+          <div className="settings-section">
+              <h3>Generation Options</h3>
+              <div className="setting-item">
+                  <label htmlFor="ttsEngine">Voice Engine</label>
+                  <select name="ttsEngine" id="ttsEngine" value={tempSettings.ttsEngine} onChange={handleSettingChange}>
+                      {TTS_ENGINES.map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
+                  </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="nativeLanguage">Your Language:</label>
+                  <select name="nativeLanguage" id="nativeLanguage" value={tempSettings.nativeLanguage} onChange={handleSettingChange}>
+                      {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
+                  </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="targetLanguage">Language to Learn:</label>
+                  <select name="targetLanguage" id="targetLanguage" value={tempSettings.targetLanguage} onChange={handleSettingChange}>
+                      {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
+                  </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="difficulty">Difficulty (CEFR):</label>
+                  <select name="difficulty" id="difficulty" value={tempSettings.difficulty} onChange={handleSettingChange}>
+                      {CEFR_LEVELS.map(level => ( <option key={level.value} value={level.value}>{level.label}</option>))}
+                  </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="model">Gemini Model:</label>
+                  <select name="model" id="model" value={tempSettings.model} onChange={handleSettingChange}>
+                      {GEMINI_MODELS.map(model => ( <option key={model} value={model}>{model}</option>))}
+                  </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="sentenceCount">Number of Sentences</label>
+                  <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
+              </div>
+          </div>
 
-        <div className="modal-actions">
-          <button onClick={onClose}>Close</button>
-          <button onClick={handleSave}>Save Settings</button>
+          <div className="modal-actions">
+            <button onClick={onClose}>Close</button>
+            <button onClick={handleSave}>Save Settings</button>
+          </div>
         </div>
       </div>
     </div>
