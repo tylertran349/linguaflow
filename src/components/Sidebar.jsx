@@ -11,7 +11,7 @@ const modules = [
   { id: 'write-a-response', name: 'Write a Response' }
 ];
 
-function Sidebar({ isOpen, activemodule, onNavigate, onOpenSettings }) {
+function Sidebar({ isOpen, activeModule, onNavigate, onOpenSettings }) {
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
@@ -24,7 +24,7 @@ function Sidebar({ isOpen, activemodule, onNavigate, onOpenSettings }) {
           {modules.map(module => (
             <li key={module.id}>
               <button
-                className={`nav-item ${activemodule === module.id ? 'active' : ''}`}
+                className={`nav-item ${activeModule === module.id ? 'active' : ''}`}
                 onClick={() => onNavigate(module.id)}
               >
                 {module.name}
