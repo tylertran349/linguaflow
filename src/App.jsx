@@ -32,7 +32,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= MOBILE_BREAKPOINT);
   
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeGame, setActiveGame] = useState(null);
+  const [activeModule, setActiveModule] = useState(null);
 
   // --- MODIFICATION 2: Add an effect to handle window resizing ---
   useEffect(() => {
@@ -74,16 +74,16 @@ function App() {
   };
   
   const handleNavigate = (gameId) => {
-    setActiveGame(gameId);
+    setActiveModule(gameId);
     // Your existing logic here is already perfect for mobile navigation
     if (window.innerWidth < MOBILE_BREAKPOINT) {
       setIsSidebarOpen(false);
     }
   };
 
-  const renderActiveGame = () => {
+  const renderActiveModule = () => {
     // This function is already correct and doesn't need changes.
-    switch (activeGame) {
+    switch (activeModule) {
       case 'sentence-generator':
         return (
           <SentenceDisplay
@@ -140,7 +140,7 @@ function App() {
 
       <Sidebar 
         isOpen={isSidebarOpen}
-        activeGame={activeGame}
+        activeModule={activeModule}
         onNavigate={handleNavigate}
         onOpenSettings={handleOpenSettings}
       />
@@ -154,7 +154,7 @@ function App() {
         </header>
 
         <main className="learning-container">
-          {renderActiveGame()}
+          {renderActiveModule()}
         </main>
       </div>
 
