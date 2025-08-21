@@ -73,3 +73,10 @@
     font-size: 1rem;
   }
 }
+
+.actions {
+  display: flex;
+  justify-content: center; /* This is the key property for horizontal centering */
+  flex-wrap: wrap;         /* Allows buttons to stack on narrow screens */
+  gap: 1rem;               /* Adds a nice space between the buttons */
+}
