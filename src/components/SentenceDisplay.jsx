@@ -1,7 +1,6 @@
 // src/components/SentenceDisplay.jsx
 
-// --- MODIFIED: Import useEffect ---
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -14,39 +13,17 @@ const MAX_HISTORY_SIZE = 100;
 function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
+  // --- NEW: State to store sentence history for generating varied vocabulary ---
   const [sentenceHistory, setSentenceHistory] = useLocalStorage('sentenceHistory', []);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTranslationVisible, setIsTranslationVisible] = useState(false);
-  
-  // --- NEW: State for the animated loading dots ---
-  const [loadingDots, setLoadingDots] = useState('.');
-
-  // --- NEW: useEffect to handle the animation ---
-  useEffect(() => {
-    let interval;
-    if (isLoading) {
-      interval = setInterval(() => {
-        setLoadingDots(prevDots => {
-          if (prevDots.length >= 3) {
-            return '.';
-          }
-          return prevDots + '.';
-        });
-      }, 400); // Adjust speed here (in milliseconds)
-    }
-
-    // This is a crucial cleanup function. It runs when the effect re-runs or the component unmounts.
-    // It prevents the interval from running forever in the background.
-    return () => {
-      clearInterval(interval);
-    };
-  }, [isLoading]); // This effect will only run when the `isLoading` state changes.
 
   const currentSentence = sentences[currentSentenceIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
 
+  // --- MODIFIED: The generate function now uses and updates the history ---
   const generate = async () => {
     if (!geminiApiKey) {
       setError("Gemini API Key is not set.");
@@ -59,6 +36,7 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     setError('');
     
     try {
+      // Pass the sentenceHistory to the service function
       const fetchedSentences = await fetchSentencesFromGemini(
         geminiApiKey, 
         settings, 
@@ -68,13 +46,18 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
       setSentences(fetchedSentences);
 
+      // After a successful fetch, update the history
       if (fetchedSentences && fetchedSentences.length > 0) {
+        // Get just the text of the new target sentences
         const newTargets = fetchedSentences.map(s => s.target);
+        // Combine old and new, ensuring we don't exceed the max size
         const combinedHistory = [...sentenceHistory, ...newTargets];
         const updatedHistory = combinedHistory.slice(-MAX_HISTORY_SIZE);
+        // Save the updated history for the next generation
         setSentenceHistory(updatedHistory);
       }
       
+      // Explicitly reset the index and visibility for the new set
       setCurrentSentenceIndex(0);
       setIsTranslationVisible(false);
 
@@ -97,22 +80,19 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const handleSpeakSentence = () => {
     if (!currentSentence) return;
+    // This now correctly passes the entire settings object
     speakText(currentSentence.target, targetLangCode, settings);
   };
   
   const handleWordClick = (word) => {
     if (!word) return;
+    // BEFORE (Incorrect): speakText(word, targetLangCode, settings.ttsEngine);
+    // AFTER (Correct):
     speakText(word, targetLangCode, settings);
   };
 
-  // --- MODIFIED: The loading state now uses the animated dots ---
-  if (isLoading) {
-    return (
-      <p className="status-message">
-        Generating sentences, please wait{loadingDots}
-      </p>
-    );
-  }
+  // --- The component's JSX is unchanged and correct. ---
+  if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
   
   if (sentences.length === 0) {
     return (
@@ -128,7 +108,6 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     );
   }
 
-  // No changes to the main return JSX
   return (
     <div className="sentence-card">
       {error && <p className="status-message error small">Error: {error}</p>}
