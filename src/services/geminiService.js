@@ -81,76 +81,43 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   }
 };
 
-export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
-  // --- MODIFIED: The instructions are now much more nuanced to handle complex linguistic cases. ---
-  const specificInstructions = `
-    **IMPORTANT INSTRUCTIONS:**
-    Your goal is to break down sentences into the smallest logical and semantic learning units for a language learner.
-    Return a single valid JSON array. Each element is an object representing a sentence with "target", "native", and "chunks" keys.
+/**
+ * Fetches a list of sentences with word-by-word mappings for color-coding.
+ */
+export const fetchColorCodedSentences = async (apiKey, settings, topic, history = []) => {
+    const specificInstructions = `
+      **IMPORTANT INSTRUCTIONS:**
+      Your goal is to generate sentences for a language learner and provide a word-by-word alignment for translation.
+      Provide the output as a single, valid JSON array of objects. Each object represents one sentence and must contain a single key "sentence_pair".
+      The "sentence_pair" value must be an array of objects, where each object represents a word or a small, translatable chunk (like "isn't").
+      Each of these chunk objects must have two keys: "target_word" (in ${settings.targetLanguage}) and "native_word" (in ${settings.nativeLanguage}).
+      Align the words as closely as possible. If a direct one-to-one mapping is impossible, group words logically. For example, "ne...pas" in French might map to "not" in English.
+      Punctuation should be its own chunk.
 
-    **Rules for Creating "chunks":**
-    1. **Granular Target Chunks:** Break down the \`target\` sentence into small, logical parts. Always separate nouns from adjectives, and verbs from objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
-    2. **Natural Native Translation:** The \`native_chunk\`s, when read in order, MUST form the grammatically correct and natural \`native\` sentence. Word order is often different between languages. To solve this, you must rearrange the native language translation within the chunks.
-    3. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
-
-    **Primary Example (Follow this structure precisely):**
-    For the sentence: "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc."
-    (English: "Using public transportation regularly can help you save time and money.")
-
-    The JSON output must be:
-    [{
-      "target": "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc.",
-      "native": "Using public transportation regularly can help you save time and money.",
-      "chunks": [
-        { "target_chunk": "Việc sử dụng", "native_chunk": "Using", "color": "..."},
-        { "target_chunk": "phương tiện giao thông", "native_chunk": "transportation", "color": "..."},
-        { "target_chunk": "công cộng", "native_chunk": "public", "color": "..."},
-        { "target_chunk": "thường xuyên", "native_chunk": "regularly", "color": "..."},
-        { "target_chunk": "có thể", "native_chunk": "can", "color": "..."},
-        { "target_chunk": "giúp", "native_chunk": "help", "color": "..."},
-        { "target_chunk": "bạn", "native_chunk": "you", "color": "..."},
-        { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "..."},
-        { "target_chunk": "thời gian", "native_chunk": "time", "color": "..."},
-        { "target_chunk": "và", "native_chunk": "and", "color": "..."},
-        { "target_chunk": "tiền bạc", "native_chunk": "money", "color": "..."}
+      **EXAMPLE OUTPUT FORMAT:**
+      [
+        {
+          "sentence_pair": [
+            { "target_word": "The", "native_word": "El" },
+            { "target_word": "cat", "native_word": "gato" },
+            { "target_word": "is", "native_word": "está" },
+            { "target_word": "black", "native_word": "negro" },
+            { "target_word": ".", "native_word": "." }
+          ]
+        },
+        {
+          "sentence_pair": [
+            { "target_word": "I", "native_word": "Yo" },
+            { "target_word": "don't", "native_word": "no" },
+            { "target_word": "like", "native_word": "gustan" },
+            { "target_word": "spiders", "native_word": "las arañas" },
+            { "target_word": ".", "native_word": "." }
+          ]
+        }
       ]
-    }]
-
-    Another JSON output example:
-    [{
-      "target": "Dù có nhiều quan điểm trái chiều đề xuất về cơ chế phân phối công bằng vẫn được đưa ra thảo luận.",
-      "native": "Despite many opposing viewpoints, proposals for a fair distribution mechanism are still being put up for discussion.",
-      "chunks": [
-        { "target_chunk": "Dù", "native_chunk": "Despite", "color": "..."},
-        { "target_chunk": "có nhiều", "native_chunk": "many", "color": "..."},
-        { "target_chunk": "quan điểm", "native_chunk": "viewpoints,", "color": "..."},
-        { "target_chunk": "trái chiều", "native_chunk": "opposing", "color": "..."},
-        { "target_chunk": "đề xuất", "native_chunk": "proposals", "color": "..."},
-        { "target_chunk": "về", "native_chunk": "for", "color": "..."},
-        { "target_chunk": "cơ chế phân phối", "native_chunk": "a distribution mechanism", "color": "..."},
-        { "target_chunk": "công bằng", "native_chunk": "fair", "color": "..."},
-        { "target_chunk": "vẫn được", "native_chunk": "are still being", "color": "..."},
-        { "target_chunk": "đưa ra", "native_chunk": "put up", "color": "..."},
-        { "target_chunk": "thảo luận", "native_chunk": "for discussion.", "color": "..."}
-      ]
-    }]
-
-    You can change the word order in the native language translated sentence if needed to make the native language translation sound natural in the native language. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
-  `;
-  const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
-
-  // This color logic remains correct and does not need to be changed.
-  sentences.forEach(sentence => {
-    if (!sentence || !Array.isArray(sentence.chunks)) return;
-    const paletteSize = RAINBOW_HEX_PALETTE.length;
-    sentence.chunks.forEach((chunk, index) => {
-      chunk.color = RAINBOW_HEX_PALETTE[index % paletteSize];
-    });
-  });
-
-  return sentences;
+    `;
+    return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate color-coded sentences.");
 };
-
 
 export const fetchUnscrambleSentences = async (apiKey, settings, topic, history = []) => {
   const specificInstructions = `

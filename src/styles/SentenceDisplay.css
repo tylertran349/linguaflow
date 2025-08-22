@@ -1,82 +1,208 @@
-/* src/styles/SentenceDisplay.css */
+.sentence-display-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px; /* Ensure a decent size even when empty */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
 
+/* States: Initial, Loading, Error */
+.initial-state, .loading-state, .error-state {
+    text-align: center;
+    color: #555;
+    padding: 1rem;
+}
+
+.initial-state h2 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.loading-state {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #007bff;
+}
+
+.error-state {
+    color: #d9534f;
+}
+.error-state p {
+    margin-bottom: 1.5rem;
+}
+
+/* Main Sentence View */
+.sentence-view {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Navigation */
+.sentence-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.sentence-nav span {
+    font-weight: 600;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.sentence-nav button {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #007bff;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.sentence-nav button:hover:not(:disabled) {
+    background-color: #e2e6ea;
+}
+
+.sentence-nav button:disabled {
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+/* Sentence Containers */
 .sentence-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-height: 120px;
-  justify-content: center;
+    font-size: 1.8rem;
+    line-height: 2.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem; /* Space between words */
+    padding: 1rem;
+    border-radius: 8px;
 }
 
-/* --- MODIFIED --- */
-/* This container just sets the text properties. No more flex or position! */
 .target-sentence {
-  line-height: 1.7;
-  font-size: 2rem;
-  font-weight: 500;
-  text-align: left; /* Ensures text aligns left if it wraps */
-}
-
-/* This is now just a simple inline wrapper and doesn't need its own rule. */
-.sentence-text-wrapper {
-  /* This rule can be empty or removed */
+    font-weight: 600;
+    background-color: #f8f9fa;
+    position: relative;
 }
 
 .native-sentence {
-  line-height: 1.7;
-  font-size: 1.2rem;
-  color: var(--color-text-secondary);
+    font-weight: 400;
+    font-size: 1.4rem;
+    line-height: 2rem;
+    color: #666;
+    background-color: #f1f3f5;
+    border: 1px dashed #ced4da;
 }
 
-/* The .word styling is now simpler, removing margin */
-.target-sentence .word {
-  cursor: pointer;
-  transition: filter 0.2s ease;
-  padding: 2px 0;
+/* Word Chunks and Punctuation */
+.word-chunk {
+    cursor: pointer;
+    transition: transform 0.2s ease, text-shadow 0.2s ease;
+    padding: 2px 4px;
+    border-radius: 4px;
+    -webkit-tap-highlight-color: transparent; /* For mobile */
 }
 
-.target-sentence .word:hover {
-  filter: brightness(1.3);
+.word-chunk:hover {
+    transform: translateY(-2px);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* --- MODIFIED --- */
-/* This is the key to the solution. The button is now an inline element. */
-.target-sentence .speak-button {
-  display: inline-block; /* Allows sizing while staying in the text flow */
-  vertical-align: middle; /* Aligns the button vertically with the text */
-  margin-left: 8px; /* Adds space after the last word */
-  
-  /* These are for appearance */
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: var(--text-color-secondary);
-  width: 44px;
-  height: 44px;
-  line-height: 44px; /* Helps vertically center the emoji */
-  text-align: center;
-  padding: 0;
-  transition: transform 0.2s;
+.word-chunk-native {
+    padding: 2px 4px;
 }
 
-.target-sentence .speak-button:hover {
-  transform: scale(1.1);
+.punctuation {
+    margin-left: -0.25rem; /* Pull punctuation closer to the preceding word */
+    cursor: default;
 }
 
-/* Responsive styles */
-@media (max-width: 767px) {
-  .target-sentence {
+/* Speak Button (TTS) */
+.speak-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
     font-size: 1.5rem;
-  }
-  .native-sentence {
-    font-size: 1rem;
-  }
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s;
 }
 
-.actions {
-  display: flex;
-  justify-content: center; /* This is the key property for horizontal centering */
-  flex-wrap: wrap;         /* Allows buttons to stack on narrow screens */
-  gap: 1rem;               /* Adds a nice space between the buttons */
+.speak-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid #e9ecef;
+    padding-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* General button styles for reuse */
+.btn-primary, .btn-secondary, .action-buttons button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.action-buttons button:not(.btn-secondary) {
+    background-color: #fff;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.action-buttons button:not(.btn-secondary):hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
 }

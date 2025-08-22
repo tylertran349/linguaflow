@@ -1,173 +1,216 @@
-// src/components/SentenceDisplay.jsx
-
-import { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { fetchSentencesFromGemini } from '../services/geminiService';
-import { speakText } from '../services/ttsService';
-import { supportedLanguages } from '../utils/languages';
+import React, { useState, useEffect } from 'react';
+import { fetchColorCodedSentences } from '../services/geminiService';
 import '../styles/SentenceDisplay.css';
 
-// We'll keep a history of the last 100 sentences to ensure variety.
-const MAX_HISTORY_SIZE = 100;
-
-function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
-  const [sentences, setSentences] = useLocalStorage('sentences', []);
-  const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
-  // --- NEW: State to store sentence history for generating varied vocabulary ---
-  const [sentenceHistory, setSentenceHistory] = useLocalStorage('sentenceHistory', []);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isTranslationVisible, setIsTranslationVisible] = useState(false);
-
-  const currentSentence = sentences[currentSentenceIndex];
-  const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
-
-  // --- MODIFIED: The generate function now uses and updates the history ---
-  const generate = async () => {
-    if (!geminiApiKey) {
-      setError("Gemini API Key is not set.");
-      if (onApiKeyMissing) {
-        onApiKeyMissing();
-      }
-      return;
-    }
-    setIsLoading(true);
-    setError('');
-    
+// Requirement 6: Custom hook for LocalStorage
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
     try {
-      // Pass the sentenceHistory to the service function
-      const fetchedSentences = await fetchSentencesFromGemini(
-        geminiApiKey, 
-        settings, 
-        topic, 
-        sentenceHistory
-      );
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
 
-      setSentences(fetchedSentences);
-
-      // After a successful fetch, update the history
-      if (fetchedSentences && fetchedSentences.length > 0) {
-        // Get just the text of the new target sentences
-        const newTargets = fetchedSentences.map(s => s.target);
-        // Combine old and new, ensuring we don't exceed the max size
-        const combinedHistory = [...sentenceHistory, ...newTargets];
-        const updatedHistory = combinedHistory.slice(-MAX_HISTORY_SIZE);
-        // Save the updated history for the next generation
-        setSentenceHistory(updatedHistory);
-      }
-      
-      // Explicitly reset the index and visibility for the new set
-      setCurrentSentenceIndex(0);
-      setIsTranslationVisible(false);
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+  const setValue = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const handleNext = () => {
-    setCurrentSentenceIndex(prev => Math.min(prev + 1, sentences.length - 1));
-    setIsTranslationVisible(false);
-  };
-
-  const handleBack = () => {
-    setCurrentSentenceIndex(prev => Math.max(prev - 1, 0));
-    setIsTranslationVisible(false);
-  };
-
-  const handleSpeakSentence = () => {
-    if (!currentSentence) return;
-    // This now correctly passes the entire settings object
-    speakText(currentSentence.target, targetLangCode, settings);
-  };
-  
-  const handleWordClick = (word) => {
-    if (!word) return;
-    // BEFORE (Incorrect): speakText(word, targetLangCode, settings.ttsEngine);
-    // AFTER (Correct):
-    speakText(word, targetLangCode, settings);
-  };
-
-  // --- The component's JSX is unchanged and correct. ---
-  if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
-  
-  if (sentences.length === 0) {
-    return (
-      <div className="initial-state-container">
-        {error && <p className="status-message error">Error: {error}</p>}
-        <p className="status-message">
-          Ready to learn? Set your options in the menu and click the button to start.
-        </p>
-        <button className="generate-button" onClick={generate}>
-          Generate Sentences
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="sentence-card">
-      {error && <p className="status-message error small">Error: {error}</p>}
-      <article className="sentence-container">
-        <section className="target-sentence">
-          <span className="sentence-text-wrapper">
-            <span>
-              {currentSentence.chunks.map((chunk, index) => {
-                const isLastChunk = index === currentSentence.chunks.length - 1;
-                const punctuation = isLastChunk ? (currentSentence.target.slice(-1).match(/[.?!]/) ? currentSentence.target.slice(-1) : '') : '';
-
-                // Remove any punctuation from the chunk itself before rendering
-                const cleanChunkText = chunk.target_chunk.replace(/[.?!]$/, '');
-                
-                return (
-                  <span key={index} style={{ color: chunk.color }}>
-                    {cleanChunkText.split(' ').map((word, wordIndex, words) => (
-                      <span key={wordIndex} onClick={() => handleWordClick(word)} className="word">
-                        {word}
-                        {wordIndex < words.length - 1 ? ' ' : ''}
-                      </span>
-                    ))}
-                    {punctuation}
-                    {!isLastChunk && ' '}
-                  </span>
-                );
-              })}
-            </span>
-          </span>
-          
-          <button onClick={handleSpeakSentence} className="speak-button" title="Pronounce Sentence">
-            🔊
-          </button>
-        </section>
-
-        {isTranslationVisible && (
-          <section className="native-sentence">
-            {currentSentence.chunks.map((chunk, index) => (
-              <span key={index} style={{ color: chunk.color, marginRight: '5px' }}>
-                {chunk.native_chunk}
-              </span>
-            ))}
-          </section>
-        )}
-      </article>
-      
-      <div className="actions">
-        <button onClick={() => setIsTranslationVisible(prev => !prev)}>
-          {isTranslationVisible ? 'Hide' : 'Show'} Translation
-        </button>
-        <button onClick={generate}>Generate New Sentences</button>
-      </div>
-
-      <div className="navigation">
-        <button onClick={handleBack} disabled={currentSentenceIndex === 0}>Back</button>
-        <span>{currentSentenceIndex + 1} / {sentences.length}</span>
-        <button onClick={handleNext} disabled={currentSentenceIndex === sentences.length - 1}>Next</button>
-      </div>
-    </div>
-  );
+  return [storedValue, setValue];
 }
+
+// A curated list of vibrant, high-contrast colors.
+const RAINBOW_HEX_PALETTE = [
+    '#f80c12',
+    '#C11C84',
+    '#ff9933',
+    '#008000',
+    '#1296a5ff',
+    '#0000FF',
+];
+
+const SentenceDisplay = ({ settings, topic, geminiApiKey, onApiKeyMissing, ttsService }) => {
+    // State management
+    const [sentences, setSentences] = useLocalStorage('sentences', []);
+    const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
+    const [sentenceHistory, setSentenceHistory] = useLocalStorage('sentenceHistory', []);
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [showTranslation, setShowTranslation] = useState(false);
+    const [loadingEllipsis, setLoadingEllipsis] = useState('.');
+
+    // Effect for animated ellipsis
+    useEffect(() => {
+        if (isLoading) {
+            const interval = setInterval(() => {
+                setLoadingEllipsis(prev => prev.length < 3 ? prev + '.' : '.');
+            }, 400);
+            return () => clearInterval(interval);
+        }
+    }, [isLoading]);
+
+    // Main function to fetch sentences
+    const handleGenerateSentences = async () => {
+        if (!geminiApiKey) {
+            onApiKeyMissing();
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        setShowTranslation(false);
+
+        try {
+            const newSentences = await fetchColorCodedSentences(geminiApiKey, settings, topic, sentenceHistory);
+            
+            setSentences(newSentences);
+
+            // Update history
+            const newHistory = newSentences.map(s =>
+                s.sentence_pair.map(p => p.target_word).join(' ')
+            );
+            const updatedHistory = [...sentenceHistory, ...newHistory].slice(-100);
+            setSentenceHistory(updatedHistory);
+
+            // Reset state
+            setCurrentSentenceIndex(0);
+            setShowTranslation(false);
+
+        } catch (err) {
+            setError(err.message || 'An unknown error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Navigation handlers
+    const handleNext = () => {
+        if (currentSentenceIndex < sentences.length - 1) {
+            setCurrentSentenceIndex(currentSentenceIndex + 1);
+        }
+    };
+
+    const handleBack = () => {
+        if (currentSentenceIndex > 0) {
+            setCurrentSentenceIndex(currentSentenceIndex - 1);
+        }
+    };
+    
+    // TTS handlers
+    const handleSpeakWord = (word) => {
+        ttsService.speak(word, settings.targetLanguage, settings);
+    };
+
+    const handleSpeakSentence = (sentencePair) => {
+        const fullSentence = sentencePair.map(chunk => chunk.target_word).join(' ');
+        ttsService.speak(fullSentence, settings.targetLanguage, settings);
+    };
+    
+    // UI rendering logic
+    const renderContent = () => {
+        if (isLoading) {
+            return <div className="loading-state">Generating sentences, please wait{loadingEllipsis}</div>;
+        }
+
+        if (error) {
+            return <div className="error-state">
+                <p><strong>Error:</strong> {error}</p>
+                <button onClick={handleGenerateSentences} className="btn-primary">Try Again</button>
+            </div>;
+        }
+
+        if (!sentences || sentences.length === 0) {
+            return (
+                <div className="initial-state">
+                    <h2>Welcome to the Sentence Generator!</h2>
+                    <p>Click the button to generate contextual sentences and learn new vocabulary.</p>
+                    <button onClick={handleGenerateSentences} className="btn-primary">Generate Sentences</button>
+                </div>
+            );
+        }
+        
+        const currentSentence = sentences[currentSentenceIndex];
+        if (!currentSentence || !currentSentence.sentence_pair) {
+            return <div className="error-state">
+                <p><strong>Error:</strong> The loaded sentence data is invalid.</p>
+                <button onClick={() => { setSentences([]); setCurrentSentenceIndex(0); }} className="btn-secondary">Clear and Start Over</button>
+            </div>;
+        }
+
+        return (
+            <div className="sentence-view">
+                <div className="sentence-nav">
+                    <button onClick={handleBack} disabled={currentSentenceIndex === 0}>Back</button>
+                    <span>{currentSentenceIndex + 1} / {sentences.length}</span>
+                    <button onClick={handleNext} disabled={currentSentenceIndex >= sentences.length - 1}>Next</button>
+                </div>
+
+                <div className="sentence-container target-sentence">
+                    {currentSentence.sentence_pair.map((chunk, index) => {
+                        const color = RAINBOW_HEX_PALETTE[index % RAINBOW_HEX_PALETTE.length];
+                        const isPunctuation = /^[.,?!;:]$/.test(chunk.target_word.trim());
+                        
+                        return isPunctuation ? (
+                            <span key={index} className="punctuation">{chunk.target_word}</span>
+                        ) : (
+                            <span 
+                                key={index} 
+                                className="word-chunk" 
+                                style={{ color }}
+                                onClick={() => handleSpeakWord(chunk.target_word)}
+                            >
+                                {chunk.target_word}
+                            </span>
+                        );
+                    })}
+                    <button className="speak-btn" title="Speak sentence" onClick={() => handleSpeakSentence(currentSentence.sentence_pair)}>🔊</button>
+                </div>
+                
+                {showTranslation && (
+                    <div className="sentence-container native-sentence">
+                       {currentSentence.sentence_pair.map((chunk, index) => {
+                           const color = RAINBOW_HEX_PALETTE[index % RAINBOW_HEX_PALETTE.length];
+                           const isPunctuation = /^[.,?!;:]$/.test(chunk.native_word.trim());
+                           
+                           return (
+                             <span 
+                                key={index} 
+                                className={isPunctuation ? 'punctuation' : 'word-chunk-native'} 
+                                style={{ color }}
+                             >
+                                 {chunk.native_word}
+                             </span>
+                           );
+                       })}
+                    </div>
+                )}
+
+                <div className="action-buttons">
+                    <button onClick={() => setShowTranslation(!showTranslation)}>
+                        {showTranslation ? 'Hide' : 'Show'} Translation
+                    </button>
+                    <button onClick={handleGenerateSentences} className="btn-secondary">
+                        Generate New Sentences
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="sentence-display-container">
+            {renderContent()}
+        </div>
+    );
+};
 
 export default SentenceDisplay;
