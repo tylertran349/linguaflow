@@ -85,36 +85,46 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
  * Fetches a list of sentences with word-by-word mappings for color-coding.
  */
 export const fetchColorCodedSentences = async (apiKey, settings, topic, history = []) => {
+    // MODIFICATION: The instructions now ask for a more sophisticated data structure.
     const specificInstructions = `
       **IMPORTANT INSTRUCTIONS:**
-      Your goal is to generate sentences for a language learner and provide a word-by-word alignment for translation.
-      Provide the output as a single, valid JSON array of objects. Each object represents one sentence and must contain a single key "sentence_pair".
-      The "sentence_pair" value must be an array of objects, where each object represents a word or a small, translatable chunk (like "isn't").
-      Each of these chunk objects must have two keys: "target_word" (in ${settings.targetLanguage}) and "native_word" (in ${settings.nativeLanguage}).
-      Align the words as closely as possible. If a direct one-to-one mapping is impossible, group words logically. For example, "ne...pas" in French might map to "not" in English.
-      Punctuation should be its own chunk.
+      Your goal is to generate sentences for a language learner and provide a word-by-word alignment for color-coding, while preserving natural word order in both languages.
+      Provide the output as a single, valid JSON array of objects. Each object represents one sentence and must have THREE keys: "target_sentence", "native_sentence", and "word_map".
 
-      **EXAMPLE OUTPUT FORMAT:**
-      [
-        {
-          "sentence_pair": [
-            { "target_word": "The", "native_word": "El" },
-            { "target_word": "cat", "native_word": "gato" },
-            { "target_word": "is", "native_word": "está" },
-            { "target_word": "black", "native_word": "negro" },
+      1.  **"target_sentence"**: The full sentence in ${settings.targetLanguage}, grammatically correct.
+      2.  **"native_sentence"**: The full, natural-sounding translation in ${settings.nativeLanguage}, with correct grammar and word order.
+      3.  **"word_map"**: An array of objects, where each object provides the direct translation link between a single target word and a single native word. This map is ONLY for color-coding. Punctuation should be included as its own entry in the map.
+
+      ---
+      **CRITICAL MAPPING & WORD ORDER EXAMPLE:**
+      Many languages have different word orders (e.g., Adjective-Noun vs. Noun-Adjective). The "native_sentence" MUST follow its own correct grammatical rules.
+
+      For example, if the target sentence is Spanish "El gato negro." (The cat black.) and the native language is English, the output should be:
+      {
+        "target_sentence": "El gato negro.",
+        "native_sentence": "The black cat.",
+        "word_map": [
+          { "target_word": "El", "native_word": "The" },
+          { "target_word": "gato", "native_word": "cat" },
+          { "target_word": "negro", "native_word": "black" },
+          { "target_word": ".", "native_word": "." }
+        ]
+      }
+      
+      Notice how "native_sentence" is "The black cat." (correct English order), even though the word map links "gato" to "cat" and "negro" to "black". The front-end application will use the map to color the words correctly.
+
+      Another example (Vietnamese -> English): "thực tại khách quan"
+      {
+        "target_sentence": "thực tại khách quan.",
+        "native_sentence": "objective reality.",
+        "word_map": [
+            { "target_word": "thực tại", "native_word": "reality" },
+            { "target_word": "khách quan", "native_word": "objective" },
             { "target_word": ".", "native_word": "." }
-          ]
-        },
-        {
-          "sentence_pair": [
-            { "target_word": "I", "native_word": "Yo" },
-            { "target_word": "don't", "native_word": "no" },
-            { "target_word": "like", "native_word": "gustan" },
-            { "target_word": "spiders", "native_word": "las arañas" },
-            { "target_word": ".", "native_word": "." }
-          ]
-        }
-      ]
+        ]
+      }
+      ---
+      Now, generate the complete JSON array based on these rules.
     `;
     return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate color-coded sentences.");
 };
