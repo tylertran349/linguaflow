@@ -81,74 +81,56 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   }
 };
 
+// --- NEW FUNCTION FOR SENTENCE GENERATOR ---
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
-  // --- MODIFIED: The instructions are now much more nuanced to handle complex linguistic cases. ---
-  const specificInstructions = `
+    const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Your goal is to break down sentences into the smallest logical and semantic learning units for a language learner.
-    Return a single valid JSON array. Each element is an object representing a sentence with "target", "native", and "chunks" keys.
+    Your goal is to generate sentences and a PRECISE, GRANULAR word map for color-coding. The map must show how individual Vietnamese words correspond to individual English words.
 
-    **Rules for Creating "chunks":**
-    1. **Granular Target Chunks:** Break down the \`target\` sentence into small, logical parts. Always separate nouns from adjectives, and verbs from objects. Make sure that for any adjective modifying a noun, it is in its own chunk, separated from the noun it is modifying.
-    2. **Natural Native Translation:** The \`native_chunk\`s, when read in order, MUST form the grammatically correct and natural \`native\` sentence. Word order is often different between languages. To solve this, you must rearrange the native language translation within the chunks.
-    3. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
+    **MANDATORY GRANULARITY RULE:**
+    The "wordMap" must be broken down into the smallest possible meaningful units. Your primary goal is to map ONE word to ONE word wherever possible.
+    1.  **SEPARATE NOUNS AND ADJECTIVES:** This is the most important rule. A noun and the adjective(s) that modify it MUST be in separate objects in the map. For example, for "sản phẩm hữu cơ", the map MUST be \`[{"target": "sản phẩm", "native": "products"}, {"target": "hữu cơ", "native": "organic"}]\`.
+    2.  **SEPARATE VERBS AND OBJECTS:** A verb and its object must be in separate map objects.
+    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes like "chất lượng cao" for "high-quality", or past tense markers like "đã xem" for "watched"). Be very conservative with grouping.
 
-    **Primary Example (Follow this structure precisely):**
-    For the sentence: "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc."
-    (English: "Using public transportation regularly can help you save time and money.")
+    **CRITICAL RULE FOR ENGLISH TRANSLATION:**
+    While the "wordMap" shows the direct, granular translation, the "nativeSentence" field MUST be grammatically perfect and sound natural in English. You will achieve this by reassembling the "native" values from the word map into the correct English syntactic order (e.g., moving adjectives before nouns).
 
-    The JSON output must be:
+    **OUTPUT FORMAT:**
+    Provide the output as a single, valid JSON array of objects. Each object must have THREE keys:
+    1.  "targetSentence": The complete sentence in Vietnamese.
+    2.  "nativeSentence": The grammatically correct, natural-sounding English translation.
+    3.  "wordMap": An array of objects showing the granular, one-to-one mapping.
+
+    **EXAMPLE OF CORRECT GRANULAR MAPPING:**
     [{
-      "target": "Việc sử dụng phương tiện giao thông công cộng thường xuyên có thể giúp bạn tiết kiệm thời gian và tiền bạc.",
-      "native": "Using public transportation regularly can help you save time and money.",
-      "chunks": [
-        { "target_chunk": "Việc sử dụng", "native_chunk": "Using", "color": "..."},
-        { "target_chunk": "phương tiện giao thông", "native_chunk": "transportation", "color": "..."},
-        { "target_chunk": "công cộng", "native_chunk": "public", "color": "..."},
-        { "target_chunk": "thường xuyên", "native_chunk": "regularly", "color": "..."},
-        { "target_chunk": "có thể", "native_chunk": "can", "color": "..."},
-        { "target_chunk": "giúp", "native_chunk": "help", "color": "..."},
-        { "target_chunk": "bạn", "native_chunk": "you", "color": "..."},
-        { "target_chunk": "tiết kiệm", "native_chunk": "save", "color": "..."},
-        { "target_chunk": "thời gian", "native_chunk": "time", "color": "..."},
-        { "target_chunk": "và", "native_chunk": "and", "color": "..."},
-        { "target_chunk": "tiền bạc", "native_chunk": "money", "color": "..."}
+      "targetSentence": "Công ty này sản xuất các sản phẩm hữu cơ chất lượng cao.",
+      "nativeSentence": "This company produces high-quality organic products.",
+      "wordMap": [
+        { "target": "Công ty này", "native": "This company" },
+        { "target": "sản xuất", "native": "produces" },
+        { "target": "các", "native": "" },
+        { "target": "sản phẩm", "native": "products" },
+        { "target": "hữu cơ", "native": "organic" },
+        { "target": "chất lượng cao", "native": "high-quality" }
       ]
     }]
-
-    Another JSON output example:
-    [{
-      "target": "Dù có nhiều quan điểm trái chiều đề xuất về cơ chế phân phối công bằng vẫn được đưa ra thảo luận.",
-      "native": "Despite many opposing viewpoints, proposals for a fair distribution mechanism are still being put up for discussion.",
-      "chunks": [
-        { "target_chunk": "Dù", "native_chunk": "Despite", "color": "..."},
-        { "target_chunk": "có nhiều", "native_chunk": "many", "color": "..."},
-        { "target_chunk": "quan điểm", "native_chunk": "viewpoints,", "color": "..."},
-        { "target_chunk": "trái chiều", "native_chunk": "opposing", "color": "..."},
-        { "target_chunk": "đề xuất", "native_chunk": "proposals", "color": "..."},
-        { "target_chunk": "về", "native_chunk": "for", "color": "..."},
-        { "target_chunk": "cơ chế phân phối", "native_chunk": "a distribution mechanism", "color": "..."},
-        { "target_chunk": "công bằng", "native_chunk": "fair", "color": "..."},
-        { "target_chunk": "vẫn được", "native_chunk": "are still being", "color": "..."},
-        { "target_chunk": "đưa ra", "native_chunk": "put up", "color": "..."},
-        { "target_chunk": "thảo luận", "native_chunk": "for discussion.", "color": "..."}
-      ]
-    }]
-
-    You can change the word order in the native language translated sentence if needed to make the native language translation sound natural in the native language. Punctuation should be attached to the appropriate final word in the sequence of native chunks.
   `;
-  const sentences = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate chunked sentences.");
+  
+  const result = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate color-coded sentences.");
 
-  // This color logic remains correct and does not need to be changed.
-  sentences.forEach(sentence => {
-    if (!sentence || !Array.isArray(sentence.chunks)) return;
-    const paletteSize = RAINBOW_HEX_PALETTE.length;
-    sentence.chunks.forEach((chunk, index) => {
-      chunk.color = RAINBOW_HEX_PALETTE[index % paletteSize];
-    });
+  // Post-process to add colors
+  result.forEach(sentence => {
+    if (sentence.wordMap) {
+      sentence.colorMapping = sentence.wordMap.map((pair, index) => ({
+        ...pair,
+        color: RAINBOW_HEX_PALETTE[index % RAINBOW_HEX_PALETTE.length]
+      }));
+      delete sentence.wordMap; // Remove original map to save space
+    }
   });
 
-  return sentences;
+  return result;
 };
 
 
