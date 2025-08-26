@@ -1,82 +1,178 @@
 /* src/styles/SentenceDisplay.css */
 
-.sentence-container {
+.sentence-display-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* --- Status, Initial, and Error States --- */
+.status-message {
+  font-size: 1.5rem;
+  color: #555;
+  padding: 2rem;
+}
+
+.error-message {
+  color: #d93025;
+  font-weight: 500;
+  white-space: pre-wrap; /* Allows line breaks in the error message */
+}
+
+.initial-state {
+  padding: 2rem;
+}
+
+.initial-state h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.initial-state p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.initial-state .action-button {
+  background-color: #4285f4;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.initial-state .action-button:hover {
+  background-color: #3367d6;
+}
+
+/* --- Main Sentence View --- */
+.sentence-view {
+  width: 100%;
+}
+
+.sentence-counter {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 1rem;
+}
+
+.sentence-content {
+  margin: 1.5rem 0;
+  min-height: 100px; /* Reserve space to prevent layout shift */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  min-height: 120px;
-  justify-content: center;
 }
 
-/* --- MODIFIED --- */
-/* This container just sets the text properties. No more flex or position! */
-.target-sentence {
-  line-height: 1.7;
+.sentence {
   font-size: 2rem;
+  line-height: 1.6;
   font-weight: 500;
-  text-align: left; /* Ensures text aligns left if it wraps */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
-/* This is now just a simple inline wrapper and doesn't need its own rule. */
-.sentence-text-wrapper {
-  /* This rule can be empty or removed */
+.target-sentence {
+  color: #333;
 }
 
 .native-sentence {
-  line-height: 1.7;
-  font-size: 1.2rem;
-  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  color: #666;
+  font-weight: 400;
 }
 
-/* The .word styling is now simpler, removing margin */
-.target-sentence .word {
+.word-segment {
+  margin-right: 0.25em; /* Space between words */
+}
+
+.clickable-word {
   cursor: pointer;
-  transition: filter 0.2s ease;
-  padding: 2px 0;
+  transition: transform 0.1s ease, background-color 0.2s;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-.target-sentence .word:hover {
-  filter: brightness(1.3);
+.clickable-word:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+  transform: translateY(-2px);
 }
 
-/* --- MODIFIED --- */
-/* This is the key to the solution. The button is now an inline element. */
-.target-sentence .speak-button {
-  display: inline-block; /* Allows sizing while staying in the text flow */
-  vertical-align: middle; /* Aligns the button vertically with the text */
-  margin-left: 8px; /* Adds space after the last word */
-  
-  /* These are for appearance */
+.punctuation {
+  color: #444; /* Keep punctuation a consistent, neutral color */
+}
+
+.speak-button {
   background: none;
   border: none;
   font-size: 1.8rem;
   cursor: pointer;
-  color: var(--text-color-secondary);
-  width: 44px;
-  height: 44px;
-  line-height: 44px; /* Helps vertically center the emoji */
-  text-align: center;
-  padding: 0;
+  margin-left: 0.5rem;
+  padding: 5px;
   transition: transform 0.2s;
+  vertical-align: middle;
 }
 
-.target-sentence .speak-button:hover {
-  transform: scale(1.1);
+.speak-button:hover {
+  transform: scale(1.2);
 }
 
-/* Responsive styles */
-@media (max-width: 767px) {
-  .target-sentence {
+/* --- Navigation and Action Buttons --- */
+.sentence-nav,
+.sentence-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.sentence-nav button,
+.sentence-actions button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.sentence-nav button:hover:not(:disabled),
+.sentence-actions button:hover:not(:disabled) {
+  background-color: #e9ecef;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.sentence-nav button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sentence {
     font-size: 1.5rem;
   }
   .native-sentence {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
-}
-
-.actions {
-  display: flex;
-  justify-content: center; /* This is the key property for horizontal centering */
-  flex-wrap: wrap;         /* Allows buttons to stack on narrow screens */
-  gap: 1rem;               /* Adds a nice space between the buttons */
+  .sentence-display-container {
+    padding: 1rem;
+    margin: 1rem;
+  }
 }
