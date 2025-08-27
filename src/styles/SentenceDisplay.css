@@ -1,82 +1,205 @@
-/* src/styles/SentenceDisplay.css */
+/* --- src/styles/SentenceDisplay.css --- */
 
-.sentence-container {
+/* :root can be defined in your main App.css or index.css for global variables */
+:root {
+  --primary-color: #007bff;
+  --primary-hover-color: #0056b3;
+  --secondary-color: #6c757d;
+  --background-color: #f8f9fa;
+  --card-background: #ffffff;
+  --text-color: #212529;
+  --light-text-color: #6c757d;
+  --border-color: #dee2e6;
+  --error-color: #dc3545;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 12px;
+}
+
+/* --- Main Card --- */
+.sentence-card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  width: 80%;
+  margin: 2rem auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  min-height: 120px;
+  gap: 1.5rem; /* Consistent spacing between sections */
+  transition: all 0.3s ease;
+}
+
+/* --- Initial & Status States --- */
+.initial-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  gap: 1rem;
+  min-height: 300px; /* Give it some substance */
 }
 
-/* --- MODIFIED --- */
-/* This container just sets the text properties. No more flex or position! */
-.target-sentence {
-  line-height: 1.7;
-  font-size: 2rem;
+.status-message {
+  font-size: 1.2rem;
+  color: var(--light-text-color);
+  margin: 0;
+}
+
+.status-message.error {
+  color: var(--error-color);
   font-weight: 500;
-  text-align: left; /* Ensures text aligns left if it wraps */
 }
 
-/* This is now just a simple inline wrapper and doesn't need its own rule. */
-.sentence-text-wrapper {
-  /* This rule can be empty or removed */
+.status-message.error.small {
+  font-size: 0.9rem;
+  background-color: #fff0f1;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-bottom: -0.5rem; /* Pull it closer to the content */
+}
+
+/* --- Sentence Display Area --- */
+.sentence-container {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.target-sentence {
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .native-sentence {
-  line-height: 1.7;
   font-size: 1.2rem;
-  color: var(--color-text-secondary);
+  color: var(--light-text-color);
+  min-height: 1.5em; /* Prevent layout shift when showing/hiding */
 }
 
-/* The .word styling is now simpler, removing margin */
-.target-sentence .word {
+.word {
   cursor: pointer;
-  transition: filter 0.2s ease;
-  padding: 2px 0;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.target-sentence .word:hover {
-  filter: brightness(1.3);
+.word:hover {
+  background-color: var(--primary-color);
+  color: white;
 }
 
-/* --- MODIFIED --- */
-/* This is the key to the solution. The button is now an inline element. */
-.target-sentence .speak-button {
-  display: inline-block; /* Allows sizing while staying in the text flow */
-  vertical-align: middle; /* Aligns the button vertically with the text */
-  margin-left: 8px; /* Adds space after the last word */
-  
-  /* These are for appearance */
+/* --- Buttons & Actions --- */
+
+/* A more general button style */
+.actions button,
+.navigation button,
+.generate-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Primary Button Style (for the most important actions) */
+.generate-button,
+.actions button:last-child {
+  background-color: var(--primary-color);
+  color: white;
+}
+.generate-button:hover,
+.actions button:last-child:hover {
+  background-color: var(--primary-hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* Secondary Button Style */
+.actions button:first-child,
+.navigation button {
+  background-color: #e9ecef;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.actions button:first-child:hover,
+.navigation button:hover:not(:disabled) {
+  background-color: #d8dde2;
+  border-color: #c7ced3;
+}
+
+.navigation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.speak-button {
   background: none;
   border: none;
-  font-size: 1.8rem;
+  font-size: 2rem;
   cursor: pointer;
-  color: var(--text-color-secondary);
-  width: 44px;
-  height: 44px;
-  line-height: 44px; /* Helps vertically center the emoji */
-  text-align: center;
-  padding: 0;
-  transition: transform 0.2s;
+  color: var(--secondary-color);
+  transition: color 0.2s ease, transform 0.2s ease;
+  padding: 0.5rem;
+  line-height: 1; /* Fix vertical alignment */
 }
 
-.target-sentence .speak-button:hover {
+.speak-button:hover {
+  color: var(--primary-color);
   transform: scale(1.1);
 }
 
-/* Responsive styles */
-@media (max-width: 767px) {
-  .target-sentence {
-    font-size: 1.5rem;
+/* --- Layout for Actions & Navigation --- */
+.actions,
+.navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+.navigation span {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--secondary-color);
+  min-width: 80px; /* Give it space */
+  text-align: center;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+  .sentence-card {
+    padding: 1.5rem;
+    margin: 1rem;
   }
+
+  .target-sentence {
+    font-size: 1.8rem;
+    flex-direction: column; /* Stack sentence and button vertically */
+  }
+
   .native-sentence {
     font-size: 1rem;
   }
-}
+  
+  .actions, .navigation {
+    flex-direction: column;
+    width: 100%;
+  }
 
-.actions {
-  display: flex;
-  justify-content: center; /* This is the key property for horizontal centering */
-  flex-wrap: wrap;         /* Allows buttons to stack on narrow screens */
-  gap: 1rem;               /* Adds a nice space between the buttons */
+  .actions button, .navigation button, .generate-button {
+    width: 100%;
+  }
 }
