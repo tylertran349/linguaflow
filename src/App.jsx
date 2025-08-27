@@ -19,7 +19,7 @@ function App() {
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
     difficulty: "B2",
-    model: "gemini-1.5-flash", // Updated model name as gemini-2.5-flash is not a valid model
+    model: "gemini-2.5-flash",
     ttsEngine: "web-speech",
     sentenceCount: 20,
     webSpeechRate: 0.6,
