@@ -1,6 +1,5 @@
 // src/components/SentenceDisplay.jsx
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -19,9 +18,23 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTranslationVisible, setIsTranslationVisible] = useState(false);
+  const [ellipsis, setEllipsis] = useState('.');
 
   const currentSentence = sentences[currentSentenceIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setEllipsis(prev => {
+          if (prev === '...') return '.';
+          if (prev === '..') return '...';
+          return '..';
+        });
+      }, 300); // Animation speed in milliseconds
+
+      return () => clearInterval(interval); // Cleanup on component unmount or when isLoading becomes false
+    }
+  }, [isLoading]);
 
   // --- MODIFIED: The generate function now uses and updates the history ---
   const generate = async () => {
@@ -92,7 +105,7 @@ function SentenceDisplay({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   };
 
   // --- The component's JSX is unchanged and correct. ---
-  if (isLoading) return <p className="status-message">Generating sentences, please wait...</p>;
+  if (isLoading) return <p className="status-message">Generating sentences, please wait{ellipsis}</p>;
   
   if (sentences.length === 0) {
     return (
