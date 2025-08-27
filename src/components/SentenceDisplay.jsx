@@ -153,45 +153,57 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     });
   };
 
-  // Renders the NATIVE sentence using the correct sentence for order
-  // and the color map for styling, now with case-insensitive matching.
+    // Renders the NATIVE sentence using a robust method that preserves all spacing and punctuation.
   const renderNativeSentence = (fullSentence, colorMap) => {
     if (!fullSentence || !colorMap) return null;
 
-    // Create a lookup map from the LOWERCASE native word/phrase to its color
+    // Create a lookup map from the LOWERCASE and TRIMMED native word to its color
     const nativeToColorMap = new Map(
-      colorMap.filter(item => item.native).map(item => [item.native.toLowerCase(), item.color])
+      colorMap.filter(item => item.native && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
     );
     
-    // Get all phrases we need to find (now in lowercase)
+    // Get all phrases we need to find (now clean) and sort them to match longest first
     const phrasesToFind = Array.from(nativeToColorMap.keys()).sort((a, b) => b.length - a.length);
 
     if (phrasesToFind.length === 0) {
       return <span>{fullSentence}</span>;
     }
 
-    // Create a case-insensitive regex ('i' flag)
+    // Create a case-insensitive regex ('i' flag) to find all occurrences of our words
     const regex = new RegExp(`(${phrasesToFind.map(escapeRegExp).join('|')})`, 'gi');
     
-    // Split the sentence by these phrases, keeping the delimiters
-    const parts = fullSentence.split(regex).filter(Boolean);
+    // Use matchAll to get all matches with their indices
+    const matches = [...fullSentence.matchAll(regex)];
+    const result = [];
+    let lastIndex = 0;
 
-    return parts.map((part, index) => {
-      // Normalize the part from the sentence for lookup
-      const lookupKey = part.toLowerCase();
-      const color = nativeToColorMap.get(lookupKey);
-
-      if (color) {
-        // It's a match! Render the ORIGINAL part (with its original casing)
-        const letters = part.split('').map((char, i) => (
-          <span key={i} style={{ color }}>{char}</span>
-        ));
-        return <span key={index} className="word-segment">{letters}</span>;
-      } else {
-        // This is plain text between our colored phrases (e.g., spaces, punctuation)
-        return <span key={index}>{part}</span>;
+    // Iterate through matches and build the output array
+    for (const match of matches) {
+      // 1. Add the plain text that comes BEFORE the current match
+      if (match.index > lastIndex) {
+        result.push(fullSentence.substring(lastIndex, match.index));
       }
-    });
+
+      // 2. Add the colored matched word
+      const matchedText = match[0];
+      const lookupKey = matchedText.trim().toLowerCase();
+      const color = nativeToColorMap.get(lookupKey);
+      
+      const letters = matchedText.split('').map((char, i) => (
+        <span key={i} style={{ color }}>{char}</span>
+      ));
+      result.push(<span key={`match-${match.index}`} className="word-segment">{letters}</span>);
+      
+      lastIndex = match.index + matchedText.length;
+    }
+
+    // 3. Add any remaining plain text after the very last match
+    if (lastIndex < fullSentence.length) {
+      result.push(fullSentence.substring(lastIndex));
+    }
+
+    // Map the final array to React elements
+    return result.map((part, index) => <span key={index}>{part}</span>);
   };
 
   const currentSentence = sentences[currentSentenceIndex];

@@ -88,44 +88,55 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
     Your goal is to generate sentences and a PRECISE, GRANULAR word map for color-coding. The map must show how individual Vietnamese words correspond to individual English words.
 
     **MANDATORY GRANULARITY RULE:**
-    The "wordMap" must be broken down into the smallest possible meaningful units. Your primary goal is to map ONE word to ONE word wherever possible.
-    1.  **SEPARATE NOUNS AND ADJECTIVES:** This is the most important rule. A noun and the adjective(s) that modify it MUST be in separate objects in the map. For example, for "sản phẩm hữu cơ", the map MUST be \`[{"target": "sản phẩm", "native": "products"}, {"target": "hữu cơ", "native": "organic"}]\`.
+    The "wordMap" must be broken down into the smallest possible meaningful units.
+    1.  **SEPARATE NOUNS AND ADJECTIVES:** A noun and the adjective(s) that modify it MUST be in separate objects in the map.
     2.  **SEPARATE VERBS AND OBJECTS:** A verb and its object must be in separate map objects.
-    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes like "chất lượng cao" for "high-quality", or past tense markers like "đã xem" for "watched"). Be very conservative with grouping.
+    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes like "chất lượng cao" for "high-quality", or past tense markers like "đã xem" for "watched").
+
+    **CRITICAL MAPPING RULE:**
+    The "wordMap" MUST be a complete decomposition of the "nativeSentence". EVERY SINGLE WORD that appears in the "nativeSentence" must be present as a "native" value in one of the "wordMap" objects. There can be NO omissions. For example, if the sentence is "The concept of mass", the map must contain objects with "native" values for "The", "concept", "of", and "mass".
 
     **CRITICAL RULE FOR ENGLISH TRANSLATION:**
     While the "wordMap" shows the direct, granular translation, the "nativeSentence" field MUST be grammatically perfect and sound natural in English. You will achieve this by reassembling the "native" values from the word map into the correct English syntactic order (e.g., moving adjectives before nouns).
 
     **OUTPUT FORMAT:**
-    Provide the output as a single, valid JSON array of objects. Each object must have THREE keys:
-    1.  "targetSentence": The complete sentence in Vietnamese.
-    2.  "nativeSentence": The grammatically correct, natural-sounding English translation.
-    3.  "wordMap": An array of objects showing the granular, one-to-one mapping.
+    Provide the output as a single, valid JSON array of objects with "targetSentence", "nativeSentence", and "wordMap" keys.
 
     **EXAMPLE OF CORRECT GRANULAR MAPPING:**
     [{
-      "targetSentence": "Công ty này sản xuất các sản phẩm hữu cơ chất lượng cao.",
-      "nativeSentence": "This company produces high-quality organic products.",
+      "targetSentence": "Khái niệm về khối lượng là nền tảng của vật lý.",
+      "nativeSentence": "The concept of mass is the foundation of physics.",
       "wordMap": [
-        { "target": "Công ty này", "native": "This company" },
-        { "target": "sản xuất", "native": "produces" },
-        { "target": "các", "native": "" },
-        { "target": "sản phẩm", "native": "products" },
-        { "target": "hữu cơ", "native": "organic" },
-        { "target": "chất lượng cao", "native": "high-quality" }
+        { "target": "", "native": "The" },
+        { "target": "Khái niệm về", "native": "concept of" },
+        { "target": "khối lượng", "native": "mass" },
+        { "target": "là", "native": "is" },
+        { "target": "", "native": "the" },
+        { "target": "nền tảng", "native": "foundation" },
+        { "target": "của", "native": "of" },
+        { "target": "vật lý", "native": "physics" }
       ]
     }]
   `;
   
   const result = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate color-coded sentences.");
 
-  // Post-process to add colors
+  // Post-process to add colors intelligently
   result.forEach(sentence => {
     if (sentence.wordMap) {
-      sentence.colorMapping = sentence.wordMap.map((pair, index) => ({
-        ...pair,
-        color: RAINBOW_HEX_PALETTE[index % RAINBOW_HEX_PALETTE.length]
-      }));
+      let colorIndex = 0; // Use a separate index for assigning rainbow colors
+      sentence.colorMapping = sentence.wordMap.map((pair) => {
+        let color;
+        // If the target word exists, it's a direct translation, so give it a rainbow color
+        if (pair.target && pair.target.trim() !== '') {
+          color = RAINBOW_HEX_PALETTE[colorIndex % RAINBOW_HEX_PALETTE.length];
+          colorIndex++; // Only increment the color index for "real" words
+        } else {
+          // If the target is empty, it's a grammatical insertion; make it black
+          color = '#000000';
+        }
+        return { ...pair, color };
+      });
       delete sentence.wordMap; // Remove original map to save space
     }
   });
