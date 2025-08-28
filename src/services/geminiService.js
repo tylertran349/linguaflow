@@ -60,6 +60,10 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
     Now, generate the ${settings.sentenceCount} items based on my request. Remember to only output the JSON array and nothing else.
   `;
 
+  const apiVersion = 'v1beta'; // This is the version the SDK currently uses
+  const constructedUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${settings.model}:generateContent`;
+  console.log(`Calling Gemini API. Constructed URL: ${constructedUrl}`);
+
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
