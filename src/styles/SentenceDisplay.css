@@ -1,178 +1,205 @@
-/* src/styles/SentenceDisplay.css */
+/* --- src/styles/SentenceDisplay.css --- */
 
-.sentence-display-container {
-  width: 100%;
-  max-width: 800px;
+/* :root can be defined in your main App.css or index.css for global variables */
+:root {
+  --primary-color: #007bff;
+  --primary-hover-color: #0056b3;
+  --secondary-color: #6c757d;
+  --background-color: #f8f9fa;
+  --card-background: #ffffff;
+  --text-color: #212529;
+  --light-text-color: #6c757d;
+  --border-color: #dee2e6;
+  --error-color: #dc3545;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 12px;
+}
+
+/* --- Main Card --- */
+.sentence-card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  width: 80%;
   margin: 2rem auto;
-  padding: 2rem;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Consistent spacing between sections */
+  transition: all 0.3s ease;
+}
+
+/* --- Initial & Status States --- */
+.initial-state-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-}
-
-/* --- Status, Initial, and Error States --- */
-.status-message {
-  font-size: 1.5rem;
-  color: #555;
-  padding: 2rem;
-}
-
-.error-message {
-  color: #d93025;
-  font-weight: 500;
-  white-space: pre-wrap; /* Allows line breaks in the error message */
-}
-
-.initial-state {
-  padding: 2rem;
-}
-
-.initial-state h2 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.initial-state p {
-  font-size: 1.1rem;
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.initial-state .action-button {
-  background-color: #4285f4;
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.initial-state .action-button:hover {
-  background-color: #3367d6;
-}
-
-/* --- Main Sentence View --- */
-.sentence-view {
-  width: 100%;
-}
-
-.sentence-counter {
-  font-size: 1rem;
-  color: #888;
-  margin-bottom: 1rem;
-}
-
-.sentence-content {
-  margin: 1.5rem 0;
-  min-height: 100px; /* Reserve space to prevent layout shift */
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.sentence {
-  font-size: 2rem;
-  line-height: 1.6;
-  font-weight: 500;
-  display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  gap: 1rem;
+  min-height: 300px; /* Give it some substance */
+}
+
+.status-message {
+  font-size: 1.2rem;
+  color: var(--light-text-color);
+  margin: 0;
+}
+
+.status-message.error {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+.status-message.error.small {
+  font-size: 0.9rem;
+  background-color: #fff0f1;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-bottom: -0.5rem; /* Pull it closer to the content */
+}
+
+/* --- Sentence Display Area --- */
+.sentence-container {
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .target-sentence {
-  color: #333;
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .native-sentence {
-  font-size: 1.5rem;
-  color: #666;
-  font-weight: 400;
+  font-size: 1.2rem;
+  color: var(--light-text-color);
+  min-height: 1.5em; /* Prevent layout shift when showing/hiding */
 }
 
-.word-segment {
-  margin-right: 0.25em; /* Space between words */
-}
-
-.clickable-word {
+.word {
   cursor: pointer;
-  transition: transform 0.1s ease, background-color 0.2s;
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.clickable-word:hover {
-  background-color: rgba(66, 133, 244, 0.1);
+.word:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* --- Buttons & Actions --- */
+
+/* A more general button style */
+.actions button,
+.navigation button,
+.generate-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Primary Button Style (for the most important actions) */
+.generate-button,
+.actions button:last-child {
+  background-color: var(--primary-color);
+  color: white;
+}
+.generate-button:hover,
+.actions button:last-child:hover {
+  background-color: var(--primary-hover-color);
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
 }
 
-.punctuation {
-  color: #444; /* Keep punctuation a consistent, neutral color */
+/* Secondary Button Style */
+.actions button:first-child,
+.navigation button {
+  background-color: #e9ecef;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.actions button:first-child:hover,
+.navigation button:hover:not(:disabled) {
+  background-color: #d8dde2;
+  border-color: #c7ced3;
+}
+
+.navigation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .speak-button {
   background: none;
   border: none;
-  font-size: 1.8rem;
+  font-size: 2rem;
   cursor: pointer;
-  margin-left: 0.5rem;
-  padding: 5px;
-  transition: transform 0.2s;
-  vertical-align: middle;
+  color: var(--secondary-color);
+  transition: color 0.2s ease, transform 0.2s ease;
+  padding: 0.5rem;
+  line-height: 1; /* Fix vertical alignment */
 }
 
 .speak-button:hover {
-  transform: scale(1.2);
+  color: var(--primary-color);
+  transform: scale(1.1);
 }
 
-/* --- Navigation and Action Buttons --- */
-.sentence-nav,
-.sentence-actions {
-  margin-top: 1.5rem;
+/* --- Layout for Actions & Navigation --- */
+.actions,
+.navigation {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 1rem;
+  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
 }
 
-.sentence-nav button,
-.sentence-actions button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s;
+.navigation span {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--secondary-color);
+  min-width: 80px; /* Give it space */
+  text-align: center;
 }
 
-.sentence-nav button:hover:not(:disabled),
-.sentence-actions button:hover:not(:disabled) {
-  background-color: #e9ecef;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.sentence-nav button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Responsive adjustments */
+/* --- Responsive Design --- */
 @media (max-width: 768px) {
-  .sentence {
-    font-size: 1.5rem;
-  }
-  .native-sentence {
-    font-size: 1.2rem;
-  }
-  .sentence-display-container {
-    padding: 1rem;
+  .sentence-card {
+    padding: 1.5rem;
     margin: 1rem;
+  }
+
+  .target-sentence {
+    font-size: 1.8rem;
+    flex-direction: column; /* Stack sentence and button vertically */
+  }
+
+  .native-sentence {
+    font-size: 1rem;
+  }
+  
+  .actions, .navigation {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .actions button, .navigation button, .generate-button {
+    width: 100%;
   }
 }
