@@ -115,7 +115,7 @@ function SettingsModal({
           <div className="settings-section">
               <h3>Topic/Theme</h3>
               <p>Specify a topic or theme to guide the sentence generation. If left blank, random sentences will be generated.</p>
-              <textarea value={tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="e.g., technology, travel, cooking..." rows="4" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'vertical' }}/>
+              <textarea value={tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="Enter words or paragraphs here..." rows="10" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'vertical' }}/>
           </div>
 
           <div className="settings-section">
