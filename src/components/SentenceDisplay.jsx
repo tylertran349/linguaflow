@@ -122,11 +122,14 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     }
   };
 
-  // --- LOGIC UNCHANGED, BUT className updated to match main branch CSS ---
+    // --- MODIFIED FUNCTION ---
+  // Renders the TARGET sentence, now with corrected spacing around punctuation.
   const renderTargetSentence = (colorMap) => {
-    const punctuationRegex = /([.,;?!:"()\[\]{}])$/;
-
     if (!colorMap) return null;
+
+    const punctuationRegex = /([.,;?!:"()\[\]{}])$/;
+    // Regex to check if a string consists ONLY of punctuation
+    const punctuationOnlyRegex = /^[.,;?!:"()\[\]{}]+$/;
 
     return colorMap.map((item, index) => {
       const text = item.target || '';
@@ -139,18 +142,27 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
         punc = match[1];
       }
 
-      const wordElement = word ? (
-        // Changed className="clickable-word" to "word" for styling compatibility
-        <span className="word" onClick={() => handleWordSpeak(word)}>
-          <span style={{ color: item.color }}>{word}</span>
-        </span>
-      ) : null;
+      // Determine if a trailing space is needed
+      const isLastItem = index === colorMap.length - 1;
+      let trailingSpace = null;
+      if (!isLastItem) {
+        const nextItem = colorMap[index + 1];
+        // Only add a space if the next item is NOT exclusively punctuation
+        if (!punctuationOnlyRegex.test(nextItem.target.trim())) {
+          trailingSpace = ' ';
+        }
+      }
 
       return (
+        // Use React.Fragment to group elements without adding an extra DOM node
         <span key={index}>
-          {wordElement}
+          {word && (
+            <span className="word" onClick={() => handleWordSpeak(word)}>
+              <span style={{ color: item.color }}>{word}</span>
+            </span>
+          )}
           {punc && <span className="punctuation">{punc}</span>}
-          {index < colorMap.length - 1 ? ' ' : ''}
+          {trailingSpace}
         </span>
       );
     });
