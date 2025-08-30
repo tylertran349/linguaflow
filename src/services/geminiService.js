@@ -85,28 +85,36 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   }
 };
 
-// --- NEW FUNCTION FOR SENTENCE GENERATOR ---
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
     const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Your goal is to generate sentences and a PRECISE, GRANULAR word map for color-coding. The map must show how individual Vietnamese words correspond to individual English words.
+    Your goal is to generate sentences and a PRECISE, GRANULAR word map for color-coding. The map must show how individual words in the target language correspond to words in the native language.
+
+    **CRITICAL LANGUAGE RULE:**
+    Pay close attention to the languages defined earlier in the prompt.
+    - The "targetSentence" field MUST be in ${settings.targetLanguage}.
+    - The "nativeSentence" field MUST be in ${settings.nativeLanguage}.
+    Do NOT reverse these roles.
 
     **MANDATORY GRANULARITY RULE:**
     The "wordMap" must be broken down into the smallest possible meaningful units.
     1.  **SEPARATE NOUNS AND ADJECTIVES:** A noun and the adjective(s) that modify it MUST be in separate objects in the map.
     2.  **SEPARATE VERBS AND OBJECTS:** A verb and its object must be in separate map objects.
-    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes like "chất lượng cao" for "high-quality", or past tense markers like "đã xem" for "watched").
+    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes or fixed expressions).
 
     **CRITICAL MAPPING RULE:**
-    The "wordMap" MUST be a complete decomposition of the "nativeSentence". EVERY SINGLE WORD that appears in the "nativeSentence" must be present as a "native" value in one of the "wordMap" objects. There can be NO omissions. For example, if the sentence is "The concept of mass", the map must contain objects with "native" values for "The", "concept", "of", and "mass".
+    The "wordMap" MUST be a complete decomposition of the "nativeSentence". EVERY SINGLE WORD that appears in the "nativeSentence" must be present as a "native" value in one of the "wordMap" objects. There can be NO omissions. Grammatical words like "the", "a", "of" must be included.
 
-    **CRITICAL RULE FOR ENGLISH TRANSLATION:**
-    While the "wordMap" shows the direct, granular translation, the "nativeSentence" field MUST be grammatically perfect and sound natural in English. You will achieve this by reassembling the "native" values from the word map into the correct English syntactic order (e.g., moving adjectives before nouns).
+    **CRITICAL RULE FOR NATIVE LANGUAGE TRANSLATION:**
+    While the "wordMap" shows the direct, granular translation, the "nativeSentence" field MUST be grammatically perfect and sound natural in the native language. You will achieve this by reassembling the "native" values from the word map into the correct syntactic order for that language.
 
     **OUTPUT FORMAT:**
     Provide the output as a single, valid JSON array of objects with "targetSentence", "nativeSentence", and "wordMap" keys.
 
-    **EXAMPLE OF CORRECT GRANULAR MAPPING:**
+    ---
+    **EXAMPLES OF CORRECT GRANULAR MAPPING:**
+
+    **EXAMPLE 1: Target = Vietnamese, Native = English**
     [{
       "targetSentence": "Khái niệm về khối lượng là nền tảng của vật lý.",
       "nativeSentence": "The concept of mass is the foundation of physics.",
@@ -121,7 +129,39 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
         { "target": "vật lý", "native": "physics" }
       ]
     }]
+
+    **EXAMPLE 2: Target = English, Native = Vietnamese**
+    [{
+      "targetSentence": "I want to learn a new language.",
+      "nativeSentence": "Tôi muốn học một ngôn ngữ mới.",
+      "wordMap": [
+        { "target": "I", "native": "Tôi" },
+        { "target": "want to", "native": "muốn" },
+        { "target": "learn", "native": "học" },
+        { "target": "a", "native": "một" },
+        { "target": "new", "native": "mới" },
+        { "target": "language", "native": "ngôn ngữ" }
+      ]
+    }]
+
+    **EXAMPLE 3: Target = French, Native = English**
+    [{
+      "targetSentence": "La grande maison rouge est au bout de la rue.",
+      "nativeSentence": "The big red house is at the end of the street.",
+      "wordMap": [
+        { "target": "", "native": "The" },
+        { "target": "grande", "native": "big" },
+        { "target": "rouge", "native": "red" },
+        { "target": "maison", "native": "house" },
+        { "target": "est", "native": "is" },
+        { "target": "au bout de", "native": "at the end of" },
+        { "target": "", "native": "the" },
+        { "target": "la rue", "native": "street" }
+      ]
+    }]
   `;
+
+  console.log(specificInstructions);
   
   const result = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate color-coded sentences.");
 
