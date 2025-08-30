@@ -5,7 +5,7 @@ import { supportedLanguages } from '../utils/languages';
 // --- Constants ---
 const CEFR_LEVELS = [{ value: "A1", label: "A1 (Beginner)" }, { value: "A2", label: "A2 (Upper Beginner)" }, { value: "B1", label: "B1 (Intermediate)" }, { value: "B2", label: "B2 (Upper Intermediate)" }, { value: "C1", label: "C1 (Advanced)" }, { value: "C2", label: "C2 (Native-like)" }];
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
-const TTS_ENGINES = [{ value: "web-speech", label: "Web Speech API (Default)" }, { value: "puter", label: "Puter AI (doesn't support some languages)" }, { value: "google-translate", label: "Google Translate Voice (local only)" }];
+const TTS_ENGINES = [{ value: "web-speech", label: "Web Speech API (default)" }, { value: "puter", label: "Puter AI (doesn't support some languages)" }, { value: "google-translate", label: "Google Translate (local only)" }];
 
 function SettingsModal({
   isOpen,
