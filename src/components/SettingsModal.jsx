@@ -152,7 +152,7 @@ function SettingsModal({
           <div className="settings-section">
               <h3>Generation Options</h3>
               <div className="setting-item">
-                  <label htmlFor="ttsEngine">Voice Engine</label>
+                  <label htmlFor="ttsEngine">Text-to-Speech Engine</label>
                   <select name="ttsEngine" id="ttsEngine" value={tempSettings.ttsEngine} onChange={handleSettingChange}>
                       {TTS_ENGINES.map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
                   </select>
@@ -182,7 +182,7 @@ function SettingsModal({
                   </select>
               </div>
               <div className="setting-item">
-                  <label htmlFor="sentenceCount">Number of Sentences</label>
+                  <label htmlFor="sentenceCount">Number of Sentences to Generate</label>
                   <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
               </div>
           </div>
