@@ -158,7 +158,7 @@ function SettingsModal({
                   </select>
               </div>
               <div className="setting-item">
-                  <label htmlFor="nativeLanguage">Your Language:</label>
+                  <label htmlFor="nativeLanguage">Your Native Language:</label>
                   <select name="nativeLanguage" id="nativeLanguage" value={tempSettings.nativeLanguage} onChange={handleSettingChange}>
                       {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
                   </select>
