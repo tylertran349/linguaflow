@@ -17,7 +17,7 @@ The primary objective of this project is to create an immersive learning environ
 
 ## Getting Started
 
-To use this website, you will need a Google Gemini API key. If you want to use the Google Translate text-to-speech engine, you will also have to run LinguaFlow locally on your computer. The following instructions will guide you through the entire process.
+To use this website, you will need a Google Gemini API key. If you want to use the Google Translate text-to-speech engine, you will also have to run LinguaFlow locally on your computer (running LinguaFlow locally is optional if you are not using the Google Translate text-to-speech engine). The following instructions will guide you through the entire process.
 
 ## Getting Your Google Gemini API Key (required)
 
