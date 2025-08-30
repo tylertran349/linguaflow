@@ -33,9 +33,11 @@ To use this application on your own computer, you will need two things: the appl
 
 6. Click on the "Search Google Cloud projects" input field and in the dropdown menu, select the Google Cloud project you created in step 2.
 
-7. Click the blue **"Create API key in existing project"** button. Copy the generated API key (it is a long string of random letters and numbers) and save it somewhere safe for the next section (like a temporary text file).
+7. Click the blue **"Create API key in existing project"** button. Copy the generated API key (it is a long string of random letters and numbers) and save it somewhere safe like a temporary text file.
 
-## Running the Application Locally (required for the Google Translate TTS option, optional otherwise)
+8. On LinguaFlow, click on **"Settings"** near the bottom of the sidebar and paste the API key you copied from step 7 in the **"Google Gemini API Key"** field of the settings menu.
+
+## Running the Application Locally (optional, only required for the Google Translate TTS option)
 
 ### 1. Prerequisites
 
@@ -72,6 +74,7 @@ Before you begin, ensure you have the following software installed on your compu
 3.  In the running application, navigate to the settings menu. Paste the Google Gemini API key you obtained earlier into the designated field to begin generating content.
 ## How to Use
 
-1. Open the settings panel to select your native language, the language you want to learn, and the CEFR difficulty level. You can provide a topic/theme to guide the AI in generating more relevant content for you (optional).
-2. Select one of the learning modules (e.g., "Sentence Generator," "Unscramble Words", "Read & Respond", etc.).
-3. On the learning module displayed on your screen, click on the generate button to have the AI generate custom sentences or exercises.
+1. Open the settings menu to select your native language, the language you want to learn, and your CEFR level in the language you want to learn. 
+2. **OPTIONAL:** You can provide a topic/theme to guide the AI in generating more relevant content for you, change the text-to-speech engine, adjust the text-to-speech playback speed for the Web Speech API and Google Translate TTS options, change the Gemini model (gemini-2.5-flash-lite is fastest but most prone to making mistakes, gemini-2.5-pro makes the fewest mistakes but is the slowest model, gemini-2.5-flash balances speed and accuracy/quality), and/or change the number of sentences generated every time you click on the generate button for a module.
+3. Select one of the learning modules (e.g., **"Sentence Generator",** **"Unscramble Words"**, **"Read & Respond"**, etc.).
+4. On the learning module displayed on your screen, click on the generate button to have the AI generate custom sentences/exercises.
