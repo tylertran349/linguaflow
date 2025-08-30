@@ -17,7 +17,7 @@ The primary objective of this project is to create an immersive learning environ
 
 ## Getting Started
 
-To use this application on your own computer, you will need two things: the application's code and a special access key from Google. The following instructions will guide you through the entire process.
+To use this website, you will need a Google Gemini API key. If you want to use the Google Translate text-to-speech engine, you will also have to run LinguaFlow locally on your computer. The following instructions will guide you through the entire process.
 
 ## Getting Your Google Gemini API Key (required)
 
@@ -66,12 +66,18 @@ Before you begin, ensure you have the following software installed on your compu
 
 1.  Once the installation is complete, run the following command to start the application:
     ```bash
-    npm start
+    npm run dev
     ```
 
-2.  This command will start the application and automatically open it in your default web browser, typically at the address `http://localhost:3000`.
+2.  In your web browser, navigate to the localhost URL given by the terminal window (e.g. `http://localhost:5173/linguaflow/`).
 
-3.  In the running application, navigate to the settings menu. Paste the Google Gemini API key you obtained earlier into the designated field to begin generating content.
+3. **OPTIONAL:** To use the Google Translate TTS engine, open another terminal window and run the following command while LinguaFlow is running locally:
+    ```bash
+    node server.js
+    ```
+
+4.  In the running application, navigate to the settings menu. Paste the Google Gemini API key you obtained earlier into the designated field to begin generating content.
+
 ## How to Use
 
 1. Open the settings menu to select your native language, the language you want to learn, and your CEFR level in the language you want to learn. 
