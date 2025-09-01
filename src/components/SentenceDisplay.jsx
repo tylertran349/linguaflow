@@ -171,9 +171,25 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   // Renders the NATIVE sentence using a robust method that preserves all spacing and punctuation.
   const renderNativeSentence = (fullSentence, colorMap) => {
     if (!fullSentence || !colorMap) return null;
-    const nativeToColorMap = new Map(
-      colorMap.filter(item => item.native && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
-    );
+    
+    const nativeToColorMap = new Map();
+    const blackColor = '#000000';
+
+    for (const item of colorMap) {
+      if (!item.native || item.native.trim() === '') {
+        continue;
+      }
+      const key = item.native.trim().toLowerCase();
+      const existingColor = nativeToColorMap.get(key);
+
+      // This logic prioritizes "real" colored mappings.
+      // It will only set a color if the key is new, or if the new color isn't black.
+      // This prevents a valid colored word from being overwritten by a duplicate, black-colored entry.
+      if (!existingColor || item.color !== blackColor) {
+        nativeToColorMap.set(key, item.color);
+      }
+    }
+
     const phrasesToFind = Array.from(nativeToColorMap.keys()).sort((a, b) => b.length - a.length);
 
     if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
