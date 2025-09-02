@@ -124,72 +124,64 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
 
     // --- MODIFIED FUNCTION ---
   // Renders the TARGET sentence, now with corrected spacing around punctuation.
-  const renderTargetSentence = (colorMap) => {
-    if (!colorMap) return null;
+  const renderTargetSentence = (fullSentence, colorMap) => {
+    if (!fullSentence || !colorMap) return null;
 
-    const punctuationRegex = /([.,;?!:"()\[\]{}])$/;
-    // Regex to check if a string consists ONLY of punctuation
-    const punctuationOnlyRegex = /^[.,;?!:"()\[\]{}]+$/;
+    // Create a map from target phrases to their color and full object
+    const targetToInfoMap = new Map(
+      colorMap.filter(item => item.target && item.target.trim() !== '').map(item => [item.target.trim().toLowerCase(), item])
+    );
 
-    return colorMap.map((item, index) => {
-      const text = item.target || '';
-      let word = text;
-      let punc = '';
+    // Get a list of phrases to find, sorted by longest first to avoid partial matches
+    const phrasesToFind = Array.from(targetToInfoMap.keys()).sort((a, b) => b.length - a.length);
 
-      const match = text.match(punctuationRegex);
-      if (match) {
-        word = text.substring(0, match.index);
-        punc = match[1];
+    if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
+
+    // Build the Regex to find all phrases at once
+    const regex = new RegExp(`(${phrasesToFind.map(escapeRegExp).join('|')})`, 'gi');
+    const matches = [...fullSentence.matchAll(regex)];
+    const result = [];
+    let lastIndex = 0;
+
+    // Iterate through the correct sentence, coloring the parts found in our map
+    for (const match of matches) {
+      // Add any text between the last match and this one (e.g., spaces, punctuation)
+      if (match.index > lastIndex) {
+        result.push(fullSentence.substring(lastIndex, match.index));
       }
 
-      // Determine if a trailing space is needed
-      const isLastItem = index === colorMap.length - 1;
-      let trailingSpace = null;
-      if (!isLastItem) {
-        const nextItem = colorMap[index + 1];
-        // Only add a space if the next item is NOT exclusively punctuation
-        if (!punctuationOnlyRegex.test(nextItem.target.trim())) {
-          trailingSpace = ' ';
-        }
-      }
+      const matchedText = match[0];
+      const lookupKey = matchedText.trim().toLowerCase();
+      const info = targetToInfoMap.get(lookupKey); // Get { target, native, color }
 
-      return (
-        // Use React.Fragment to group elements without adding an extra DOM node
-        <span key={index}>
-          {word && (
-            <span className="word" onClick={() => handleWordSpeak(word)}>
-              <span style={{ color: item.color }}>{word}</span>
-            </span>
-          )}
-          {punc && <span className="punctuation">{punc}</span>}
-          {trailingSpace}
+      // Add the colored, clickable word
+      result.push(
+        <span
+          key={`match-${match.index}`}
+          className="word"
+          onClick={() => handleWordSpeak(info.target)}
+          style={{ color: info.color }}
+        >
+          {matchedText}
         </span>
       );
-    });
+      lastIndex = match.index + matchedText.length;
+    }
+
+    // Add any remaining text after the last match
+    if (lastIndex < fullSentence.length) {
+      result.push(fullSentence.substring(lastIndex));
+    }
+
+    return result.map((part, index) => <span key={index}>{part}</span>);
   };
 
   // Renders the NATIVE sentence using a robust method that preserves all spacing and punctuation.
   const renderNativeSentence = (fullSentence, colorMap) => {
     if (!fullSentence || !colorMap) return null;
-    
-    const nativeToColorMap = new Map();
-    const blackColor = '#000000';
-
-    for (const item of colorMap) {
-      if (!item.native || item.native.trim() === '') {
-        continue;
-      }
-      const key = item.native.trim().toLowerCase();
-      const existingColor = nativeToColorMap.get(key);
-
-      // This logic prioritizes "real" colored mappings.
-      // It will only set a color if the key is new, or if the new color isn't black.
-      // This prevents a valid colored word from being overwritten by a duplicate, black-colored entry.
-      if (!existingColor || item.color !== blackColor) {
-        nativeToColorMap.set(key, item.color);
-      }
-    }
-
+    const nativeToColorMap = new Map(
+      colorMap.filter(item => item.native && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
+    );
     const phrasesToFind = Array.from(nativeToColorMap.keys()).sort((a, b) => b.length - a.length);
 
     if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
@@ -242,7 +234,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
       <article className="sentence-container">
         <section className="target-sentence">
           <span className="sentence-text-wrapper">
-             <span>{renderTargetSentence(currentSentence.colorMapping)}</span>
+             <span>{renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping)}</span>
           </span>
           <button 
             onClick={() => handleSentenceSpeak(currentSentence.targetSentence)} 
