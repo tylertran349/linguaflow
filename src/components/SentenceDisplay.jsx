@@ -56,14 +56,15 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   useEffect(() => {
     let intervalId;
     if (isLoading) {
-      let dotCount = 1;
-      setLoadingMessage('Generating sentences, please wait.');
+      let dotCount = 0; // Start with 0 dots
+      setLoadingMessage('Generating sentences, please wait'); // Initial message with no dots
       intervalId = setInterval(() => {
-        dotCount = (dotCount % 3) + 1;
+        // Cycle dotCount from 0 to 3 (for "", ".", "..", "...")
+        dotCount = (dotCount + 1) % 4; 
         setLoadingMessage(`Generating sentences, please wait${'.'.repeat(dotCount)}`);
-      }, 400);
+      }, 400); // Interval speed
     }
-    return () => clearInterval(intervalId);
+    return () => clearInterval(intervalId); // Cleanup on component unmount or when isLoading changes
   }, [isLoading]);
   
   const handleGenerateSentences = async () => {
