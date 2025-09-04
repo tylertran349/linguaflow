@@ -75,6 +75,9 @@ function SettingsModal({
         webSpeechRate: rates.webSpeechRate,
         googleTranslateRate: rates.googleTranslateRate,
         sentenceCount: parseInt(tempSettings.sentenceCount, 10) || 10,
+        sentenceDisplayHistorySize: parseInt(tempSettings.sentenceDisplayHistorySize, 10) || 100,
+        readAndRespondHistorySize: parseInt(tempSettings.readAndRespondHistorySize, 10) || 50,
+        writeAResponseHistorySize: parseInt(tempSettings.writeAResponseHistorySize, 10) || 100,
       },
       apiKey: tempApiKey,
       topic: tempTopic,
@@ -184,6 +187,18 @@ function SettingsModal({
               <div className="setting-item">
                   <label htmlFor="sentenceCount">Number of Sentences to Generate</label>
                   <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="sentenceDisplayHistorySize">Sentence Display History Size</label>
+                  <input type="number" id="sentenceDisplayHistorySize" name="sentenceDisplayHistorySize" min="0" max="1000" value={tempSettings.sentenceDisplayHistorySize} onChange={handleSettingChange}/>
+              </div>
+               <div className="setting-item">
+                  <label htmlFor="readAndRespondHistorySize">Read & Respond History Size</label>
+                  <input type="number" id="readAndRespondHistorySize" name="readAndRespondHistorySize" min="0" max="1000" value={tempSettings.readAndRespondHistorySize} onChange={handleSettingChange}/>
+              </div>
+               <div className="setting-item">
+                  <label htmlFor="writeAResponseHistorySize">Write a Response History Size</label>
+                  <input type="number" id="writeAResponseHistorySize" name="writeAResponseHistorySize" min="0" max="1000" value={tempSettings.writeAResponseHistorySize} onChange={handleSettingChange}/>
               </div>
           </div>
 

@@ -38,7 +38,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     try {
       const fetchedData = await fetchPracticeQuestions(geminiApiKey, settings, topic, questionHistory);
       setQuestions(fetchedData);
-      setQuestionHistory(prev => [...prev, ...fetchedData].slice(-MAX_HISTORY_SIZE));
+      setQuestionHistory(prev => [...prev, ...fetchedData].slice(-settings.writeAResponseHistorySize));
       setCurrentQuestionIndex(0);
       setUserResponse('');
       setFeedback('');

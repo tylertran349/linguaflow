@@ -24,6 +24,9 @@ function App() {
     sentenceCount: 20,
     webSpeechRate: 0.6,
     googleTranslateRate: 1,
+    sentenceDisplayHistorySize: 100,
+    readAndRespondHistorySize: 100,
+    writeAResponseHistorySize: 100,
   });
   const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
   

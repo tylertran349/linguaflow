@@ -81,7 +81,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
       setSentences(newSentences);
 
       // In beta, the history stores the target sentence string.
-      const newHistory = [...sentenceHistory, ...newSentences.map(s => s.targetSentence)].slice(-100);
+      const newHistory = [...sentenceHistory, ...newSentences.map(s => s.targetSentence)].slice(-settings.sentenceDisplayHistorySize);
       setSentenceHistory(newHistory);
       
       setCurrentSentenceIndex(0);
