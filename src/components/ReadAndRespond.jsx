@@ -44,7 +44,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       if (fetchedData?.length > 0) {
         const newPassageTexts = fetchedData.map(p => p.passage);
         const combinedHistory = [...passageHistory, ...newPassageTexts];
-        setPassageHistory(combinedHistory.slice(-MAX_HISTORY_SIZE));
+        setPassageHistory(combinedHistory.slice(-settings.readAndRespondHistorySize));
       }
       
       // Reset state for the new set
