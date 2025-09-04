@@ -73,6 +73,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
       return;
     }
 
+    const lastViewedSentence = sentences[currentSentenceIndex];
+    if (lastViewedSentence) {
+        setSentenceHistory(prev => [...prev, lastViewedSentence.targetSentence].slice(-settings.sentenceDisplayHistorySize));
+    }
+
     setIsLoading(true);
     setError(null);
     setShowTranslation(false); // Hide translation for new sentences
@@ -80,10 +85,6 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     try {
       const newSentences = await fetchSentencesFromGemini(geminiApiKey, settings, topic, sentenceHistory);
       setSentences(newSentences);
-
-      // In beta, the history stores the target sentence string.
-      const newHistory = [...sentenceHistory, ...newSentences.map(s => s.targetSentence)].slice(-settings.sentenceDisplayHistorySize);
-      setSentenceHistory(newHistory);
       
       setCurrentSentenceIndex(0);
 
@@ -93,17 +94,28 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
       setIsLoading(false);
     }
   };
-
-  const handleNavigate = (direction) => {
-    const newIndex = currentSentenceIndex + direction;
-    if (newIndex >= 0 && newIndex < sentences.length) {
-      setCurrentSentenceIndex(newIndex);
-      setShowTranslation(false); // Hide translation when navigating
+  
+  const handleBack = () => {
+    const newIndex = currentSentenceIndex - 1;
+    if (newIndex >= 0) {
+        setCurrentSentenceIndex(newIndex);
+        setShowTranslation(false);
     }
   };
   
-  const handleBack = () => handleNavigate(-1);
-  const handleNext = () => handleNavigate(1);
+  const handleNext = () => {
+    if (currentSentenceIndex < sentences.length - 1) {
+      // Add the sentence we are leaving to the history
+      const sentenceToAdd = sentences[currentSentenceIndex];
+      if (sentenceToAdd) {
+        setSentenceHistory(prev => [...prev, sentenceToAdd.targetSentence].slice(-settings.sentenceDisplayHistorySize));
+      }
+      
+      // Now, navigate to the next sentence
+      setCurrentSentenceIndex(prev => prev + 1);
+      setShowTranslation(false);
+    }
+  };
 
   const handleWordSpeak = (word) => {
     const langCode = getLanguageCode(settings.targetLanguage);
