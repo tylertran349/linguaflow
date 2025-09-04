@@ -7,8 +7,6 @@ import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/ReadAndRespond.css';
 
-const MAX_HISTORY_SIZE = 50; // Keep a history of passages to avoid repeats
-
 function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   // --- State Management ---
   const [passages, setPassages] = useLocalStorage('comprehensionPassages', []);
@@ -33,19 +31,18 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       if (onApiKeyMissing) onApiKeyMissing();
       return;
     }
+
+    const lastViewedPassage = passages[currentPassageIndex];
+    if (lastViewedPassage) {
+        setPassageHistory(prev => [...prev, lastViewedPassage.passage].slice(-settings.readAndRespondHistorySize));
+    }
+
     setIsLoading(true);
     setError('');
     
     try {
       const fetchedData = await fetchComprehensionPassages(geminiApiKey, settings, topic, passageHistory);
       setPassages(fetchedData);
-
-      // Update history with the text of the new passages
-      if (fetchedData?.length > 0) {
-        const newPassageTexts = fetchedData.map(p => p.passage);
-        const combinedHistory = [...passageHistory, ...newPassageTexts];
-        setPassageHistory(combinedHistory.slice(-settings.readAndRespondHistorySize));
-      }
       
       // Reset state for the new set
       setCurrentPassageIndex(0);
@@ -61,12 +58,16 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const handleContinue = () => {
     if (currentPassageIndex < passages.length - 1) {
+      // Add the passage we are leaving to the history
+      const passageToAdd = passages[currentPassageIndex];
+      if (passageToAdd) {
+          setPassageHistory(prev => [...prev, passageToAdd.passage].slice(-settings.readAndRespondHistorySize));
+      }
+
+      // Now, navigate to the next passage
       setCurrentPassageIndex(prev => prev + 1);
       setUserAnswer(null);
       setIsAnswered(false);
-    } else {
-      // Optional: Handle end of the set, e.g., show a completion message or offer to generate more
-      alert("You've completed this set! Generate new passages to continue.");
     }
   };
 

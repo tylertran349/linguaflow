@@ -8,8 +8,6 @@ import { supportedLanguages } from '../utils/languages';
 // Renamed CSS import
 import '../styles/WriteAResponse.css';
 
-const MAX_HISTORY_SIZE = 100;
-
 // Renamed component function
 function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [questions, setQuestions] = useLocalStorage('practiceQuestions', []);
@@ -32,13 +30,20 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       if (onApiKeyMissing) onApiKeyMissing();
       return;
     }
+
+    // Add the last viewed question to history before generating new ones
+    const lastViewedQuestion = questions[currentQuestionIndex];
+    if (lastViewedQuestion) {
+        setQuestionHistory(prev => [...prev, lastViewedQuestion].slice(-settings.writeAResponseHistorySize));
+    }
+
     setIsLoadingQuestions(true);
     setError('');
     
     try {
       const fetchedData = await fetchPracticeQuestions(geminiApiKey, settings, topic, questionHistory);
       setQuestions(fetchedData);
-      setQuestionHistory(prev => [...prev, ...fetchedData].slice(-settings.writeAResponseHistorySize));
+      // REMOVED: setQuestionHistory(prev => [...prev, ...fetchedData].slice(-settings.writeAResponseHistorySize));
       setCurrentQuestionIndex(0);
       setUserResponse('');
       setFeedback('');
@@ -72,6 +77,13 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
+      // Add the question we are leaving (or skipping) to the history
+      const questionToAdd = questions[currentQuestionIndex];
+      if (questionToAdd) {
+        setQuestionHistory(prev => [...prev, questionToAdd].slice(-settings.writeAResponseHistorySize));
+      }
+
+      // Now, navigate to the next question
       setCurrentQuestionIndex(prev => prev + 1);
       setUserResponse('');
       setFeedback('');
