@@ -125,16 +125,6 @@ body {
   }
 }
 
-.auth-container,
-.welcome-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f0f2f5;
-}
-
 .welcome-container h1 {
   font-size: 3rem;
   color: #333;
