@@ -15,6 +15,13 @@
   --border-radius: 12px;
 }
 
+.sentence-display-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* --- Main Card --- */
 .sentence-card {
   background-color: var(--card-background);
@@ -202,4 +209,76 @@
   .actions button, .navigation button, .generate-button {
     width: 100%;
   }
+}
+
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto; /* Center the toggle and add space below it */
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden; /* This makes the button corners conform to the container's rounded corners */
+  width: fit-content; /* The container will only be as wide as its content */
+  background-color: var(--card-background);
+}
+
+.mode-toggle button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none; /* Remove individual button borders */
+  cursor: pointer;
+  background-color: transparent; /* Unselected state is transparent/white */
+  color: var(--text-color);
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.mode-toggle button:first-child {
+  border-right: 1px solid var(--border-color); /* Add a separator line between the buttons */
+}
+
+.mode-toggle button:hover:not(.active) {
+  background-color: #f8f9fa; /* A very light hover for the unselected button */
+}
+
+/* This is the style for the currently selected button */
+.mode-toggle button.active {
+  background-color: #e9ecef; /* The light grey you requested */
+  color: var(--text-color);
+}
+
+
+/* 2. Review Decision Button Styles */
+.review-decision {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem; /* Creates the distance between the two buttons */
+  margin-top: 1rem; /* Adds space above, separating it from the 'Hide Translation' button */
+  border-top: 1px solid var(--border-color); /* Adds a subtle separator line */
+  padding-top: 1.5rem; /* Creates space below the separator line */
+}
+
+.decision-button {
+  padding: 0.75rem 2rem; /* Give the buttons some horizontal space */
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  color: white;
+}
+
+.decision-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.decision-button.forgot {
+  background-color: #dc3545; /* A distinct red for 'Forgot' */
+}
+
+.decision-button.knew-it {
+  background-color: #28a745; /* A distinct green for 'Knew it' */
 }
