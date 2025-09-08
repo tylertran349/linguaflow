@@ -1,0 +1,143 @@
+// src/LinguaFlowApp.jsx
+import { useState, useEffect } from 'react';
+import './App.css';
+import { useLocalStorage } from './hooks/useLocalStorage';
+
+// --- Component Imports ---
+import Sidebar from './components/Sidebar';
+import SettingsModal from './components/SettingsModal';
+import SentenceDisplay from './components/SentenceDisplay';
+import UnscrambleWords from './components/UnscrambleWords';
+import ReadAndRespond from './components/ReadAndRespond';
+import WriteAResponse from './components/WriteAResponse';
+import { UserButton } from '@clerk/clerk-react'; // Import Clerk's UserButton
+
+// Define the breakpoint once to avoid magic numbers
+const MOBILE_BREAKPOINT = 1024;
+
+// Change the function name from App to LinguaFlowApp
+function LinguaFlowApp() { 
+  const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
+  const [settings, setSettings] = useLocalStorage('settings', {
+    nativeLanguage: "English",
+    targetLanguage: "Vietnamese",
+    difficulty: "B2",
+    model: "gemini-1.5-flash", 
+    ttsEngine: "web-speech",
+    sentenceCount: 20,
+    webSpeechRate: 0.6,
+    googleTranslateRate: 1,
+    sentenceDisplayHistorySize: 100,
+    readAndRespondHistorySize: 100,
+    writeAResponseHistorySize: 100,
+  });
+  const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
+  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= MOBILE_BREAKPOINT);
+  
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= MOBILE_BREAKPOINT) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); 
+
+  useEffect(() => {
+    if (!geminiApiKey) {
+      setIsSettingsModalOpen(true);
+    }
+  }, [geminiApiKey]);
+
+  const handleOpenSettings = () => {
+    setIsSettingsModalOpen(true);
+    if (window.innerWidth < MOBILE_BREAKPOINT) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const handleSaveSettings = (data) => {
+    setGeminiApiKey(data.apiKey);
+    setSettings(data.settings);
+    setTopic(data.topic);
+    setIsSettingsModalOpen(false);
+  };
+  
+  const handleNavigate = (gameId) => {
+    setActiveModule(gameId);
+    if (window.innerWidth < MOBILE_BREAKPOINT) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const renderActiveModule = () => {
+    switch (activeModule) {
+      case 'sentence-generator':
+        return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+      case 'unscramble-words':
+        return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+      case 'read-and-respond':
+        return <ReadAndRespond geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+      case 'write-a-response':
+        return <WriteAResponse geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+      default:
+        return (
+          <div className="initial-state-container">
+            <h2>Welcome to LinguaFlow!</h2>
+            <p>Select an exercise from the menu to begin.</p>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="app-layout">
+      {isSidebarOpen && window.innerWidth < MOBILE_BREAKPOINT && (
+        <div className="overlay" onClick={() => setIsSidebarOpen(false)}></div>
+      )}
+
+      <Sidebar 
+        isOpen={isSidebarOpen}
+        activeModule={activeModule}
+        onNavigate={handleNavigate}
+        onOpenSettings={handleOpenSettings}
+      />
+
+      <div className="main-content">
+        <header className="app-header">
+          <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            <span></span><span></span><span></span>
+          </button>
+          
+          {/* This part adds the user profile button to the top right corner */}
+          <div className="user-button-container">
+            <UserButton afterSignOutUrl='/'/>
+          </div>
+        </header>
+
+        <main className="learning-container">
+          {renderActiveModule()}
+        </main>
+      </div>
+
+      <SettingsModal 
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        onSave={handleSaveSettings}
+        currentSettings={settings}
+        currentApiKey={geminiApiKey}
+        currentTopic={topic}
+      />
+    </div>
+  );
+}
+
+// Make sure to export the function
+export default LinguaFlowApp;

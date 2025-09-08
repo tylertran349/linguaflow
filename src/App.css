@@ -124,3 +124,67 @@ body {
     padding: 0 1rem;
   }
 }
+
+.auth-container,
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.welcome-container h1 {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.welcome-container p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.welcome-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: #4a4eee;
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #3a3dbb;
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #333;
+}
+.btn-secondary:hover {
+  background-color: #c7c7c7;
+}
+
+/* User Button positioning */
+.app-header {
+  /* ... keep existing styles ... */
+  display: flex;
+  justify-content: space-between; /* This will push items to the ends */
+  align-items: center;
+}
+
+.user-button-container {
+  margin-right: 20px; /* Add some spacing */
+}
