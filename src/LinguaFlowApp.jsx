@@ -10,7 +10,6 @@ import SentenceDisplay from './components/SentenceDisplay';
 import UnscrambleWords from './components/UnscrambleWords';
 import ReadAndRespond from './components/ReadAndRespond';
 import WriteAResponse from './components/WriteAResponse';
-import { UserButton } from '@clerk/clerk-react'; // Import Clerk's UserButton
 
 // Define the breakpoint once to avoid magic numbers
 const MOBILE_BREAKPOINT = 1024;
@@ -115,11 +114,6 @@ function LinguaFlowApp() {
           <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <span></span><span></span><span></span>
           </button>
-          
-          {/* This part adds the user profile button to the top right corner */}
-          <div className="user-button-container">
-            <UserButton afterSignOutUrl='/'/>
-          </div>
         </header>
 
         <main className="learning-container">

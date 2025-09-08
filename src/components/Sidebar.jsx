@@ -2,6 +2,7 @@
 
 import React from 'react';
 import '../styles/Sidebar.css';
+import { UserButton } from '@clerk/clerk-react';
 
 // The list of modules is unchanged.
 const modules = [
@@ -35,10 +36,12 @@ function Sidebar({ isOpen, activeModule, onNavigate, onOpenSettings }) {
       </nav>
 
       <div className="sidebar-footer">
+        <div className="user-button-container">
+          <UserButton afterSignOutUrl='/' />
+        </div>
         <button className="nav-item" onClick={onOpenSettings}>
           Settings
         </button>
-        {/* --- NEW HELP BUTTON ADDED HERE --- */}
         <a
           href="https://github.com/tylertran349/linguaflow/blob/main/README.md"
           target="_blank"
