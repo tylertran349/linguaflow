@@ -1,0 +1,7 @@
+Run the following commands (each in their own terminal):
+1. npm run server
+2. ngrok http 3001
+3. npm run dev
+4. For the ngrok terminal window, if the forwarding URL has changed, go to https://dashboard.clerk.com/ -> Configure -> Webhooks -> Modify the endpoint URL and 
+make sure to add /api/webhooks to the end of the URL
+5. To run Gemini CLI, run "npx https://github.com/google-gemini/gemini-cli"
