@@ -42,6 +42,20 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   firstName: String,
   lastName: String,
+  topic: { type: String, default: '' },
+  settings: {
+    nativeLanguage: { type: String, default: "English" },
+    targetLanguage: { type: String, default: "Spanish" },
+    difficulty: { type: String, default: "B2" },
+    model: { type: String, default: "gemini-2.5-flash" },
+    ttsEngine: { type: String, default: "web-speech" },
+    sentenceCount: { type: Number, default: 20 },
+    webSpeechRate: { type: Number, default: 0.6 },
+    googleTranslateRate: { type: Number, default: 1 },
+    sentenceDisplayHistorySize: { type: Number, default: 100 },
+    readAndRespondHistorySize: { type: Number, default: 100 },
+    writeAResponseHistorySize: { type: Number, default: 100 },
+  },
   createdAt: { type: Date, default: Date.now },
   viewedSentences: [sentenceReviewSchema], // Use the new sub-schema here
 });
@@ -100,6 +114,63 @@ app.post('/api/webhooks', bodyParser.raw({ type: 'application/json' }), async fu
 
 // Use express.json() for all other routes
 app.use(express.json());
+
+// GET USER SETTINGS
+app.get('/api/user/settings', ClerkExpressWithAuth(), async (req, res) => {
+  try {
+    const user = await User.findOne({ clerkUserId: req.auth.userId });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({
+      settings: user.settings,
+      topic: user.topic
+    });
+  } catch (error) {
+    console.error('Error fetching user settings:', error);
+    res.status(500).json({ message: 'Server error while fetching settings' });
+  }
+});
+
+// UPDATE USER SETTINGS
+app.put('/api/user/settings', ClerkExpressWithAuth(), async (req, res) => {
+  try {
+    // --- START: ADD THESE LOGS ---
+    console.log('--- UPDATE SETTINGS ENDPOINT HIT ---');
+    console.log('User ID from Clerk:', req.auth.userId);
+    console.log('Received body from frontend:', JSON.stringify(req.body, null, 2));
+    // --- END: ADD THESE LOGS ---
+
+    const { settings, topic } = req.body;
+
+    // Build the update object carefully to avoid overwriting with undefined
+    const updatePayload = {};
+    if (settings) updatePayload.settings = settings;
+    if (typeof topic !== 'undefined') updatePayload.topic = topic;
+
+    // --- ADD THIS LOG ---
+    console.log('Payload to be saved to DB:', JSON.stringify(updatePayload, null, 2));
+
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkUserId: req.auth.userId },
+      { $set: updatePayload },
+      { new: true, runValidators: true }
+    );
+
+    // --- ADD THIS LOG ---
+    console.log('Result from findOneAndUpdate:', updatedUser);
+
+    if (!updatedUser) {
+      console.log('User not found in DB with that clerkUserId.'); // Important log
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'Settings updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating user settings:', error);
+    res.status(500).json({ message: 'Server error while updating settings' });
+  }
+});
 
 // --- 1. NEW API ENDPOINT: Save a Sentence for Review ---
 app.post('/api/sentences/save', ClerkExpressWithAuth(), async (req, res) => {

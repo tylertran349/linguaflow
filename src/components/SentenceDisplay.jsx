@@ -77,6 +77,17 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     }
     return () => clearInterval(intervalId);
   }, [isLoading, reviewLoading]);
+
+  useEffect(() => {
+    // Identify the sentence that is currently being displayed.
+    const currentSentence = sentences[currentSentenceIndex];
+
+    // If there is a sentence on screen, save it for review.
+    if (currentSentence) {
+      saveSentenceForReview(currentSentence);
+    }
+    // The dependency array ensures this runs only when the view changes.
+  }, [sentences, currentSentenceIndex]);
   
   // --- FUNCTION: FETCH SENTENCES FOR REVIEW ---
   const handleFetchReviewSentences = async () => {
@@ -144,17 +155,24 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     }
   };
 
+  const addCurrentSentenceToHistory = () => {
+    const sentenceToAddToHistory = sentences[currentSentenceIndex];
+    if (sentenceToAddToHistory) {
+      setSentenceHistory(prev => 
+        // Prevent duplicates in history
+        [...new Set([...prev, sentenceToAddToHistory.targetSentence])]
+        .slice(-settings.sentenceDisplayHistorySize)
+      );
+    }
+  };
+
   const handleGenerateSentences = async () => {
     if (!geminiApiKey) {
       onApiKeyMissing();
       return;
     }
 
-    const lastViewedSentence = sentences[currentSentenceIndex];
-    if (lastViewedSentence) {
-        saveSentenceForReview(lastViewedSentence); 
-        setSentenceHistory(prev => [...prev, lastViewedSentence.targetSentence].slice(-settings.sentenceDisplayHistorySize));
-    }
+    addCurrentSentenceToHistory();
 
     setIsLoading(true);
     setError(null);
@@ -174,10 +192,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   };
   
   const handleBack = () => {
-    const sentenceToSave = sentences[currentSentenceIndex];
-    if (sentenceToSave) {
-        saveSentenceForReview(sentenceToSave);
-    }
+    addCurrentSentenceToHistory();
 
     const newIndex = currentSentenceIndex - 1;
     if (newIndex >= 0) {
@@ -188,15 +203,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   
   const handleNext = () => {
     if (currentSentenceIndex < sentences.length - 1) {
-      // Add the sentence we are leaving to the history
-      const sentenceToAdd = sentences[currentSentenceIndex];
-      if (sentenceToAdd) {
-        setSentenceHistory(prev => [...prev, sentenceToAdd.targetSentence].slice(-settings.sentenceDisplayHistorySize));
-        // Save the sentence the user is navigating *away from*
-        saveSentenceForReview(sentenceToAdd);
-      }
-      
-      // Now, navigate to the next sentence
+      addCurrentSentenceToHistory();
+
       setCurrentSentenceIndex(prev => prev + 1);
       setShowTranslation(false);
     }
@@ -310,12 +318,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
             <button 
               className={mode === 'review' ? 'active' : ''}
               onClick={() => {
-                  // --- START OF FIX ---
-                  // If we are in learn mode and there's a sentence, save it before switching.
-                  if (mode === 'learn' && sentences[currentSentenceIndex]) {
-                      saveSentenceForReview(sentences[currentSentenceIndex]);
-                  }
-                  // --- END OF FIX ---
+                  addCurrentSentenceToHistory();
                   setMode('review');
                   handleFetchReviewSentences();
               }}

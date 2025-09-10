@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useAuth, useUser } from '@clerk/clerk-react';
 
 // --- Component Imports ---
 import Sidebar from './components/Sidebar';
@@ -17,11 +18,11 @@ const MOBILE_BREAKPOINT = 1024;
 // Change the function name from App to LinguaFlowApp
 function LinguaFlowApp() { 
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
-  const [settings, setSettings] = useLocalStorage('settings', {
+   const [settings, setSettings] = useState({
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
     difficulty: "B2",
-    model: "gemini-1.5-flash", 
+    model: "gemini-2.5-flash", 
     ttsEngine: "web-speech",
     sentenceCount: 20,
     webSpeechRate: 0.6,
@@ -30,12 +31,44 @@ function LinguaFlowApp() {
     readAndRespondHistorySize: 100,
     writeAResponseHistorySize: 100,
   });
-  const [topic, setTopic] = useLocalStorage('linguaflowTopic', '');
+  const [topic, setTopic] = useState('');
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= MOBILE_BREAKPOINT);
   
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeModule, setActiveModule] = useState(null);
+
+  const { getToken } = useAuth();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    const fetchUserSettings = async () => {
+      if (isSignedIn) {
+        try {
+          const token = await getToken();
+          const response = await fetch('/api/user/settings', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) {
+            throw new Error('Could not fetch user settings.');
+          }
+          const data = await response.json();
+          // Only update state if the fetched settings are not null/undefined
+          if (data.settings) {
+            setSettings(data.settings);
+          }
+          if (data.topic) {
+            setTopic(data.topic);
+          }
+        } catch (error) {
+          console.error("Failed to fetch settings from DB:", error);
+          // Keep default settings if fetch fails
+        }
+      }
+    };
+
+    fetchUserSettings();
+  }, [isSignedIn, getToken]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -62,10 +95,33 @@ function LinguaFlowApp() {
     }
   };
 
-  const handleSaveSettings = (data) => {
+  const handleSaveSettings = async (data) => {
+    // The API key is still saved to local storage
     setGeminiApiKey(data.apiKey);
-    setSettings(data.settings);
-    setTopic(data.topic);
+
+    // --- REPLACE THE OLD LOGIC ---
+    try {
+      const token = await getToken();
+      await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          settings: data.settings,
+          topic: data.topic
+        })
+      });
+      // Update local state only after successful API call for immediate UI feedback
+      setSettings(data.settings);
+      setTopic(data.topic);
+    } catch (error) {
+      console.error("Failed to save settings to DB:", error);
+      // Optionally, show an error message to the user
+    }
+    // --- END REPLACEMENT ---
+
     setIsSettingsModalOpen(false);
   };
   
