@@ -31,7 +31,7 @@ const sentenceReviewSchema = new mongoose.Schema({
   // Spaced Repetition System (SRS) data
   lastReviewed: { type: Date, default: Date.now },
   nextReviewDate: { type: Date, default: Date.now },
-  interval: { type: Number, default: 1 }, // Interval in days
+  interval: { type: Number, default: 15 }, // Interval in minutes
 });
 
 
@@ -171,16 +171,16 @@ app.put('/api/sentences/update-review', ClerkExpressWithAuth(), async (req, res)
             // If correct, double the interval for the next review
             sentence.interval *= 2; 
         } else {
-            // If incorrect, reset the interval back to day 1
-            sentence.interval = 1;
+            // If incorrect, reset the interval back to 15 minutes
+            sentence.interval = 15;
         }
 
         // Set the last reviewed date to now
         sentence.lastReviewed = new Date();
         
-        // Calculate the next review date by adding the interval (in days) to today
+        // Calculate the next review date by adding the interval (in minutes) to today
         const newReviewDate = new Date();
-        newReviewDate.setDate(newReviewDate.getDate() + sentence.interval);
+        newReviewDate.setMinutes(newReviewDate.getMinutes() + sentence.interval);
         sentence.nextReviewDate = newReviewDate;
 
         await user.save(); // Save the entire user document with the updated sentence
