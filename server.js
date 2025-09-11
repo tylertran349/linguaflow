@@ -10,8 +10,6 @@ import Sentence from './src/models/Sentence.js';
 import UserSettings from './src/models/UserSettings.js'; 
 
 // --- 1. INITIAL SETUP ---
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -147,28 +145,30 @@ app.get('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
 app.put('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
-        // Destructure the apiKey from the request body
         const { settings, topic, apiKey } = req.body;
 
-        const updateData = {
-            userId,
-            settings,
-            topic
-        };
+        // 1. Find the existing settings first
+        let userSettings = await UserSettings.findOne({ userId: userId });
 
-        // Only add the geminiApiKey to the update if it's provided.
-        // This prevents an existing key from being wiped out if the user saves other settings.
-        if (apiKey) {
-            updateData.geminiApiKey = apiKey;
+        // 2. If no settings exist, create a new document in memory
+        if (!userSettings) {
+            userSettings = new UserSettings({ userId: userId });
         }
 
-        const updatedSettings = await UserSettings.findOneAndUpdate(
-            { userId: userId },
-            updateData,
-            { new: true, upsert: true }
-        ).select('+geminiApiKey'); // Also select the key on update to return it
+        // 3. Apply the changes from the request to the document
+        userSettings.settings = settings;
+        userSettings.topic = topic;
         
-        res.json(updatedSettings);
+        // Only set the API key if a new one was provided
+        if (apiKey) {
+            userSettings.geminiApiKey = apiKey;
+        }
+
+        // 4. Save the document. This is when the encryption plugin will run
+        //    on the final, correct data.
+        const savedSettings = await userSettings.save();
+
+        res.json(savedSettings);
     } catch (error) {
         console.error("Error saving user settings:", error);
         res.status(500).json({ message: "Failed to save user settings." });

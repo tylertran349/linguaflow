@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "nodemon server.js",
+    "server": "nodemon -r dotenv/config server.js",
     "build": "vite build",
-    "start": "node server.js",
+    "start": "node -r dotenv/config server.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
