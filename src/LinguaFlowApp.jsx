@@ -18,8 +18,8 @@ const MOBILE_BREAKPOINT = 1024;
 
 // Change the function name from App to LinguaFlowApp
 function LinguaFlowApp() { 
-  const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
-   const [settings, setSettings] = useState({
+  const [geminiApiKey, setGeminiApiKey] = useState(''); 
+  const [settings, setSettings] = useState({
     nativeLanguage: "English",
     targetLanguage: "Vietnamese",
     difficulty: "B2",
@@ -47,23 +47,21 @@ function LinguaFlowApp() {
       if (isSignedIn) {
         try {
           const token = await getToken();
-          const response = await fetch(`${API_BASE_URL}/api/settings`, {
+          const response = await fetch(`${API_BASE_URL}/api/settings`, { // <-- Make sure this uses API_BASE_URL
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!response.ok) {
             throw new Error('Could not fetch user settings.');
           }
           const data = await response.json();
-          // Only update state if the fetched settings are not null/undefined
-          if (data.settings) {
-            setSettings(data.settings);
-          }
-          if (data.topic) {
-            setTopic(data.topic);
-          }
+          
+          // Update all state from the fetched data
+          if (data.settings) setSettings(data.settings);
+          if (data.topic) setTopic(data.topic);
+          if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey); // <-- ADD THIS LINE
+
         } catch (error) {
           console.error("Failed to fetch settings from DB:", error);
-          // Keep default settings if fetch fails
         }
       }
     };
@@ -97,32 +95,28 @@ function LinguaFlowApp() {
   };
 
   const handleSaveSettings = async (data) => {
-    // The API key is still saved to local storage
-    setGeminiApiKey(data.apiKey);
-
-    // --- REPLACE THE OLD LOGIC ---
     try {
       const token = await getToken();
-      await fetch(`${API_BASE_URL}/api/settings`, {
+      await fetch(`${API_BASE_URL}/api/settings`, { // <-- Make sure this uses API_BASE_URL
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+        // Pass the apiKey in the body
         body: JSON.stringify({
           settings: data.settings,
-          topic: data.topic
+          topic: data.topic,
+          apiKey: data.apiKey // <-- ADD THIS LINE
         })
       });
-      // Update local state only after successful API call for immediate UI feedback
+      // Update local state for immediate UI feedback
       setSettings(data.settings);
       setTopic(data.topic);
+      setGeminiApiKey(data.apiKey); // <-- ADD THIS LINE
     } catch (error) {
       console.error("Failed to save settings to DB:", error);
-      // Optionally, show an error message to the user
     }
-    // --- END REPLACEMENT ---
-
     setIsSettingsModalOpen(false);
   };
   

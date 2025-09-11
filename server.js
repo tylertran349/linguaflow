@@ -129,11 +129,10 @@ app.get('/api/protected-data', ClerkExpressRequireAuth(), (req, res) => {
 app.get('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
-        const userSettings = await UserSettings.findOne({ userId: userId });
+        // Use .select('+geminiApiKey') to explicitly request the encrypted field
+        const userSettings = await UserSettings.findOne({ userId: userId }).select('+geminiApiKey');
         
         if (!userSettings) {
-            // If no settings are found, it's not an error.
-            // The frontend will just use its default state.
             return res.status(200).json({}); 
         }
 
@@ -148,15 +147,26 @@ app.get('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
 app.put('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
-        const { settings, topic } = req.body;
+        // Destructure the apiKey from the request body
+        const { settings, topic, apiKey } = req.body;
 
-        // findOneAndUpdate with 'upsert: true' is perfect for this.
-        // It will update the document if it finds one, or create it if it doesn't.
+        const updateData = {
+            userId,
+            settings,
+            topic
+        };
+
+        // Only add the geminiApiKey to the update if it's provided.
+        // This prevents an existing key from being wiped out if the user saves other settings.
+        if (apiKey) {
+            updateData.geminiApiKey = apiKey;
+        }
+
         const updatedSettings = await UserSettings.findOneAndUpdate(
             { userId: userId },
-            { settings, topic, userId }, // The data to insert/update
-            { new: true, upsert: true } // Options: return the new doc, and create if not found
-        );
+            updateData,
+            { new: true, upsert: true }
+        ).select('+geminiApiKey'); // Also select the key on update to return it
         
         res.json(updatedSettings);
     } catch (error) {
