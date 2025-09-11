@@ -6,6 +6,8 @@ import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/SentenceDisplay.css';
 
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
+
 // A custom hook for interacting with LocalStorage.
 function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
@@ -96,7 +98,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     setShowTranslation(false);
     try {
         const token = await getToken();
-        const response = await fetch('http://localhost:3001/api/sentences/review', {
+        const response = await fetch(`${API_BASE_URL}/api/sentences/review`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Failed to fetch review sentences.');
@@ -117,7 +119,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
 
     try {
         const token = await getToken();
-        await fetch('http://localhost:3001/api/sentences/save', {
+        await fetch(`${API_BASE_URL}/api/sentences/save`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -134,7 +136,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   const handleReviewDecision = async (sentenceId, decision) => {
     try {
         const token = await getToken();
-        await fetch('http://localhost:3001/api/sentences/update-review', {
+        await fetch(`${API_BASE_URL}/api/sentences/update-review`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
