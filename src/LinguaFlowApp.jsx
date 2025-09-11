@@ -82,10 +82,43 @@ function LinguaFlowApp() {
   }, []); 
 
   useEffect(() => {
-    if (!geminiApiKey) {
-      setIsSettingsModalOpen(true);
-    }
-  }, [geminiApiKey]);
+    const fetchUserSettings = async () => {
+      if (isSignedIn) {
+        try {
+          const token = await getToken();
+          const response = await fetch(`${API_BASE_URL}/api/settings`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (!response.ok) {
+            throw new Error('Could not fetch user settings.');
+          }
+
+          const data = await response.json();
+          
+          // Update all state from the fetched data
+          if (data.settings) setSettings(data.settings);
+          if (data.topic) setTopic(data.topic);
+          if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey);
+
+          // --- NEW LOGIC ---
+          // Now that we have the data, check if the API key is still missing.
+          // This is the correct time to decide if the modal should open.
+          if (!data.geminiApiKey) {
+            setIsSettingsModalOpen(true);
+          }
+
+        } catch (error) {
+          console.error("Failed to fetch settings from DB:", error);
+          // NEW: If fetching fails, it's also a good idea to open the modal
+          // so the user can at least enter a key to use the app.
+          setIsSettingsModalOpen(true);
+        }
+      }
+    };
+
+    fetchUserSettings();
+  }, [isSignedIn, getToken]);
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
