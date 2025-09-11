@@ -91,15 +91,6 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Successfully connected to MongoDB Atlas.'))
     .catch(err => console.error('Error connecting to MongoDB Atlas:', err));
 
-
-// --- 5. SERVE REACT FRONTEND IN PRODUCTION ---
-// This code will only run in the production environment
-if (process.env.NODE_ENV === 'production') {
-    // Serve the static files from the Vite build folder
-    app.use(express.static(path.join(__dirname, 'dist')));
-}
-
-
 // --- 6. API ROUTES ---
 // All your API routes should be prefixed with '/api' to avoid conflicts with frontend routes.
 
@@ -289,10 +280,10 @@ app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, r
 });
 
 // --- 7. FRONTEND CATCH-ALL ROUTE ---
-// This must be the last GET route.
-// It sends the main index.html file to the client for any request that doesn't match an API route.
-// This is essential for React Router to handle client-side routing.
 if (process.env.NODE_ENV === 'production') {
+    // Serve the static files from the Vite build folder
+    app.use(express.static(path.join(__dirname, 'dist')));
+
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
