@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
 import { ClerkExpressWithAuth, ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
 import { Webhook } from 'svix';
@@ -122,6 +123,45 @@ app.get('/api/protected-data', ClerkExpressRequireAuth(), (req, res) => {
 // ============================================================
 //  APPLICATION API ROUTES
 // ============================================================
+
+// --- GOOGLE TRANSLATE TTS PROXY ---
+// This route is called by the ttsService.js on the frontend
+app.get('/api/tts', async (req, res) => {
+    try {
+        const { text, lang, speed } = req.query;
+
+        if (!text || !lang) {
+            return res.status(400).send('Missing required query parameters: text and lang');
+        }
+        
+        // Google's TTS endpoint has a "slow" parameter. We can map our speed to that.
+        // If the speed is less than 1.0, we'll use the "slow" version.
+        const isSlow = parseFloat(speed) < 1.0;
+        
+        const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob&slow=${isSlow}`;
+
+        // Fetch the audio from Google's server. We must include a User-Agent header
+        // or the request will be blocked.
+        const fetchResponse = await fetch(googleTtsUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+
+        if (!fetchResponse.ok) {
+            throw new Error(`Google TTS API responded with status: ${fetchResponse.status}`);
+        }
+        
+        // Set the correct content type for the audio file
+        res.setHeader('Content-Type', 'audio/mpeg');
+
+        // Pipe the audio stream from Google's response directly to our client's response.
+        // This is very efficient as it doesn't load the whole audio file into server memory.
+        fetchResponse.body.pipe(res);
+
+    } catch (error) {
+        console.error("Error in TTS proxy:", error);
+        res.status(500).send("Failed to fetch TTS audio.");
+    }
+});
 
 // --- GET User Settings ---
 app.get('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
