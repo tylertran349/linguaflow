@@ -108,10 +108,10 @@ function SettingsModal({
 
           <div className="settings-section">
               <h3>API Key</h3>
-              <p>Your key is stored in your browser's local storage.</p>
+              <p>Your API key is encrypted and stored securely in the database.</p>
               <div className="setting-item">
                   <label htmlFor="gemini-key">Google Gemini API Key</label>
-                  <input id="gemini-key" type="password" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key"/>
+                  <input id="gemini-key" type="text" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key"/>
               </div>
           </div>
 
