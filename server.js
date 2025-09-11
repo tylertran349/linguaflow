@@ -6,6 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { ClerkExpressWithAuth, ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
 import { Webhook } from 'svix';
+import Sentence from './src/models/Sentence.js';
+import UserSettings from './src/models/UserSettings.js'; 
 
 // --- 1. INITIAL SETUP ---
 dotenv.config();
@@ -120,10 +122,121 @@ app.get('/api/protected-data', ClerkExpressRequireAuth(), (req, res) => {
 });
 
 // ============================================================
-//  ADD YOUR OTHER API ROUTES HERE
-//  e.g., app.post('/api/documents', ClerkExpressRequireAuth(), createDocument);
+//  APPLICATION API ROUTES
 // ============================================================
 
+// --- GET User Settings ---
+app.get('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const userSettings = await UserSettings.findOne({ userId: userId });
+        
+        if (!userSettings) {
+            // If no settings are found, it's not an error.
+            // The frontend will just use its default state.
+            return res.status(200).json({}); 
+        }
+
+        res.json(userSettings);
+    } catch (error) {
+        console.error("Error fetching user settings:", error);
+        res.status(500).json({ message: "Failed to fetch user settings." });
+    }
+});
+
+// --- CREATE/UPDATE User Settings ---
+app.put('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { settings, topic } = req.body;
+
+        // findOneAndUpdate with 'upsert: true' is perfect for this.
+        // It will update the document if it finds one, or create it if it doesn't.
+        const updatedSettings = await UserSettings.findOneAndUpdate(
+            { userId: userId },
+            { settings, topic, userId }, // The data to insert/update
+            { new: true, upsert: true } // Options: return the new doc, and create if not found
+        );
+        
+        res.json(updatedSettings);
+    } catch (error) {
+        console.error("Error saving user settings:", error);
+        res.status(500).json({ message: "Failed to save user settings." });
+    }
+});
+
+
+// --- FETCH SENTENCES DUE FOR REVIEW ---
+app.get('/api/sentences/review', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const now = new Date();
+        
+        // Find sentences for the logged-in user where the due date is in the past
+        const sentencesToReview = await Sentence.find({
+            userId: userId,
+            reviewDueDate: { $lte: now }
+        });
+
+        res.json(sentencesToReview);
+    } catch (error) {
+        console.error("Error fetching review sentences:", error);
+        res.status(500).json({ message: 'Failed to fetch sentences for review.' });
+    }
+});
+
+// --- SAVE A NEW SENTENCE ---
+app.post('/api/sentences/save', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { sentence } = req.body;
+
+        // Use findOneAndUpdate with 'upsert: true' to either create a new sentence
+        // or update the existing one. This prevents duplicates.
+        await Sentence.findOneAndUpdate(
+            { userId: userId, targetSentence: sentence.targetSentence },
+            { 
+              ...sentence, 
+              userId: userId,
+              $setOnInsert: { reviewDueDate: new Date() }
+            },
+            { upsert: true, new: true }
+        );
+        
+        res.status(201).json({ message: 'Sentence saved successfully.' });
+    } catch (error) {
+        console.error("Error saving sentence:", error);
+        if (error.code === 11000) {
+            return res.status(200).json({ message: 'Sentence already exists.' });
+        }
+        res.status(500).json({ message: 'Failed to save sentence.' });
+    }
+});
+
+
+// --- UPDATE A SENTENCE'S REVIEW DATE ---
+app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const { sentenceId, decision } = req.body;
+        
+        // Spaced Repetition Logic (Simplified)
+        const now = new Date();
+        let newDueDate;
+
+        if (decision === 'correct') {
+            newDueDate = new Date(now.getTime() + (24 * 60 * 60 * 1000)); // 1 day from now
+        } else { // incorrect
+            newDueDate = new Date(now.getTime() + (1 * 60 * 1000)); // 1 minute from now
+        }
+
+        await Sentence.findByIdAndUpdate(sentenceId, { reviewDueDate: newDueDate });
+
+        res.json({ message: 'Review updated successfully.' });
+    } catch (error) {
+        console.error("Error updating review:", error);
+        res.status(500).json({ message: 'Failed to update review.' });
+    }
+});
 
 // --- 7. FRONTEND CATCH-ALL ROUTE ---
 // This must be the last GET route.

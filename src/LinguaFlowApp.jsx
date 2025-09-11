@@ -13,6 +13,7 @@ import ReadAndRespond from './components/ReadAndRespond';
 import WriteAResponse from './components/WriteAResponse';
 
 // Define the breakpoint once to avoid magic numbers
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 const MOBILE_BREAKPOINT = 1024;
 
 // Change the function name from App to LinguaFlowApp
@@ -46,7 +47,7 @@ function LinguaFlowApp() {
       if (isSignedIn) {
         try {
           const token = await getToken();
-          const response = await fetch('/api/user/settings', {
+          const response = await fetch(`${API_BASE_URL}/api/settings`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!response.ok) {
@@ -102,7 +103,7 @@ function LinguaFlowApp() {
     // --- REPLACE THE OLD LOGIC ---
     try {
       const token = await getToken();
-      await fetch('/api/user/settings', {
+      await fetch(`${API_BASE_URL}/api/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
