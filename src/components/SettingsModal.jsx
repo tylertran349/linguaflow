@@ -14,13 +14,15 @@ function SettingsModal({
   currentSettings,
   currentApiKey,
   currentTopic,
-  isRetrying = false
+  isRetrying = false,
+  isRetryingSave = false
 }) {
   const [tempSettings, setTempSettings] = useState(currentSettings);
   const [tempApiKey, setTempApiKey] = useState(currentApiKey);
   const [tempTopic, setTempTopic] = useState(currentTopic);
   const [errors, setErrors] = useState({});
   const [ellipses, setEllipses] = useState('');
+  const [saveEllipses, setSaveEllipses] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +52,26 @@ function SettingsModal({
       }
     };
   }, [isRetrying]);
+
+  // Animate ellipses when retrying save
+  useEffect(() => {
+    let interval;
+    if (isRetryingSave) {
+      let dotCount = 0;
+      interval = setInterval(() => {
+        setSaveEllipses('.'.repeat(dotCount));
+        dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
+      }, 500); // Change every 500ms
+    } else {
+      setSaveEllipses('');
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isRetryingSave]);
 
   const handleSettingChange = (e) => {
     const { name, value } = e.target;
@@ -126,7 +148,10 @@ function SettingsModal({
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="modal-content">
         <div className="modal-scroll-wrapper" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-          <h2>Settings {isRetrying && <span style={{ color: '#007bff', fontSize: '0.8em' }}>Retrieving settings{ellipses}</span>}</h2>
+          <h2>Settings 
+            {isRetrying && <span style={{ color: '#007bff', fontSize: '0.8em' }}>Retrieving settings{ellipses}</span>}
+            {isRetryingSave && <span style={{ color: '#28a745', fontSize: '0.8em' }}>Saving settings{saveEllipses}</span>}
+          </h2>
 
           <div className="settings-section">
               <h3>API Key</h3>

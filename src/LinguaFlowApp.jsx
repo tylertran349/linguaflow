@@ -43,6 +43,9 @@ function LinguaFlowApp() {
   const [settingsRetryInterval, setSettingsRetryInterval] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingTimeout, setLoadingTimeout] = useState(null);
+  const [isRetryingSave, setIsRetryingSave] = useState(false);
+  const [saveRetryInterval, setSaveRetryInterval] = useState(null);
+  const [pendingSaveData, setPendingSaveData] = useState(null);
 
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
@@ -56,6 +59,86 @@ function LinguaFlowApp() {
       clearInterval(settingsRetryInterval);
       setSettingsRetryInterval(null);
     }
+  };
+
+  const stopRetryingSave = () => {
+    if (isRetryingSave) {
+      console.log('Stopping save retry - settings saved successfully');
+    }
+    setIsRetryingSave(false);
+    if (saveRetryInterval) {
+      clearInterval(saveRetryInterval);
+      setSaveRetryInterval(null);
+    }
+    setPendingSaveData(null);
+  };
+
+  const attemptSaveSettings = async (data) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          settings: data.settings,
+          topic: data.topic,
+          apiKey: data.apiKey
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Update local state for immediate UI feedback
+      setSettings(data.settings);
+      setTopic(data.topic);
+      setGeminiApiKey(data.apiKey);
+      
+      // Stop retrying since we successfully saved
+      stopRetryingSave();
+      
+      // Clear loading timeout and hide initial loading screen
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        setLoadingTimeout(null);
+      }
+      setIsInitialLoading(false);
+      
+      console.log('Settings saved successfully');
+      return true; // Success
+    } catch (error) {
+      console.error("Failed to save settings to DB:", error);
+      return false; // Failure
+    }
+  };
+
+  const startRetryingSave = (data) => {
+    if (isRetryingSave) return; // Already retrying
+    
+    console.log('Starting save retry - attempting to save settings to MongoDB');
+    setIsRetryingSave(true);
+    setPendingSaveData(data);
+    
+    // Try immediately first
+    attemptSaveSettings(data).then(success => {
+      if (!success) {
+        console.log('Initial save attempt failed, starting interval retry every 3 seconds');
+        // If immediate attempt failed, start interval retry
+        const interval = setInterval(async () => {
+          const success = await attemptSaveSettings(data);
+          if (success) {
+            clearInterval(interval);
+            setSaveRetryInterval(null);
+          }
+        }, 3000); // Retry every 3 seconds
+        
+        setSaveRetryInterval(interval);
+      }
+    });
   };
 
   const fetchUserSettings = async () => {
@@ -153,11 +236,14 @@ function LinguaFlowApp() {
       if (settingsRetryInterval) {
         clearInterval(settingsRetryInterval);
       }
+      if (saveRetryInterval) {
+        clearInterval(saveRetryInterval);
+      }
       if (loadingTimeout) {
         clearTimeout(loadingTimeout);
       }
     };
-  }, [settingsRetryInterval, loadingTimeout]);
+  }, [settingsRetryInterval, saveRetryInterval, loadingTimeout]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -196,39 +282,14 @@ function LinguaFlowApp() {
   };
 
   const handleSaveSettings = async (data) => {
-    try {
-      const token = await getToken();
-      await fetch(`${API_BASE_URL}/api/settings`, { // <-- Make sure this uses API_BASE_URL
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        // Pass the apiKey in the body
-        body: JSON.stringify({
-          settings: data.settings,
-          topic: data.topic,
-          apiKey: data.apiKey // <-- ADD THIS LINE
-        })
-      });
-      // Update local state for immediate UI feedback
-      setSettings(data.settings);
-      setTopic(data.topic);
-      setGeminiApiKey(data.apiKey); // <-- ADD THIS LINE
-      
-      // Stop retrying since we successfully saved
-      stopRetryingSettings();
-      
-      // Clear loading timeout and hide initial loading screen
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        setLoadingTimeout(null);
-      }
-      setIsInitialLoading(false);
-    } catch (error) {
-      console.error("Failed to save settings to DB:", error);
-    }
+    // Close the modal immediately for better UX
     setIsSettingsModalOpen(false);
+    
+    // Try to save settings, and if it fails, start retrying in background
+    const success = await attemptSaveSettings(data);
+    if (!success) {
+      startRetryingSave(data);
+    }
   };
   
   const handleNavigate = (gameId) => {
@@ -299,6 +360,7 @@ function LinguaFlowApp() {
         currentApiKey={geminiApiKey}
         currentTopic={topic}
         isRetrying={isRetryingSettings}
+        isRetryingSave={isRetryingSave}
       />
     </div>
   );
