@@ -7,6 +7,156 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+/* Tablet breakpoint (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .write-a-response-container {
+    gap: 1.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .question-card-write {
+    padding: 1.25rem;
+  }
+
+  .question-text {
+    font-size: 1.4rem;
+  }
+
+  .response-input {
+    font-size: 1.05rem;
+    padding: 0.875rem;
+  }
+
+  .submit-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 1.05rem;
+  }
+
+  .nav-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile breakpoint (< 768px) */
+@media (max-width: 767px) {
+  .write-a-response-container {
+    gap: 1rem;
+    padding: 0;
+  }
+
+  .question-card-write {
+    padding: 1rem;
+    margin: 0 0.25rem;
+  }
+
+  .question-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .question-text {
+    font-size: 1.25rem;
+    line-height: 1.5;
+  }
+
+  .speak-button {
+    font-size: 1.3rem;
+    padding: 0.25rem;
+    align-self: flex-end;
+  }
+
+  .response-area {
+    gap: 0.875rem;
+  }
+
+  .response-input {
+    font-size: 1rem;
+    padding: 0.75rem;
+    min-height: 100px;
+  }
+
+  .submit-button {
+    padding: 0.7rem 1.25rem;
+    font-size: 1rem;
+    align-self: stretch;
+  }
+
+  .feedback-box {
+    padding: 0.875rem 1.25rem;
+  }
+
+  .feedback-box h4 {
+    font-size: 1rem;
+  }
+
+  .feedback-box p {
+    font-size: 0.9rem;
+  }
+
+  .navigation-write {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .nav-button {
+    padding: 0.7rem 1.25rem;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+}
+
+/* Small mobile breakpoint (< 480px) */
+@media (max-width: 479px) {
+  .write-a-response-container {
+    gap: 0.875rem;
+  }
+
+  .question-card-write {
+    padding: 0.875rem;
+    margin: 0;
+  }
+
+  .question-text {
+    font-size: 1.15rem;
+  }
+
+  .speak-button {
+    font-size: 1.2rem;
+  }
+
+  .response-input {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+    min-height: 90px;
+  }
+
+  .submit-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .feedback-box {
+    padding: 0.75rem 1rem;
+  }
+
+  .feedback-box h4 {
+    font-size: 0.95rem;
+  }
+
+  .feedback-box p {
+    font-size: 0.85rem;
+  }
+
+  .nav-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
 }
 
 .question-card-write {

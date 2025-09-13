@@ -7,6 +7,135 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+/* Tablet breakpoint (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .comprehension-container {
+    gap: 1.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .passage-card, .question-card {
+    padding: 1.25rem;
+  }
+
+  .passage-text {
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .comprehension-question {
+    font-size: 1.2rem;
+  }
+
+  .mcq-option {
+    padding: 0.875rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile breakpoint (< 768px) */
+@media (max-width: 767px) {
+  .comprehension-container {
+    gap: 1rem;
+    padding: 0;
+  }
+
+  .passage-card, .question-card {
+    padding: 1rem;
+    margin: 0 0.25rem;
+  }
+
+  .passage-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .speak-button {
+    font-size: 1.3rem;
+    padding: 0.25rem;
+  }
+
+  .passage-text {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .comprehension-question {
+    font-size: 1.15rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .mcq-options {
+    gap: 0.6rem;
+  }
+
+  .mcq-option {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .feedback-and-navigation .continue-button, 
+  .feedback-and-navigation .generate-new-button {
+    padding: 0.875rem;
+    font-size: 1rem;
+  }
+
+  .correct-answer-feedback {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Small mobile breakpoint (< 480px) */
+@media (max-width: 479px) {
+  .comprehension-container {
+    gap: 0.875rem;
+  }
+
+  .passage-card, .question-card {
+    padding: 0.875rem;
+    margin: 0;
+  }
+
+  .passage-header h3 {
+    font-size: 1rem;
+  }
+
+  .speak-button {
+    font-size: 1.2rem;
+  }
+
+  .passage-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .comprehension-question {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .mcq-options {
+    gap: 0.5rem;
+  }
+
+  .mcq-option {
+    padding: 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .feedback-and-navigation .continue-button, 
+  .feedback-and-navigation .generate-new-button {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .correct-answer-feedback {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.85rem;
+  }
 }
 
 .passage-card, .question-card {
