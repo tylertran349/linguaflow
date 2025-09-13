@@ -97,7 +97,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   const handleSpeakPassage = () => {
     if (!currentPassageData?.passage) return;
-    speakText(currentPassageData.passage, targetLangCode, settings.ttsEngine);
+    speakText(currentPassageData.passage, targetLangCode, settings);
   };
   
   const handleWordClick = (word) => {

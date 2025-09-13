@@ -126,7 +126,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   const handleSpeakQuestion = () => {
     if (!currentQuestion) return;
-    speakText(currentQuestion, targetLangCode, settings.ttsEngine);
+    speakText(currentQuestion, targetLangCode, settings);
   };
   
     const handleWordClick = (word) => {

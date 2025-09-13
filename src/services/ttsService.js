@@ -3,6 +3,49 @@
 let currentGoogleAudio = null;
 let currentPuterAudio = null;
 
+// Enhanced mapping from basic language codes to BCP 47 language tags for Web Speech API
+// This mapping prioritizes the most commonly supported language variants
+const languageCodeToBCP47 = {
+  "ar": "ar-SA",      // Arabic - Saudi Arabia (more commonly supported)
+  "bn": "bn-BD",      // Bengali - Bangladesh
+  "bg": "bg-BG",      // Bulgarian - Bulgaria
+  "hr": "hr-HR",      // Croatian - Croatia
+  "cs": "cs-CZ",      // Czech - Czech Republic
+  "da": "da-DK",      // Danish - Denmark
+  "nl": "nl-NL",      // Dutch - Netherlands
+  "en": "en-US",      // English - United States
+  "et": "et-EE",      // Estonian - Estonia
+  "fi": "fi-FI",      // Finnish - Finland
+  "fr": "fr-FR",      // French - France
+  "de": "de-DE",      // German - Germany
+  "el": "el-GR",      // Greek - Greece
+  "iw": "he-IL",      // Hebrew - Israel
+  "hi": "hi-IN",      // Hindi - India
+  "hu": "hu-HU",      // Hungarian - Hungary
+  "id": "id-ID",      // Indonesian - Indonesia
+  "it": "it-IT",      // Italian - Italy
+  "ja": "ja-JP",      // Japanese - Japan
+  "ko": "ko-KR",      // Korean - South Korea
+  "lv": "lv-LV",      // Latvian - Latvia
+  "lt": "lt-LT",      // Lithuanian - Lithuania
+  "zh-CN": "zh-CN",   // Chinese Simplified - China
+  "no": "nb-NO",      // Norwegian Bokmål - Norway
+  "pl": "pl-PL",      // Polish - Poland
+  "pt": "pt-BR",      // Portuguese - Brazil (more commonly supported)
+  "ro": "ro-RO",      // Romanian - Romania
+  "ru": "ru-RU",      // Russian - Russia
+  "sr": "sr-RS",      // Serbian - Serbia
+  "sk": "sk-SK",      // Slovak - Slovakia
+  "sl": "sl-SI",      // Slovenian - Slovenia
+  "es": "es-ES",      // Spanish - Spain
+  "sw": "sw-KE",      // Swahili - Kenya
+  "sv": "sv-SE",      // Swedish - Sweden
+  "th": "th-TH",      // Thai - Thailand
+  "tr": "tr-TR",      // Turkish - Turkey
+  "uk": "uk-UA",      // Ukrainian - Ukraine
+  "vi": "vi-VN"       // Vietnamese - Vietnam
+};
+
 // The puterVoiceMap configuration remains unchanged.
 const puterVoiceMap = {
   "ru":    { language: "ru-RU", voice: "Maxim",  engine: "standard" },
@@ -49,17 +92,93 @@ const stopAllAudio = () => {
   }
 };
 
-// --- MODIFIED: Removed redundant cancellation logic ---
+// --- COMPLETELY REDESIGNED: Web Speech API with proper language handling ---
 const speakWithWebSpeech = (text, langCode, rate = 1) => {
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = langCode;
-    utterance.rate = rate; // Use the provided rate
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    window.speechSynthesis.speak(utterance);
-  } else {
+  if (!('speechSynthesis' in window)) {
     console.error("Sorry, your browser does not support the Web Speech API.");
+    return;
+  }
+
+  // Convert basic language code to BCP 47 format
+  const bcp47LangCode = languageCodeToBCP47[langCode] || langCode;
+  
+  // Create the utterance
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = bcp47LangCode;
+  utterance.rate = rate;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  // Function to find and set the best matching voice
+  const setBestVoice = () => {
+    const voices = speechSynthesis.getVoices();
+    
+    if (voices.length === 0) {
+      console.warn("No voices available yet, will retry when voices are loaded");
+      return false;
+    }
+
+    // First, try to find an exact language match
+    let bestVoice = voices.find(voice => voice.lang === bcp47LangCode);
+    
+    // If no exact match, try to find a voice that starts with the language code
+    if (!bestVoice) {
+      bestVoice = voices.find(voice => 
+        voice.lang.startsWith(langCode + '-') || 
+        voice.lang.startsWith(langCode + '_')
+      );
+    }
+    
+    // If still no match, try to find any voice with the same base language
+    if (!bestVoice) {
+      const baseLang = langCode.split('-')[0];
+      bestVoice = voices.find(voice => 
+        voice.lang.startsWith(baseLang + '-') || 
+        voice.lang.startsWith(baseLang + '_')
+      );
+    }
+    
+    // If we found a voice, use it
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+      console.log(`Using voice: ${bestVoice.name} (${bestVoice.lang}) for language: ${langCode}`);
+      return true;
+    } else {
+      console.warn(`No suitable voice found for language: ${langCode} (${bcp47LangCode})`);
+      console.log("Available voices:", voices.map(v => `${v.name} (${v.lang})`));
+      return false;
+    }
+  };
+
+  // Try to set the voice immediately
+  const voiceSet = setBestVoice();
+  
+  if (voiceSet) {
+    // Voice is set, speak immediately
+    speechSynthesis.speak(utterance);
+  } else {
+    // Voices not loaded yet, wait for them
+    const onVoicesChanged = () => {
+      if (setBestVoice()) {
+        speechSynthesis.speak(utterance);
+      } else {
+        // Fallback: speak with default voice but correct language
+        console.warn(`Speaking with default voice for language: ${bcp47LangCode}`);
+        speechSynthesis.speak(utterance);
+      }
+      speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+    };
+    
+    speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+    
+    // Fallback timeout in case voices never load
+    setTimeout(() => {
+      speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+      if (!speechSynthesis.speaking) {
+        console.warn(`Speaking with default voice after timeout for language: ${bcp47LangCode}`);
+        speechSynthesis.speak(utterance);
+      }
+    }, 2000);
   }
 };
 
@@ -98,6 +217,9 @@ export const speakText = (text, langCode, settings) => {
   stopAllAudio();
   
   const { ttsEngine } = settings;
+
+  // Debug logging for TTS calls
+  console.log(`TTS Debug - Text: "${text}", Language: ${langCode}, Engine: ${ttsEngine}`);
 
   if (ttsEngine === 'web-speech') {
     speakWithWebSpeech(text, langCode, settings.webSpeechRate);
