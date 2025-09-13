@@ -1,11 +1,27 @@
 import { useState, useEffect } from 'react';
 import '../styles/SettingsModal.css';
 import { supportedLanguages } from '../utils/languages';
+import { isLocalEnvironment } from '../utils/environment';
 
 // --- Constants ---
 const CEFR_LEVELS = [{ value: "A1", label: "A1 (Beginner)" }, { value: "A2", label: "A2 (Upper Beginner)" }, { value: "B1", label: "B1 (Intermediate)" }, { value: "B2", label: "B2 (Upper Intermediate)" }, { value: "C1", label: "C1 (Advanced)" }, { value: "C2", label: "C2 (Native-like)" }];
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
-const TTS_ENGINES = [{ value: "web-speech", label: "Web Speech API (default)" }, { value: "puter", label: "Puter AI (doesn't support some languages)" }, { value: "google-translate", label: "Google Translate (local only)" }];
+
+// TTS engines - filter based on environment
+const getAllTtsEngines = () => [
+  { value: "web-speech", label: "Web Speech API (default)" }, 
+  { value: "puter", label: "Puter AI (doesn't support some languages)" }, 
+  { value: "google-translate", label: "Google Translate (local only)" }
+];
+
+const getTtsEngines = () => {
+  const allEngines = getAllTtsEngines();
+  if (isLocalEnvironment()) {
+    return allEngines;
+  }
+  // In production, exclude Google Translate
+  return allEngines.filter(engine => engine.value !== 'google-translate');
+};
 
 function SettingsModal({
   isOpen,
@@ -26,7 +42,14 @@ function SettingsModal({
 
   useEffect(() => {
     if (isOpen) {
-      setTempSettings(currentSettings);
+      let settingsToUse = { ...currentSettings };
+      
+      // If Google Translate is selected but not available in this environment, switch to web-speech
+      if (settingsToUse.ttsEngine === 'google-translate' && !isLocalEnvironment()) {
+        settingsToUse.ttsEngine = 'web-speech';
+      }
+      
+      setTempSettings(settingsToUse);
       setTempApiKey(currentApiKey || '');
       setTempTopic(currentTopic || '');
       setErrors({}); // Clear errors when modal opens
@@ -193,19 +216,21 @@ function SettingsModal({
                   />
                   {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
               </div>
-              <div className="setting-item">
-                  <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
-                  <input
-                      type="number"
-                      id="googleTranslateRate"
-                      name="googleTranslateRate"
-                      min="0" max="2" step="0.1"
-                      value={tempSettings.googleTranslateRate}
-                      onChange={handleSettingChange}
-                      className={errors.googleTranslateRate ? 'input-error' : ''}
-                  />
-                  {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
-              </div>
+              {isLocalEnvironment() && (
+                  <div className="setting-item">
+                      <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
+                      <input
+                          type="number"
+                          id="googleTranslateRate"
+                          name="googleTranslateRate"
+                          min="0" max="2" step="0.1"
+                          value={tempSettings.googleTranslateRate}
+                          onChange={handleSettingChange}
+                          className={errors.googleTranslateRate ? 'input-error' : ''}
+                      />
+                      {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
+                  </div>
+              )}
           </div>
 
           <div className="settings-section">
@@ -213,7 +238,7 @@ function SettingsModal({
               <div className="setting-item">
                   <label htmlFor="ttsEngine">Text-to-Speech Engine</label>
                   <select name="ttsEngine" id="ttsEngine" value={tempSettings.ttsEngine} onChange={handleSettingChange}>
-                      {TTS_ENGINES.map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
+                      {getTtsEngines().map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
                   </select>
               </div>
               <div className="setting-item">
