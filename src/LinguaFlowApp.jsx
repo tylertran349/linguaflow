@@ -338,11 +338,9 @@ function LinguaFlowApp() {
       />
 
       <div className="main-content">
-        <header className="app-header">
-          <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            <span></span><span></span><span></span>
-          </button>
-        </header>
+        <button className="hamburger-menu" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          <span></span><span></span><span></span>
+        </button>
 
         <main className="learning-container">
           {renderActiveModule()}

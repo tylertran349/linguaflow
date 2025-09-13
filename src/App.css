@@ -162,16 +162,6 @@ textarea {
   background-color: var(--color-light-grey);
 }
 
-/* App Header */
-.app-header {
-  display: none;
-  align-items: center;
-  padding: 0 var(--spacing-6);
-  height: 70px;
-  background-color: var(--color-white);
-  border-bottom: 1px solid var(--color-light-grey);
-  flex-shrink: 0;
-}
 
 .title-group h1 {
   font-size: var(--font-size-2xl);
@@ -192,27 +182,35 @@ textarea {
 /* Hamburger Menu */
 .hamburger-menu {
   display: none;
+  position: fixed;
+  top: var(--spacing-4);
+  left: var(--spacing-4);
   background: none;
   border: none;
-  padding: var(--spacing-2);
-  margin-right: var(--spacing-4);
+  padding: 0;
+  margin: 0;
   cursor: pointer;
   flex-direction: column;
   gap: var(--spacing-1);
   z-index: 1001;
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast);
+  border-radius: 0;
+  box-shadow: none;
+  transition: none;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
 }
 
 .hamburger-menu:hover {
-  background-color: var(--color-light-grey);
+  background: none;
 }
 
 .hamburger-menu span {
   display: block;
-  width: 24px;
-  height: 2px;
-  background-color: var(--color-white);
+  width: 28px;
+  height: 3px;
+  background-color: var(--color-dark-grey);
   border-radius: 1px;
   transition: all var(--transition-fast);
 }
@@ -408,11 +406,6 @@ textarea {
     display: block;
   }
 
-  .app-header {
-    display: flex;
-    padding: 0 var(--spacing-5);
-    height: 60px;
-  }
 
   .learning-container {
     padding: var(--spacing-5);
@@ -476,25 +469,23 @@ textarea {
     display: block;
   }
 
-  .app-header {
-    display: flex;
-    padding: 0 var(--spacing-4);
-    height: 56px;
-  }
 
   .learning-container {
     padding: var(--spacing-4);
-    min-height: calc(100vh - 56px);
+    min-height: 100vh;
   }
 
   .hamburger-menu {
     display: flex;
-    padding: var(--spacing-2);
+    padding: 0;
+    margin: 0;
+    background: none;
+    box-shadow: none;
   }
 
   .hamburger-menu span {
-    width: 20px;
-    height: 2px;
+    width: 24px;
+    height: 3px;
   }
 
   .overlay {
@@ -552,18 +543,17 @@ textarea {
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
-  .app-header {
-    padding: 0 var(--spacing-3);
-    height: 52px;
-  }
 
   .hamburger-menu {
-    padding: var(--spacing-1);
+    padding: 0;
+    margin: 0;
+    background: none;
+    box-shadow: none;
   }
 
   .hamburger-menu span {
-    width: 18px;
-    height: 2px;
+    width: 20px;
+    height: 3px;
   }
 
   .learning-container {
@@ -647,16 +637,6 @@ textarea {
   }
 }
 
-/* User Button positioning */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.user-button-container {
-  margin-right: var(--spacing-5);
-}
 
 /* Utility Classes */
 .sr-only {
