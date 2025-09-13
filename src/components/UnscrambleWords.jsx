@@ -33,6 +33,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [isHintVisible, setIsHintVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
 
   // --- NEW STATE for DragOverlay ---
   const [activeItem, setActiveItem] = useState(null);
@@ -45,6 +46,21 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Effect for animated ellipsis during loading
+  useEffect(() => {
+    let intervalId;
+    if (isLoading) {
+      let dotCount = 0;
+      const baseMessage = 'Generating sentences, please wait';
+      setLoadingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isLoading]);
 
   // ... (shuffleArray, useEffect hooks, and other functions remain the same)
   const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
@@ -155,7 +171,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
   // --- JSX REMAINS LARGELY THE SAME ---
   if (isLoading) {
-    return <p className="status-message">Generating sentences, please wait...</p>;
+    return <p className="status-message">{loadingMessage}</p>;
   }
 
   // 2. Second Priority: Handle the initial state before any sentences have been generated.

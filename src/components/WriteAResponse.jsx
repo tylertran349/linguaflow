@@ -1,6 +1,6 @@
 // src/components/WriteAResponse.jsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchPracticeQuestions, fetchResponseFeedback } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -21,9 +21,41 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [isFetchingFeedback, setIsFetchingFeedback] = useState(false);
   const [error, setError] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Generating questions, please wait...');
+  const [feedbackLoadingMessage, setFeedbackLoadingMessage] = useState('Getting feedback...');
 
   const currentQuestion = questions[currentQuestionIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
+
+  // Effect for animated ellipsis during loading
+  useEffect(() => {
+    let intervalId;
+    if (isLoadingQuestions) {
+      let dotCount = 0;
+      const baseMessage = 'Generating questions, please wait';
+      setLoadingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isLoadingQuestions]);
+
+  // Effect for animated ellipsis during feedback loading
+  useEffect(() => {
+    let intervalId;
+    if (isFetchingFeedback) {
+      let dotCount = 0;
+      const baseMessage = 'Getting feedback';
+      setFeedbackLoadingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setFeedbackLoadingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isFetchingFeedback]);
 
   const generateQuestions = async () => {
     if (!geminiApiKey) {
@@ -104,7 +136,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
         speakText(cleanedWord, targetLangCode, settings);
     };
   
-  if (isLoadingQuestions) return <p className="status-message">Generating questions...</p>;
+  if (isLoadingQuestions) return <p className="status-message">{loadingMessage}</p>;
   
   if (questions.length === 0) {
     return (
@@ -152,7 +184,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
                 onClick={handleSubmit}
                 disabled={isFetchingFeedback}
             >
-                {isFetchingFeedback ? 'Getting Feedback...' : 'Submit Response'}
+                {isFetchingFeedback ? feedbackLoadingMessage : 'Submit Response'}
             </button>
         )}
       </div>

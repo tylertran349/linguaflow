@@ -1,6 +1,6 @@
 // src/components/ReadAndRespond.jsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchComprehensionPassages } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -15,6 +15,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Generating passages, please wait...');
   
   // State for the current question
   const [userAnswer, setUserAnswer] = useState(null); // Stores the selected option text
@@ -23,6 +24,21 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   // --- Derived State ---
   const currentPassageData = passages[currentPassageIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
+
+  // Effect for animated ellipsis during loading
+  useEffect(() => {
+    let intervalId;
+    if (isLoading) {
+      let dotCount = 0;
+      const baseMessage = 'Generating passages, please wait';
+      setLoadingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isLoading]);
 
   // --- Core Functions ---
   const generate = async () => {
@@ -105,7 +121,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   };
 
   // --- Render Logic ---
-  if (isLoading) return <p className="status-message">Generating passages, please wait...</p>;
+  if (isLoading) return <p className="status-message">{loadingMessage}</p>;
   
   if (passages.length === 0) {
     return (
