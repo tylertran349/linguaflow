@@ -126,7 +126,7 @@ function LinguaFlowApp() {
     // Try immediately first
     attemptSaveSettings(data).then(success => {
       if (!success) {
-        console.log('Initial save attempt failed, starting interval retry every 3 seconds');
+        console.log('Initial save attempt failed, starting interval retry every 2 seconds');
         // If immediate attempt failed, start interval retry
         const interval = setInterval(async () => {
           const success = await attemptSaveSettings(data);
@@ -134,7 +134,7 @@ function LinguaFlowApp() {
             clearInterval(interval);
             setSaveRetryInterval(null);
           }
-        }, 3000); // Retry every 3 seconds
+        }, 2000); // Retry every 2 seconds
         
         setSaveRetryInterval(interval);
       }
