@@ -224,7 +224,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
       {isCorrect === true && (
         <div className="feedback-message correct">
-          Correct! <PartyPopper size={20} fill="var(--color-green)" />
+          Correct! <PartyPopper size={20} color="var(--color-green)" />
         </div>
       )}
 

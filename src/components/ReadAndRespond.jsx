@@ -151,7 +151,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
         <div className="passage-header">
             <h3>Read the passage</h3>
             <button onClick={handleSpeakPassage} className="speak-button" title="Pronounce entire passage">
-              <Volume2 size={20} fill="var(--color-green)" />
+              <Volume2 size={20} color="var(--color-green)" />
             </button>
         </div>
         <p className="passage-text">

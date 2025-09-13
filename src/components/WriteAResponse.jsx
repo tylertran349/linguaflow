@@ -166,7 +166,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
               ))}
             </h3>
             <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">
-              <Volume2 size={20} fill="var(--color-green)" />
+              <Volume2 size={20} color="var(--color-green)" />
             </button>
         </div>
       </div>

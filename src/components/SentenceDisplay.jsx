@@ -267,7 +267,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     }
   };
 
-  const renderTargetSentence = (fullSentence, colorMap) => {
+  const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak) => {
     if (!fullSentence || !colorMap) return null;
 
     const targetToInfoMap = new Map(
@@ -276,7 +276,18 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
 
     const phrasesToFind = Array.from(targetToInfoMap.keys()).sort((a, b) => b.length - a.length);
 
-    if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
+    if (phrasesToFind.length === 0) {
+      return (
+        <span>
+          {fullSentence}
+          {onSentenceSpeak && (
+            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
+              <Volume2 size={24} color="var(--color-green)" />
+            </button>
+          )}
+        </span>
+      );
+    }
 
     const regex = new RegExp(`(${phrasesToFind.map(escapeRegExp).join('|')})`, 'gi');
     const matches = [...fullSentence.matchAll(regex)];
@@ -309,7 +320,18 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
       result.push(fullSentence.substring(lastIndex));
     }
 
-    return result.map((part, index) => <span key={index}>{part}</span>);
+    const sentenceParts = result.map((part, index) => <span key={index}>{part}</span>);
+
+    return (
+      <span>
+        {sentenceParts}
+        {onSentenceSpeak && (
+          <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
+            <Volume2 size={24} color="var(--color-green)" />
+          </button>
+        )}
+      </span>
+    );
   };
 
   const renderNativeSentence = (fullSentence, colorMap) => {
@@ -386,11 +408,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        <span>{renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping)}</span>
+                        {renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping, () => handleSentenceSpeak(currentReview.targetSentence))}
                     </span>
-                    <button onClick={() => handleSentenceSpeak(currentReview.targetSentence)} className="speak-button" title="Pronounce Sentence">
-                      <Volume2 size={20} fill="var(--color-green)" />
-                    </button>
                 </section>
                 {showTranslation && (
                     <section className="native-sentence">
@@ -455,11 +474,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        <span>{renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping)}</span>
+                        {renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping, () => handleSentenceSpeak(currentSentence.targetSentence))}
                     </span>
-                    <button onClick={() => handleSentenceSpeak(currentSentence.targetSentence)} className="speak-button" title="Pronounce Sentence">
-                      <Volume2 size={20} fill="var(--color-green)" />
-                    </button>
                 </section>
                 {showTranslation && (
                     <section className="native-sentence">

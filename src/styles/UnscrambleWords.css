@@ -131,7 +131,6 @@
   padding: var(--spacing-3) var(--spacing-5);
   border-radius: var(--radius-lg);
   text-align: center;
-  box-shadow: var(--shadow-sm);
 }
 
 .feedback-message.correct {

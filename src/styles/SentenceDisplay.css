@@ -75,7 +75,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-4);
 }
 
 .native-sentence {
@@ -193,11 +192,10 @@
 }
 
 .speak-button {
-  background: var(--color-green);
+  background: transparent;
   border: none;
   font-size: var(--font-size-2xl);
   cursor: pointer;
-  color: var(--color-white);
   transition: all var(--transition-fast);
   padding: var(--spacing-2);
   line-height: 1;
@@ -207,15 +205,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
 }
 
 .speak-button:hover {
   transform: scale(1.1);
-  box-shadow: var(--shadow-md);
 }
 
 .speak-button:active {
+  transform: scale(0.95);
+}
+
+.inline-speak-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: var(--spacing-3);
+  line-height: 1;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-3);
+  vertical-align: middle;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.inline-speak-button:hover {
+  background: var(--color-light-grey);
+  transform: scale(1.1);
+}
+
+.inline-speak-button:active {
   transform: scale(0.95);
 }
 
@@ -317,8 +339,6 @@
 
   .target-sentence {
     font-size: 1.75rem;
-    flex-direction: column;
-    gap: var(--spacing-3);
   }
 
   .native-sentence {
@@ -330,6 +350,10 @@
     padding: var(--spacing-1);
     width: 50px;
     height: 50px;
+  }
+
+  .inline-speak-button {
+    margin-left: var(--spacing-1);
   }
 
   .actions, .navigation {
@@ -391,7 +415,6 @@
 
   .target-sentence {
     font-size: 1.5rem;
-    gap: var(--spacing-2);
   }
 
   .native-sentence {
@@ -402,6 +425,10 @@
     font-size: var(--font-size-lg);
     width: 45px;
     height: 45px;
+  }
+
+  .inline-speak-button {
+    margin-left: var(--spacing-1);
   }
 
   .actions button, .navigation button, .generate-button {
@@ -441,6 +468,7 @@
 .navigation button:focus-visible,
 .generate-button:focus-visible,
 .speak-button:focus-visible,
+.inline-speak-button:focus-visible,
 .decision-button:focus-visible {
   outline: 2px solid var(--color-green);
   outline-offset: 2px;
