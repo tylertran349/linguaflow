@@ -38,36 +38,102 @@ function LinguaFlowApp() {
   
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeModule, setActiveModule] = useState(null);
+  const [isRetryingSettings, setIsRetryingSettings] = useState(false);
+  const [settingsRetryInterval, setSettingsRetryInterval] = useState(null);
 
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
 
-  useEffect(() => {
-    const fetchUserSettings = async () => {
-      if (isSignedIn) {
-        try {
-          const token = await getToken();
-          const response = await fetch(`${API_BASE_URL}/api/settings`, { // <-- Make sure this uses API_BASE_URL
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (!response.ok) {
-            throw new Error('Could not fetch user settings.');
-          }
-          const data = await response.json();
-          
-          // Update all state from the fetched data
-          if (data.settings) setSettings(data.settings);
-          if (data.topic) setTopic(data.topic);
-          if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey); // <-- ADD THIS LINE
+  const stopRetryingSettings = () => {
+    if (isRetryingSettings) {
+      console.log('Stopping settings retry - settings loaded successfully');
+    }
+    setIsRetryingSettings(false);
+    if (settingsRetryInterval) {
+      clearInterval(settingsRetryInterval);
+      setSettingsRetryInterval(null);
+    }
+  };
 
-        } catch (error) {
-          console.error("Failed to fetch settings from DB:", error);
+  const fetchUserSettings = async () => {
+    if (isSignedIn) {
+      const startTime = Date.now();
+      try {
+        console.log('Fetching user settings...');
+        const token = await getToken();
+        const tokenTime = Date.now();
+        console.log(`Token obtained in ${tokenTime - startTime}ms`);
+        
+        const response = await fetch(`${API_BASE_URL}/api/settings`, { // <-- Make sure this uses API_BASE_URL
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const fetchTime = Date.now();
+        console.log(`API request completed in ${fetchTime - tokenTime}ms`);
+        
+        if (!response.ok) {
+          throw new Error('Could not fetch user settings.');
         }
+        const data = await response.json();
+        
+        // Update all state from the fetched data
+        if (data.settings) setSettings(data.settings);
+        if (data.topic) setTopic(data.topic);
+        if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey); // <-- ADD THIS LINE
+
+        // Always stop retrying when we successfully fetch settings (even if not currently retrying)
+        stopRetryingSettings();
+
+        const totalTime = Date.now() - startTime;
+        console.log(`Settings loaded successfully in ${totalTime}ms total`);
+        return true; // Success
+      } catch (error) {
+        const totalTime = Date.now() - startTime;
+        console.error(`Failed to fetch settings from DB after ${totalTime}ms:`, error);
+        return false; // Failure
+      }
+    }
+    return false; // Not signed in
+  };
+
+  const startRetryingSettings = () => {
+    if (isRetryingSettings) return; // Already retrying
+    
+    console.log('Starting settings retry - attempting to load settings from MongoDB');
+    setIsRetryingSettings(true);
+    
+    // Try immediately first
+    fetchUserSettings().then(success => {
+      if (!success) {
+        console.log('Initial settings fetch failed, starting interval retry every 2 seconds');
+        // If immediate attempt failed, start interval retry
+        const interval = setInterval(async () => {
+          const success = await fetchUserSettings();
+          if (success) {
+            clearInterval(interval);
+            setSettingsRetryInterval(null);
+          }
+        }, 2000); // Retry every 2 seconds
+        
+        setSettingsRetryInterval(interval);
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (isSignedIn) {
+      console.log('Initial settings fetch triggered - user is signed in');
+      fetchUserSettings();
+    }
+  }, [isSignedIn, getToken]);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (settingsRetryInterval) {
+        clearInterval(settingsRetryInterval);
       }
     };
-
-    fetchUserSettings();
-  }, [isSignedIn, getToken]);
+  }, [settingsRetryInterval]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -82,16 +148,27 @@ function LinguaFlowApp() {
   }, []); 
 
   useEffect(() => {
-    if (!geminiApiKey) {
+    if (!geminiApiKey && isSignedIn) {
+      console.log('No API key detected, opening settings modal and starting retry');
       setIsSettingsModalOpen(true);
+      // Only start retrying if we're not already fetching settings
+      if (!isRetryingSettings) {
+        startRetryingSettings();
+      }
+    } else if (geminiApiKey) {
+      console.log('API key detected, stopping any retry attempts');
+      // If we have an API key, make sure we're not retrying
+      stopRetryingSettings();
     }
-  }, [geminiApiKey]);
+  }, [geminiApiKey, isRetryingSettings, isSignedIn]);
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
     if (window.innerWidth < MOBILE_BREAKPOINT) {
       setIsSidebarOpen(false);
     }
+    // Start retrying settings when modal is opened
+    startRetryingSettings();
   };
 
   const handleSaveSettings = async (data) => {
@@ -114,6 +191,9 @@ function LinguaFlowApp() {
       setSettings(data.settings);
       setTopic(data.topic);
       setGeminiApiKey(data.apiKey); // <-- ADD THIS LINE
+      
+      // Stop retrying since we successfully saved
+      stopRetryingSettings();
     } catch (error) {
       console.error("Failed to save settings to DB:", error);
     }
@@ -174,11 +254,15 @@ function LinguaFlowApp() {
 
       <SettingsModal 
         isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
+        onClose={() => {
+          setIsSettingsModalOpen(false);
+          stopRetryingSettings();
+        }}
         onSave={handleSaveSettings}
         currentSettings={settings}
         currentApiKey={geminiApiKey}
         currentTopic={topic}
+        isRetrying={isRetryingSettings}
       />
     </div>
   );
