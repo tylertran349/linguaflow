@@ -20,6 +20,7 @@ const userSettingsSchema = new mongoose.Schema({
         sentenceDisplayHistorySize: Number,
         readAndRespondHistorySize: Number,
         writeAResponseHistorySize: Number,
+        temperature: Number,
     },
     
     // The topic string

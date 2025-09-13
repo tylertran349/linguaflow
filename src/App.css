@@ -31,7 +31,6 @@ body {
   align-items: center;
   padding: 0 2rem;
   height: 70px; /* Example fixed height */
-  border-bottom: 1px solid #ddd;
   background-color: #fff;
   flex-shrink: 0; /* Prevents header from shrinking */
 }
@@ -86,6 +85,7 @@ body {
   /* MODIFICATION 2: Make the header visible ONLY on smaller screens */
   .app-header {
     display: flex;
+    border-bottom: 1px solid #ddd;
   }
 
   .sidebar {

@@ -31,7 +31,7 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
-      temperature: 1,
+      temperature: settings.temperature || 1,
     }
   });
 
@@ -224,7 +224,12 @@ export const fetchPracticeQuestions = async (apiKey, settings, topic, history = 
 
 export const fetchResponseFeedback = async (apiKey, settings, question, userResponse) => {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: settings.model });
+  const model = genAI.getGenerativeModel({ 
+    model: settings.model,
+    generationConfig: {
+      temperature: settings.temperature || 1,
+    }
+  });
 
   const prompt = `
     You are a friendly and encouraging language tutor.

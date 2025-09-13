@@ -96,12 +96,20 @@ function SettingsModal({
       googleTranslateRate: parseFloat(tempSettings.googleTranslateRate),
     };
     
+    // Parse temperature for validation
+    const temperature = parseFloat(tempSettings.temperature);
+    
     // Validate each rate
     for (const key in rates) {
       const rate = rates[key];
       if (isNaN(rate) || rate < 0.1 || rate > 2.0) {
         newErrors[key] = "Value must be between 0.1 and 2.0";
       }
+    }
+    
+    // Validate temperature
+    if (isNaN(temperature) || temperature < 0.0 || temperature > 2.0) {
+      newErrors.temperature = "Temperature must be between 0.0 and 2.0";
     }
 
     // If there are any errors, update the error state and stop.
@@ -118,6 +126,7 @@ function SettingsModal({
         ...tempSettings,
         webSpeechRate: rates.webSpeechRate,
         googleTranslateRate: rates.googleTranslateRate,
+        temperature: temperature,
         sentenceCount: parseInt(tempSettings.sentenceCount, 10) || 10,
         sentenceDisplayHistorySize: parseInt(tempSettings.sentenceDisplayHistorySize, 10) || 100,
         readAndRespondHistorySize: parseInt(tempSettings.readAndRespondHistorySize, 10) || 50,
@@ -230,6 +239,22 @@ function SettingsModal({
                   <select name="model" id="model" value={tempSettings.model} onChange={handleSettingChange}>
                       {GEMINI_MODELS.map(model => ( <option key={model} value={model}>{model}</option>))}
                   </select>
+              </div>
+              <div className="setting-item">
+                  <label htmlFor="temperature">Temperature (0.0 - 2.0):</label>
+                  <input
+                      type="number"
+                      id="temperature"
+                      name="temperature"
+                      min="0" max="2" step="0.1"
+                      value={tempSettings.temperature}
+                      onChange={handleSettingChange}
+                      className={errors.temperature ? 'input-error' : ''}
+                  />
+                  {errors.temperature && <p className="error-text">{errors.temperature}</p>}
+                  <p style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                      Lower values (0.1-0.5) make responses more focused and deterministic. Higher values (0.7-2.0) make responses more creative and varied.
+                  </p>
               </div>
               <div className="setting-item">
                   <label htmlFor="sentenceCount">Number of Sentences to Generate</label>
