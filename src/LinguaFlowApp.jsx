@@ -11,6 +11,7 @@ import SentenceDisplay from './components/SentenceDisplay';
 import UnscrambleWords from './components/UnscrambleWords';
 import ReadAndRespond from './components/ReadAndRespond';
 import WriteAResponse from './components/WriteAResponse';
+import LoadingSettings from './components/LoadingSettings';
 
 // Define the breakpoint once to avoid magic numbers
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
@@ -40,6 +41,8 @@ function LinguaFlowApp() {
   const [activeModule, setActiveModule] = useState(null);
   const [isRetryingSettings, setIsRetryingSettings] = useState(false);
   const [settingsRetryInterval, setSettingsRetryInterval] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(null);
 
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
@@ -82,6 +85,13 @@ function LinguaFlowApp() {
 
         // Always stop retrying when we successfully fetch settings (even if not currently retrying)
         stopRetryingSettings();
+        
+        // Clear loading timeout and hide initial loading screen
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+          setLoadingTimeout(null);
+        }
+        setIsInitialLoading(false);
 
         const totalTime = Date.now() - startTime;
         console.log(`Settings loaded successfully in ${totalTime}ms total`);
@@ -123,17 +133,31 @@ function LinguaFlowApp() {
     if (isSignedIn) {
       console.log('Initial settings fetch triggered - user is signed in');
       fetchUserSettings();
+      
+      // Set a timeout to hide loading screen after 10 seconds as fallback
+      const timeout = setTimeout(() => {
+        console.log('Loading timeout reached, hiding loading screen');
+        setIsInitialLoading(false);
+      }, 10000);
+      
+      setLoadingTimeout(timeout);
+    } else {
+      // If user is not signed in, hide loading screen
+      setIsInitialLoading(false);
     }
   }, [isSignedIn, getToken]);
 
-  // Cleanup interval on unmount
+  // Cleanup interval and timeout on unmount
   useEffect(() => {
     return () => {
       if (settingsRetryInterval) {
         clearInterval(settingsRetryInterval);
       }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
     };
-  }, [settingsRetryInterval]);
+  }, [settingsRetryInterval, loadingTimeout]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -194,6 +218,13 @@ function LinguaFlowApp() {
       
       // Stop retrying since we successfully saved
       stopRetryingSettings();
+      
+      // Clear loading timeout and hide initial loading screen
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        setLoadingTimeout(null);
+      }
+      setIsInitialLoading(false);
     } catch (error) {
       console.error("Failed to save settings to DB:", error);
     }
@@ -226,6 +257,11 @@ function LinguaFlowApp() {
         );
     }
   };
+
+  // Show loading screen if we're initially loading settings
+  if (isInitialLoading) {
+    return <LoadingSettings />;
+  }
 
   return (
     <div className="app-layout">

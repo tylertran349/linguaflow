@@ -113,7 +113,7 @@ function SettingsModal({
     // This condition checks if the user clicked on the backdrop itself,
     // and not on any of its children (like the modal content).
     if (e.target.className === 'modal-backdrop') {
-      onClose();
+      handleSave(); // Save settings when clicking outside
     }
   };
 
@@ -225,8 +225,7 @@ function SettingsModal({
           </div>
 
           <div className="modal-actions">
-            <button onClick={onClose}>Close</button>
-            <button onClick={handleSave}>Save Settings</button>
+            <button onClick={handleSave}>Close and Save Settings</button>
           </div>
         </div>
       </div>
