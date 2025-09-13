@@ -162,6 +162,33 @@ textarea {
   background-color: var(--color-light-grey);
 }
 
+.main-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-light-grey);
+  box-shadow: var(--shadow-sm);
+  z-index: 1000;
+  align-items: center;
+  padding: 0 var(--spacing-6);
+  gap: var(--spacing-4);
+}
+
+.main-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-dark-grey);
+  margin: 0;
+  background: var(--color-green);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 
 .title-group h1 {
   font-size: var(--font-size-2xl);
@@ -182,9 +209,7 @@ textarea {
 /* Hamburger Menu */
 .hamburger-menu {
   display: none;
-  position: fixed;
-  top: var(--spacing-4);
-  left: var(--spacing-4);
+  position: relative;
   background: none;
   border: none;
   padding: 0;
@@ -204,6 +229,8 @@ textarea {
 
 .hamburger-menu:hover {
   background: none;
+  box-shadow: none;
+  transform: none;
 }
 
 .hamburger-menu span {
@@ -406,13 +433,22 @@ textarea {
     display: block;
   }
 
+  .main-header {
+    display: flex;
+  }
 
   .learning-container {
     padding: var(--spacing-5);
+    margin-top: 80px;
   }
 
   .hamburger-menu {
     display: flex;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
   }
 
   .overlay {
@@ -469,10 +505,15 @@ textarea {
     display: block;
   }
 
+  .main-header {
+    display: flex;
+    padding: 0 var(--spacing-4);
+  }
 
   .learning-container {
     padding: var(--spacing-4);
     min-height: 100vh;
+    margin-top: 80px;
   }
 
   .hamburger-menu {
@@ -480,6 +521,7 @@ textarea {
     padding: 0;
     margin: 0;
     background: none;
+    border: none;
     box-shadow: none;
   }
 
@@ -543,11 +585,20 @@ textarea {
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
+  .main-header {
+    display: flex;
+    padding: 0 var(--spacing-3);
+  }
+
+  .learning-container {
+    margin-top: 80px;
+  }
 
   .hamburger-menu {
     padding: 0;
     margin: 0;
     background: none;
+    border: none;
     box-shadow: none;
   }
 
