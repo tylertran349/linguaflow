@@ -6,15 +6,15 @@
 /* 2. Define Global Style Variables */
 :root {
   /* Color Palette */
-  --color-background: #1a1a1a; /* A slightly softer black */
-  --color-surface: #242424;   /* Dark grey for cards/panels/sidebar */
-  --color-surface-light: #3a3a3a; /* Lighter grey for input fields */
-  --color-primary: #66FF00;      /* The vibrant lime green accent */
-  --color-primary-variant: #52cc00; /* Darker green for hover states */
-  --color-text-primary: #f5f5f5;   /* Off-white for primary text */
-  --color-text-secondary: #aaaaaa; /* Dimmer grey for secondary text/labels */
-  --color-error: #ff6b6b;        /* A readable red for error messages */
-  --color-border: #444444;       /* Border color for inputs/dividers */
+  --color-background: #f5f5f5; /* Light grey background */
+  --color-surface: #ffffff;   /* White for cards/panels/sidebar */
+  --color-surface-light: #f5f5f5; /* Light grey for input fields */
+  --color-primary: #10b981;      /* Emerald green accent */
+  --color-primary-variant: #059669; /* Darker green for hover states */
+  --color-text-primary: #333333;   /* Dark grey for primary text */
+  --color-text-secondary: #666666; /* Medium grey for secondary text/labels */
+  --color-error: #ef4444;        /* Red for error messages */
+  --color-border: #e5e7eb;       /* Light grey border color for inputs/dividers */
 
   /* Layout & Font */
   --font-main: 'Inter', sans-serif;
@@ -48,7 +48,7 @@ button {
   border-radius: var(--border-radius);
   cursor: pointer;
   background-color: var(--color-primary);
-  color: #000000;
+  color: #ffffff;
   transition: background-color 0.2s ease-in-out, transform 0.1s ease;
   text-transform: uppercase;
   letter-spacing: 1.2px;
@@ -73,7 +73,7 @@ input[type="text"] {
   padding: 12px;
   font-size: 1rem;
   font-family: var(--font-main);
-  background-color: var(--color-surface-light);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   color: var(--color-text-primary);

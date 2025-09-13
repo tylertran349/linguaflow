@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PartyPopper } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -221,7 +222,11 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
 
       </DndContext>
 
-      {isCorrect === true && (<div className="feedback-message correct">Correct! 🎉</div>)}
+      {isCorrect === true && (
+        <div className="feedback-message correct">
+          Correct! <PartyPopper size={20} fill="var(--color-green)" />
+        </div>
+      )}
 
       <div className="actions-panel">
         <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>{isHintVisible ? 'Hide Hint' : 'Show Hint'}</button>

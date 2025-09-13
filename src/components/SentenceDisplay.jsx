@@ -1,5 +1,6 @@
 // src/components/SentenceDisplay.jsx
 import { useState, useEffect } from 'react';
+import { Volume2 } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -387,7 +388,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
                     <span className="sentence-text-wrapper">
                         <span>{renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping)}</span>
                     </span>
-                    <button onClick={() => handleSentenceSpeak(currentReview.targetSentence)} className="speak-button" title="Pronounce Sentence">🔊</button>
+                    <button onClick={() => handleSentenceSpeak(currentReview.targetSentence)} className="speak-button" title="Pronounce Sentence">
+                      <Volume2 size={20} fill="var(--color-green)" />
+                    </button>
                 </section>
                 {showTranslation && (
                     <section className="native-sentence">
@@ -454,7 +457,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
                     <span className="sentence-text-wrapper">
                         <span>{renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping)}</span>
                     </span>
-                    <button onClick={() => handleSentenceSpeak(currentSentence.targetSentence)} className="speak-button" title="Pronounce Sentence">🔊</button>
+                    <button onClick={() => handleSentenceSpeak(currentSentence.targetSentence)} className="speak-button" title="Pronounce Sentence">
+                      <Volume2 size={20} fill="var(--color-green)" />
+                    </button>
                 </section>
                 {showTranslation && (
                     <section className="native-sentence">

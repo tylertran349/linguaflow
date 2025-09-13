@@ -1,4 +1,4 @@
-/* src/styles/SettingsModal.css */
+/* Modern Settings Modal Styles */
 
 .modal-backdrop {
   position: fixed;
@@ -6,282 +6,393 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(31, 41, 55, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000; /* Ensure it's on top of everything */
-  padding: 1rem;
+  z-index: 2000;
+  padding: var(--spacing-4);
+  backdrop-filter: blur(8px);
 }
 
 .modal-content {
-  background-color: #fff;
-  padding: 1rem;
-  border-radius: 12px; /* A slightly larger radius often looks more modern */
+  background-color: var(--color-white);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-xl);
   width: 40%;
   max-width: 600px;
   min-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  gap: var(--spacing-6);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-light-grey);
+  animation: modalSlideIn var(--transition-normal) ease-out;
 }
 
-/* Tablet breakpoint (768px - 1023px) */
-@media (max-width: 1023px) and (min-width: 768px) {
-  .modal-backdrop {
-    padding: 1.5rem;
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
   }
-
-  .modal-content {
-    width: 60%;
-    max-width: 500px;
-    padding: 1.25rem;
-  }
-
-  .modal-scroll-wrapper {
-    padding: 0.75rem;
-  }
-
-  .settings-section {
-    padding-top: 1.25rem;
-  }
-
-  .setting-item {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Mobile breakpoint (< 768px) */
-@media (max-width: 767px) {
-  .modal-backdrop {
-    padding: 1rem;
-    align-items: flex-start;
-    padding-top: 2rem;
-  }
-
-  .modal-content {
-    width: 95%;
-    max-width: none;
-    min-width: 280px;
-    padding: 1rem;
-    max-height: 90vh;
-    margin-top: 0;
-  }
-
-  .modal-scroll-wrapper {
-    padding: 0.5rem;
-    max-height: calc(90vh - 2rem);
-  }
-
-  .modal-content h2 {
-    font-size: 1.4rem;
-    margin-bottom: 1rem;
-  }
-
-  .settings-section {
-    padding-top: 1rem;
-  }
-
-  .settings-section h3 {
-    font-size: 1.1rem;
-  }
-
-  .settings-section p {
-    font-size: 0.85rem;
-  }
-
-  .setting-item {
-    margin-bottom: 0.875rem;
-  }
-
-  .setting-item label {
-    font-size: 0.9rem;
-  }
-
-  .setting-item input,
-  .setting-item select,
-  .settings-section textarea {
-    padding: 0.6rem;
-    font-size: 0.9rem;
-  }
-
-  .modal-actions {
-    padding-top: 1rem;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .modal-actions button {
-    width: 100%;
-    padding: 0.7rem 1.25rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* Small mobile breakpoint (< 480px) */
-@media (max-width: 479px) {
-  .modal-backdrop {
-    padding: 0.75rem;
-    padding-top: 1.5rem;
-  }
-
-  .modal-content {
-    width: 98%;
-    padding: 0.875rem;
-  }
-
-  .modal-scroll-wrapper {
-    padding: 0.375rem;
-  }
-
-  .modal-content h2 {
-    font-size: 1.25rem;
-  }
-
-  .settings-section h3 {
-    font-size: 1rem;
-  }
-
-  .settings-section p {
-    font-size: 0.8rem;
-  }
-
-  .setting-item {
-    margin-bottom: 0.75rem;
-  }
-
-  .setting-item label {
-    font-size: 0.85rem;
-  }
-
-  .setting-item input,
-  .setting-item select,
-  .settings-section textarea {
-    padding: 0.5rem;
-    font-size: 0.85rem;
-  }
-
-  .modal-actions button {
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
 .modal-content h2 {
   text-align: center;
-  color: #333;
-  margin-top: 0; /* Removing default margin */
+  color: var(--color-dark-grey);
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-light-grey);
 }
 
 .modal-scroll-wrapper {
-  /* CHANGE THIS LINE from 'padding: 2rem;' */
-  padding: 1rem 1rem 1rem 1rem; /* top, right, bottom, left */
-  
+  padding: var(--spacing-4);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
-/* --- NEW STYLES FOR FORM STRUCTURE --- */
+.modal-scroll-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
 
+.modal-scroll-wrapper::-webkit-scrollbar-track {
+  background: var(--color-light-grey);
+  border-radius: 3px;
+}
+
+.modal-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-light-grey);
+  border-radius: 3px;
+}
+
+.modal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-light-grey);
+}
+
+/* Settings Sections */
 .settings-section {
-  border-top: 1px solid #eee;
-  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-light-grey);
+  padding-top: var(--spacing-6);
 }
 
-/* This removes the border from the very first section */
 .settings-section:first-of-type {
   border-top: none;
   padding-top: 0;
 }
 
 .settings-section h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
+  margin: 0 0 var(--spacing-3) 0;
+  color: var(--color-dark-grey);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
 }
 
 .settings-section p {
-  /* This overrides the centered style from the base modal paragraph */
   text-align: left;
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-4) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-dark-grey);
+  line-height: 1.6;
 }
 
-/* This is the container for a single setting (label + input) */
+/* Setting Items */
 .setting-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  /* --- THIS IS THE FIX YOU REQUESTED --- */
-  margin-bottom: 1.25rem; /* Adds vertical space between each setting */
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-5);
 }
 
 .setting-item label {
   font-weight: 500;
-  color: #444;
+  color: var(--color-dark-grey);
+  font-size: var(--font-size-sm);
 }
 
-/* A single rule for all inputs, selects, and textareas */
 .setting-item input,
 .setting-item select,
 .settings-section textarea {
   width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #f9f9f9;
-  font-family: inherit; /* Ensures they use the app's font */
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-light-grey);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-white);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Style for when a user clicks into a field */
 .setting-item input:focus,
 .setting-item select:focus,
 .settings-section textarea:focus {
-  outline: 2px solid #6a5acd;
-  border-color: transparent; /* Hides the default border to make the outline look cleaner */
+  outline: none;
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  transform: translateY(-1px);
 }
 
-/* --- END OF NEW STYLES --- */
+.setting-item input:hover,
+.setting-item select:hover,
+.settings-section textarea:hover {
+  border-color: var(--color-light-grey);
+}
 
-
-.modal-content .modal-actions {
+/* Modal Actions */
+.modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
-  border-top: 1px solid #eee; /* Add separator for actions */
-  padding-top: 1.5rem;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+  border-top: 1px solid var(--color-light-grey);
+  padding-top: var(--spacing-6);
 }
 
-/* A base style for all buttons in the modal footer */
 .modal-actions button {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  padding: var(--spacing-3) var(--spacing-6);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Style for the 'Close' button */
 .modal-actions button:first-of-type {
-  background-color: #e8e8ee;
-  color: #333;
-}
-.modal-actions button:first-of-type:hover {
-  background-color: #ddd;
+  background-color: var(--color-white);
+  color: var(--color-dark-grey);
+  border: 1px solid var(--color-light-grey);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Style for the primary 'Save Settings' button */
-.modal-actions button:last-of-type {
-    background-color: #6a5acd;
-    color: white;
+.modal-actions button:first-of-type:hover {
+  background-color: var(--color-light-grey);
+  border-color: var(--color-light-grey);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
+
+.modal-actions button:last-of-type {
+  background: var(--color-green);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
 .modal-actions button:last-of-type:hover {
-    background-color: #584aae;
+  background: var(--color-green);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design */
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .modal-backdrop {
+    padding: var(--spacing-5);
+  }
+
+  .modal-content {
+    width: 60%;
+    max-width: 500px;
+    padding: var(--spacing-6);
+  }
+
+  .modal-scroll-wrapper {
+    padding: var(--spacing-3);
+    max-height: 65vh;
+  }
+
+  .settings-section {
+    padding-top: var(--spacing-5);
+  }
+
+  .setting-item {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .modal-content h2 {
+    font-size: var(--font-size-xl);
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) {
+  .modal-backdrop {
+    padding: var(--spacing-4);
+    align-items: flex-start;
+    padding-top: var(--spacing-8);
+  }
+
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    min-width: 280px;
+    padding: var(--spacing-4);
+    max-height: 90vh;
+    margin-top: 0;
+  }
+
+  .modal-scroll-wrapper {
+    padding: var(--spacing-2);
+    max-height: calc(90vh - 2rem);
+  }
+
+  .modal-content h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .settings-section {
+    padding-top: var(--spacing-4);
+  }
+
+  .settings-section h3 {
+    font-size: var(--font-size-base);
+  }
+
+  .settings-section p {
+    font-size: var(--font-size-sm);
+  }
+
+  .setting-item {
+    margin-bottom: var(--spacing-3);
+  }
+
+  .setting-item label {
+    font-size: var(--font-size-sm);
+  }
+
+  .setting-item input,
+  .setting-item select,
+  .settings-section textarea {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .modal-actions {
+    padding-top: var(--spacing-4);
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  .modal-actions button {
+    width: 100%;
+    padding: var(--spacing-3) var(--spacing-4);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Small Mobile (320px - 479px) */
+@media (max-width: 479px) {
+  .modal-backdrop {
+    padding: var(--spacing-3);
+    padding-top: var(--spacing-6);
+  }
+
+  .modal-content {
+    width: 98%;
+    padding: var(--spacing-3);
+  }
+
+  .modal-scroll-wrapper {
+    padding: var(--spacing-1);
+  }
+
+  .modal-content h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .settings-section h3 {
+    font-size: var(--font-size-sm);
+  }
+
+  .settings-section p {
+    font-size: var(--font-size-xs);
+  }
+
+  .setting-item {
+    margin-bottom: var(--spacing-2);
+  }
+
+  .setting-item label {
+    font-size: var(--font-size-xs);
+  }
+
+  .setting-item input,
+  .setting-item select,
+  .settings-section textarea {
+    padding: var(--spacing-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .modal-actions button {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Focus states for accessibility */
+.modal-actions button:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+/* Loading states */
+.modal-content.loading {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* Error states */
+.setting-item.error input,
+.setting-item.error select,
+.settings-section.error textarea {
+  border-color: var(--color-light-grey);
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+}
+
+.setting-item.error label {
+  color: var(--color-white);
+}
+
+/* Success states */
+.setting-item.success input,
+.setting-item.success select,
+.settings-section.success textarea {
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Animation for modal backdrop */
+.modal-backdrop {
+  animation: backdropFadeIn var(--transition-fast) ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

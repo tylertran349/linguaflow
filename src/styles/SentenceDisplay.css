@@ -1,19 +1,4 @@
-/* --- src/styles/SentenceDisplay.css --- */
-
-/* :root can be defined in your main App.css or index.css for global variables */
-:root {
-  --primary-color: #007bff;
-  --primary-hover-color: #0056b3;
-  --secondary-color: #6c757d;
-  --background-color: #f8f9fa;
-  --card-background: #ffffff;
-  --text-color: #212529;
-  --light-text-color: #6c757d;
-  --border-color: #dee2e6;
-  --error-color: #dc3545;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --border-radius: 12px;
-}
+/* Modern Sentence Display Component Styles */
 
 .sentence-display-container {
   width: 100%;
@@ -22,395 +7,463 @@
   align-items: center;
 }
 
-/* --- Main Card --- */
+/* Main Card */
 .sentence-card {
-  background-color: var(--card-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  padding: 2rem;
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-8);
   width: 80%;
-  margin: 2rem auto;
+  margin: var(--spacing-8) auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Consistent spacing between sections */
-  transition: all 0.3s ease;
+  gap: var(--spacing-6);
+  transition: all var(--transition-normal);
+  border: 1px solid var(--color-light-grey);
 }
 
-/* --- Initial & Status States --- */
+.sentence-card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+/* Initial & Status States */
 .initial-state-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 3rem 1rem;
-  gap: 1rem;
-  min-height: 300px; /* Give it some substance */
+  padding: var(--spacing-12) var(--spacing-4);
+  gap: var(--spacing-4);
+  min-height: 300px;
 }
 
 .status-message {
-  font-size: 1.2rem;
-  color: var(--light-text-color);
+  font-size: var(--font-size-lg);
+  color: var(--color-dark-grey);
   margin: 0;
+  font-weight: 500;
 }
 
 .status-message.error {
-  color: var(--error-color);
-  font-weight: 500;
+  color: var(--color-dark-grey);
+  font-weight: 600;
 }
 
 .status-message.error.small {
-  font-size: 0.9rem;
-  background-color: #fff0f1;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  margin-bottom: -0.5rem; /* Pull it closer to the content */
+  font-size: var(--font-size-sm);
+  background: var(--color-light-grey);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: calc(var(--spacing-2) * -1);
+  border: 1px solid var(--color-light-grey);
 }
 
-/* --- Sentence Display Area --- */
+/* Sentence Display Area */
 .sentence-container {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .target-sentence {
-  font-size: 2.2rem;
-  font-weight: 500;
+  font-size: 2.5rem;
+  font-weight: 600;
   line-height: 1.4;
-  color: var(--text-color);
-  margin-bottom: 1rem;
+  color: var(--color-dark-grey);
+  margin-bottom: var(--spacing-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 .native-sentence {
-  font-size: 1.2rem;
-  color: var(--light-text-color);
-  min-height: 1.5em; /* Prevent layout shift when showing/hiding */
+  font-size: var(--font-size-xl);
+  color: var(--color-dark-grey);
+  min-height: 1.5em;
+  font-weight: 500;
 }
 
 .word {
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+  position: relative;
 }
 
 .word:hover {
-  background-color: var(--primary-color);
-  color: white;
+  background: var(--color-green);
+  color: var(--color-white);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
 }
 
-/* --- Buttons & Actions --- */
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto var(--spacing-6) auto;
+  border: 1px solid var(--color-light-grey);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  width: fit-content;
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
 
-/* A more general button style */
+.mode-toggle button {
+  padding: var(--spacing-3) var(--spacing-6);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--color-dark-grey);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.mode-toggle button:first-child {
+  border-right: 1px solid var(--color-light-grey);
+}
+
+.mode-toggle button:hover:not(.active) {
+  background-color: var(--color-light-grey);
+  color: var(--color-dark-grey);
+}
+
+.mode-toggle button.active {
+  background: var(--color-green);
+  color: var(--color-white);
+  font-weight: 700;
+}
+
+/* Buttons & Actions */
 .actions button,
 .navigation button,
 .generate-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  padding: var(--spacing-3) var(--spacing-6);
+  font-size: var(--font-size-base);
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  box-shadow: var(--shadow-sm);
 }
 
-/* Primary Button Style (for the most important actions) */
 .generate-button,
 .actions button:last-child {
-  background-color: var(--primary-color);
-  color: white;
-}
-.generate-button:hover,
-.actions button:last-child:hover {
-  background-color: var(--primary-hover-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+  background: var(--color-green);
+  color: var(--color-white);
 }
 
-/* Secondary Button Style */
+.generate-button:hover,
+.actions button:last-child:hover {
+  background: var(--color-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
 .actions button:first-child,
 .navigation button {
-  background-color: #e9ecef;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background-color: var(--color-white);
+  color: var(--color-dark-grey);
+  border: 1px solid var(--color-light-grey);
 }
+
 .actions button:first-child:hover,
 .navigation button:hover:not(:disabled) {
-  background-color: #d8dde2;
-  border-color: #c7ced3;
+  background-color: var(--color-light-grey);
+  border-color: var(--color-light-grey);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .navigation button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .speak-button {
-  background: none;
+  background: var(--color-green);
   border: none;
-  font-size: 2rem;
+  font-size: var(--font-size-2xl);
   cursor: pointer;
-  color: var(--secondary-color);
-  transition: color 0.2s ease, transform 0.2s ease;
-  padding: 0.5rem;
-  line-height: 1; /* Fix vertical alignment */
+  color: var(--color-white);
+  transition: all var(--transition-fast);
+  padding: var(--spacing-2);
+  line-height: 1;
+  border-radius: var(--radius-lg);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .speak-button:hover {
-  color: var(--primary-color);
   transform: scale(1.1);
+  box-shadow: var(--shadow-md);
 }
 
-/* --- Layout for Actions & Navigation --- */
+.speak-button:active {
+  transform: scale(0.95);
+}
+
+/* Layout for Actions & Navigation */
 .actions,
 .navigation {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
 }
 
 .navigation span {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--secondary-color);
-  min-width: 80px; /* Give it space */
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-dark-grey);
+  min-width: 80px;
   text-align: center;
 }
 
-/* --- Responsive Design --- */
+/* Review Decision */
+.review-decision {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-6);
+  margin-top: var(--spacing-4);
+  border-top: 1px solid var(--color-light-grey);
+  padding-top: var(--spacing-6);
+}
 
-/* Tablet breakpoint (768px - 1023px) */
+.decision-button {
+  padding: var(--spacing-3) var(--spacing-8);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.decision-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.decision-button.forgot {
+  background: var(--color-dark-grey);
+}
+
+.decision-button.knew-it {
+  background: var(--color-green);
+}
+
+/* Responsive Design */
+
+/* Tablet (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
   .sentence-card {
-    padding: 1.75rem;
-    margin: 1.5rem auto;
+    padding: var(--spacing-6);
+    margin: var(--spacing-6) auto;
     width: 85%;
   }
 
   .target-sentence {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
 
   .native-sentence {
-    font-size: 1.1rem;
+    font-size: var(--font-size-lg);
   }
 
   .actions button, .navigation button, .generate-button {
-    padding: 0.7rem 1.25rem;
-    font-size: 0.95rem;
+    padding: var(--spacing-2) var(--spacing-5);
+    font-size: var(--font-size-sm);
   }
 
   .mode-toggle button {
-    padding: 0.7rem 1.25rem;
-    font-size: 0.95rem;
+    padding: var(--spacing-2) var(--spacing-5);
+    font-size: var(--font-size-sm);
   }
 }
 
-/* Mobile breakpoint (< 768px) */
+/* Mobile (480px - 767px) */
 @media (max-width: 767px) {
   .sentence-display-container {
-    padding: 0 0.5rem;
+    padding: 0 var(--spacing-2);
   }
 
   .sentence-card {
-    padding: 1.25rem;
-    margin: 1rem auto;
+    padding: var(--spacing-5);
+    margin: var(--spacing-4) auto;
     width: 95%;
-    gap: 1.25rem;
+    gap: var(--spacing-5);
   }
 
   .target-sentence {
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
   }
 
   .native-sentence {
-    font-size: 1rem;
+    font-size: var(--font-size-base);
   }
 
   .speak-button {
-    font-size: 1.5rem;
-    padding: 0.25rem;
+    font-size: var(--font-size-xl);
+    padding: var(--spacing-1);
+    width: 50px;
+    height: 50px;
   }
 
   .actions, .navigation {
     flex-direction: column;
     width: 100%;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
   }
 
   .actions button, .navigation button, .generate-button {
     width: 100%;
-    padding: 0.7rem 1.25rem;
-    font-size: 0.9rem;
+    padding: var(--spacing-2) var(--spacing-5);
+    font-size: var(--font-size-sm);
   }
 
   .mode-toggle {
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-4);
   }
 
   .mode-toggle button {
-    padding: 0.6rem 1rem;
-    font-size: 0.9rem;
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
   }
 
   .review-decision {
     flex-direction: column;
-    gap: 0.75rem;
-    padding-top: 1rem;
+    gap: var(--spacing-3);
+    padding-top: var(--spacing-4);
   }
 
   .decision-button {
-    padding: 0.7rem 1.5rem;
-    font-size: 0.9rem;
+    padding: var(--spacing-2) var(--spacing-6);
+    font-size: var(--font-size-sm);
     width: 100%;
     max-width: 200px;
   }
 
   .initial-state-container {
-    padding: 2rem 1rem;
+    padding: var(--spacing-8) var(--spacing-4);
     min-height: 250px;
   }
 
   .status-message {
-    font-size: 1.1rem;
+    font-size: var(--font-size-base);
   }
 }
 
-/* Small mobile breakpoint (< 480px) */
+/* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
   .sentence-display-container {
-    padding: 0 0.25rem;
+    padding: 0 var(--spacing-1);
   }
 
   .sentence-card {
-    padding: 1rem;
-    margin: 0.75rem auto;
+    padding: var(--spacing-4);
+    margin: var(--spacing-3) auto;
     width: 98%;
-    gap: 1rem;
+    gap: var(--spacing-4);
   }
 
   .target-sentence {
-    font-size: 1.4rem;
-    gap: 0.5rem;
+    font-size: 1.5rem;
+    gap: var(--spacing-2);
   }
 
   .native-sentence {
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
   }
 
   .speak-button {
-    font-size: 1.3rem;
+    font-size: var(--font-size-lg);
+    width: 45px;
+    height: 45px;
   }
 
   .actions button, .navigation button, .generate-button {
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
   }
 
   .mode-toggle button {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.85rem;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
   }
 
   .decision-button {
-    padding: 0.6rem 1.25rem;
-    font-size: 0.85rem;
+    padding: var(--spacing-2) var(--spacing-5);
+    font-size: var(--font-size-sm);
     max-width: 180px;
   }
 
   .initial-state-container {
-    padding: 1.5rem 0.75rem;
+    padding: var(--spacing-6) var(--spacing-3);
     min-height: 200px;
   }
 
   .status-message {
-    font-size: 1rem;
+    font-size: var(--font-size-sm);
   }
 
   .status-message.error.small {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.75rem;
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-1) var(--spacing-3);
   }
 }
 
-.mode-toggle {
-  display: flex;
-  justify-content: center;
-  margin: 0 auto 1.5rem auto; /* Center the toggle and add space below it */
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  overflow: hidden; /* This makes the button corners conform to the container's rounded corners */
-  width: fit-content; /* The container will only be as wide as its content */
-  background-color: var(--card-background);
+/* Focus states for accessibility */
+.word:focus-visible,
+.actions button:focus-visible,
+.navigation button:focus-visible,
+.generate-button:focus-visible,
+.speak-button:focus-visible,
+.decision-button:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
 }
 
-.mode-toggle button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none; /* Remove individual button borders */
-  cursor: pointer;
-  background-color: transparent; /* Unselected state is transparent/white */
-  color: var(--text-color);
-  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+/* Loading states */
+.sentence-card.loading {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
-.mode-toggle button:first-child {
-  border-right: 1px solid var(--border-color); /* Add a separator line between the buttons */
+/* Animation for card entrance */
+.sentence-card {
+  animation: cardSlideIn var(--transition-normal) ease-out;
 }
 
-.mode-toggle button:hover:not(.active) {
-  background-color: #f8f9fa; /* A very light hover for the unselected button */
-}
-
-/* This is the style for the currently selected button */
-.mode-toggle button.active {
-  background-color: #e9ecef; /* The light grey you requested */
-  color: var(--text-color);
-}
-
-
-/* 2. Review Decision Button Styles */
-.review-decision {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.5rem; /* Creates the distance between the two buttons */
-  margin-top: 1rem; /* Adds space above, separating it from the 'Hide Translation' button */
-  border-top: 1px solid var(--border-color); /* Adds a subtle separator line */
-  padding-top: 1.5rem; /* Creates space below the separator line */
-}
-
-.decision-button {
-  padding: 0.75rem 2rem; /* Give the buttons some horizontal space */
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  color: white;
-}
-
-.decision-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-.decision-button.forgot {
-  background-color: #dc3545; /* A distinct red for 'Forgot' */
-}
-
-.decision-button.knew-it {
-  background-color: #28a745; /* A distinct green for 'Knew it' */
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

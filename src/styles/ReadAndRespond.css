@@ -1,299 +1,423 @@
-/* src/styles/ReadAndRespond.css */
+/* Modern Read and Respond Component Styles */
 
 .comprehension-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 0.5rem;
+  padding: 0 var(--spacing-2);
 }
 
-/* Tablet breakpoint (768px - 1023px) */
-@media (max-width: 1023px) and (min-width: 768px) {
-  .comprehension-container {
-    gap: 1.25rem;
-    padding: 0 0.25rem;
-  }
-
-  .passage-card, .question-card {
-    padding: 1.25rem;
-  }
-
-  .passage-text {
-    font-size: 1.05rem;
-    line-height: 1.7;
-  }
-
-  .comprehension-question {
-    font-size: 1.2rem;
-  }
-
-  .mcq-option {
-    padding: 0.875rem;
-    font-size: 0.95rem;
-  }
-}
-
-/* Mobile breakpoint (< 768px) */
-@media (max-width: 767px) {
-  .comprehension-container {
-    gap: 1rem;
-    padding: 0;
-  }
-
-  .passage-card, .question-card {
-    padding: 1rem;
-    margin: 0 0.25rem;
-  }
-
-  .passage-header h3 {
-    font-size: 1.1rem;
-  }
-
-  .speak-button {
-    font-size: 1.3rem;
-    padding: 0.25rem;
-  }
-
-  .passage-text {
-    font-size: 1rem;
-    line-height: 1.6;
-  }
-
-  .comprehension-question {
-    font-size: 1.15rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .mcq-options {
-    gap: 0.6rem;
-  }
-
-  .mcq-option {
-    padding: 0.8rem;
-    font-size: 0.9rem;
-  }
-
-  .feedback-and-navigation .continue-button, 
-  .feedback-and-navigation .generate-new-button {
-    padding: 0.875rem;
-    font-size: 1rem;
-  }
-
-  .correct-answer-feedback {
-    padding: 0.6rem 1rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* Small mobile breakpoint (< 480px) */
-@media (max-width: 479px) {
-  .comprehension-container {
-    gap: 0.875rem;
-  }
-
-  .passage-card, .question-card {
-    padding: 0.875rem;
-    margin: 0;
-  }
-
-  .passage-header h3 {
-    font-size: 1rem;
-  }
-
-  .speak-button {
-    font-size: 1.2rem;
-  }
-
-  .passage-text {
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .comprehension-question {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-  }
-
-  .mcq-options {
-    gap: 0.5rem;
-  }
-
-  .mcq-option {
-    padding: 0.7rem;
-    font-size: 0.85rem;
-  }
-
-  .feedback-and-navigation .continue-button, 
-  .feedback-and-navigation .generate-new-button {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .correct-answer-feedback {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.85rem;
-  }
-}
-
+/* Card Styles */
 .passage-card, .question-card {
-  background-color: var(--card-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-light-grey);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-fast);
 }
 
+.passage-card:hover, .question-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Passage Header */
 .passage-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-light-grey);
 }
 
 .passage-header h3 {
   margin: 0;
-  font-size: 1.2rem;
-  color: var(--text-color-secondary);
+  font-size: var(--font-size-lg);
+  color: var(--color-dark-grey);
+  font-weight: 600;
 }
 
 .speak-button {
-  background: none;
+  background: var(--color-green);
   border: none;
-  font-size: 1.5rem;
+  font-size: var(--font-size-xl);
   cursor: pointer;
-  color: var(--text-color-secondary);
-  transition: transform 0.2s ease;
-}
-.speak-button:hover {
-  transform: scale(1.1);
+  color: var(--color-white);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
 }
 
+.speak-button:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.speak-button:active {
+  transform: scale(0.95);
+}
+
+/* Passage Text */
 .passage-text {
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
   line-height: 1.8;
-  color: var(--text-color);
+  color: var(--color-dark-grey);
+  margin: 0;
 }
 
 .passage-word {
   cursor: pointer;
-  transition: background-color 0.2s;
-  border-radius: 3px;
-  padding: 0 2px;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--spacing-1);
+  position: relative;
 }
 
 .passage-word:hover {
-  background-color: var(--highlight-color);
+  background-color: var(--color-light-grey);
+  color: var(--color-dark-grey);
+  font-weight: 500;
 }
 
+/* Question Styles */
 .comprehension-question {
-  font-size: 1.25rem;
-  margin-bottom: 1.5rem;
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-6);
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-dark-grey);
+  line-height: 1.4;
 }
 
-
-/* --- START OF MODIFICATIONS --- */
-
+/* MCQ Options */
 .mcq-options {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* This correctly adds space between the options */
+  gap: var(--spacing-3);
 }
 
-/* MODIFIED: Enhanced styling for each option */
 .mcq-option {
   width: 100%;
-  padding: 1rem; /* Kept your padding, it's a good size */
-  font-size: 1rem;
+  padding: var(--spacing-4);
+  font-size: var(--font-size-base);
   text-align: left;
-  background-color: var(--card-bg-color);
-  color: var(--text-color);
-  border: 2px solid var(--border-color); /* Kept your border style */
-  border-radius: 8px;
+  background-color: var(--color-white);
+  color: var(--color-dark-grey);
+  border: 2px solid var(--color-light-grey);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  /* MODIFIED: Added background-color to the transition for a smoother hover effect */
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
 }
 
-/* MODIFIED: Improved hover effect for better user feedback */
+.mcq-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: var(--color-light-grey);
+  transition: width var(--transition-fast);
+  z-index: 0;
+}
+
+.mcq-option > * {
+  position: relative;
+  z-index: 1;
+}
+
 .mcq-option:not(:disabled):hover {
-  border-color: var(--primary-color);
-  /* NEW: Added a subtle background change on hover */
-  background-color: var(--hover-bg-color, rgba(0, 0, 0, 0.03)); /* Uses a variable or a safe fallback */
+  border-color: var(--color-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.mcq-option:not(:disabled):hover::before {
+  width: 100%;
 }
 
 .mcq-option:disabled {
   cursor: not-allowed;
-}
-
-/* MODIFIED: Made the correct state more prominent */
-.mcq-option.correct {
-  border-color: #28a745; /* Green */
-  background-color: rgba(40, 167, 69, 0.15); /* Slightly stronger background */
-  color: var(--text-color); /* Ensures text is readable */
-  font-weight: bold;
-}
-
-/* MODIFIED: Cleaned up the incorrect state */
-.mcq-option.incorrect {
-  border-color: #dc3545; /* Red */
-  background-color: rgba(220, 53, 69, 0.1);
-  color: var(--text-color); /* Ensures text is readable */
-  opacity: 0.8; /* Replaced line-through with opacity for a cleaner look */
-}
-
-/* NEW: Style for the other options after an answer is selected */
-/* This makes the correct/incorrect choices stand out more clearly */
-.mcq-option:disabled:not(.correct):not(.incorrect) {
   opacity: 0.6;
-  background-color: transparent;
 }
 
-/* --- END OF MODIFICATIONS --- */
+.mcq-option.correct {
+  border-color: var(--color-green);
+  background: var(--color-light-grey);
+  color: var(--color-green);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
 
+.mcq-option.incorrect {
+  border-color: var(--color-light-grey);
+  background: var(--color-light-grey);
+  color: var(--color-dark-grey);
+  opacity: 0.8;
+}
 
+.mcq-option:disabled:not(.correct):not(.incorrect) {
+  opacity: 0.4;
+  background-color: var(--color-light-grey);
+}
+
+/* Feedback and Navigation */
 .feedback-and-navigation {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-6);
 }
 
 .correct-answer-feedback {
-    background-color: var(--highlight-color);
-    color: var(--text-color);
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-weight: 500;
-    text-align: center;
-    border: 1px solid var(--border-color);
+  background: var(--color-light-grey);
+  color: var(--color-green);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--color-green);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-sm);
 }
 
-.feedback-and-navigation .continue-button, .feedback-and-navigation .generate-new-button {
+.feedback-and-navigation .continue-button, 
+.feedback-and-navigation .generate-new-button {
   width: 100%;
   max-width: 400px;
-  padding: 1rem;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: black;
-  background-color: var(--primary-color);
+  padding: var(--spacing-4);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-white);
+  background: var(--color-green);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
-.feedback-and-navigation .continue-button:hover, .feedback-and-navigation .generate-new-button:hover {
-  background-color: var(--primary-color-dark);
+.feedback-and-navigation .continue-button:hover, 
+.feedback-and-navigation .generate-new-button:hover {
+  background: var(--color-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.feedback-and-navigation .continue-button:active, 
+.feedback-and-navigation .generate-new-button:active {
+  transform: translateY(0);
 }
 
 .navigation {
-    text-align: center;
-    color: var(--text-color-secondary);
-    margin-top: 1rem;
+  text-align: center;
+  color: var(--color-dark-grey);
+  margin-top: var(--spacing-4);
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive Design */
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .comprehension-container {
+    gap: var(--spacing-5);
+    padding: 0 var(--spacing-1);
+  }
+
+  .passage-card, .question-card {
+    padding: var(--spacing-5);
+  }
+
+  .passage-text {
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+  }
+
+  .comprehension-question {
+    font-size: var(--font-size-lg);
+  }
+
+  .mcq-option {
+    padding: var(--spacing-3);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) {
+  .comprehension-container {
+    gap: var(--spacing-4);
+    padding: 0;
+  }
+
+  .passage-card, .question-card {
+    padding: var(--spacing-4);
+    margin: 0 var(--spacing-1);
+  }
+
+  .passage-header h3 {
+    font-size: var(--font-size-base);
+  }
+
+  .speak-button {
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-1);
+    width: 40px;
+    height: 40px;
+  }
+
+  .passage-text {
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+  }
+
+  .comprehension-question {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-5);
+  }
+
+  .mcq-options {
+    gap: var(--spacing-2);
+  }
+
+  .mcq-option {
+    padding: var(--spacing-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .feedback-and-navigation .continue-button, 
+  .feedback-and-navigation .generate-new-button {
+    padding: var(--spacing-3);
+    font-size: var(--font-size-base);
+  }
+
+  .correct-answer-feedback {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Small Mobile (320px - 479px) */
+@media (max-width: 479px) {
+  .comprehension-container {
+    gap: var(--spacing-3);
+  }
+
+  .passage-card, .question-card {
+    padding: var(--spacing-3);
+    margin: 0;
+  }
+
+  .passage-header h3 {
+    font-size: var(--font-size-sm);
+  }
+
+  .speak-button {
+    font-size: var(--font-size-base);
+    width: 36px;
+    height: 36px;
+  }
+
+  .passage-text {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+  }
+
+  .comprehension-question {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .mcq-options {
+    gap: var(--spacing-2);
+  }
+
+  .mcq-option {
+    padding: var(--spacing-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .feedback-and-navigation .continue-button, 
+  .feedback-and-navigation .generate-new-button {
+    padding: var(--spacing-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .correct-answer-feedback {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Loading States */
+.comprehension-container.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.mcq-option.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.mcq-option.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Focus states for accessibility */
+.mcq-option:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+.speak-button:focus-visible {
+  outline: 2px solid var(--color-white);
+  outline-offset: 2px;
+}
+
+/* Animation for card entrance */
+.passage-card, .question-card {
+  animation: cardSlideIn var(--transition-normal) ease-out;
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

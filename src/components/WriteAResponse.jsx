@@ -1,6 +1,7 @@
 // src/components/WriteAResponse.jsx
 
 import { useState, useEffect } from 'react';
+import { Volume2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchPracticeQuestions, fetchResponseFeedback } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -164,7 +165,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
                 word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
               ))}
             </h3>
-            <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">🔊</button>
+            <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">
+              <Volume2 size={20} fill="var(--color-green)" />
+            </button>
         </div>
       </div>
 

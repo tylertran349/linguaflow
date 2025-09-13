@@ -1,6 +1,7 @@
 // src/components/ReadAndRespond.jsx
 
 import { useState, useEffect } from 'react';
+import { Volume2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchComprehensionPassages } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -149,7 +150,9 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       <article className="passage-card">
         <div className="passage-header">
             <h3>Read the passage</h3>
-            <button onClick={handleSpeakPassage} className="speak-button" title="Pronounce entire passage">🔊</button>
+            <button onClick={handleSpeakPassage} className="speak-button" title="Pronounce entire passage">
+              <Volume2 size={20} fill="var(--color-green)" />
+            </button>
         </div>
         <p className="passage-text">
           {currentPassageData.passage.split(/(\s+)/).map((word, index) => (

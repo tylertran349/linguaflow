@@ -1,111 +1,408 @@
-/* Add this at the top for better layout consistency */
+/* Modern LinguaFlow App Styles */
+/* Color Palette:
+   - White: #ffffff (for sidebar and modules)
+   - Very Light Grey: #f5f5f5 (main app background - just dark enough to stand out from white)
+   - Green Accent: #10b981 (modern emerald green)
+   - Dark Grey: #333333 (for text)
+*/
+
+/* CSS Reset and Base Styles */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+:root {
+  /* Color Variables - Only 4 colors allowed */
+  --color-white: #ffffff;
+  --color-light-grey: #f5f5f5;
+  --color-green: #10b981;
+  --color-dark-grey: #333333;
+  
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* Base Styles */
+html {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 body {
   margin: 0;
   padding: 0;
-  /* Improve text rendering on mobile devices */
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--color-dark-grey);
+  background-color: var(--color-light-grey);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Prevent horizontal scrolling */
   overflow-x: hidden;
 }
 
-/* Improve touch interactions on mobile */
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-dark-grey);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+  margin: 0;
+  color: var(--color-dark-grey);
+}
+
+/* Button Base Styles */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+/* Form Elements */
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+/* Focus States */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+/* Touch Targets for Mobile */
 button, 
 input, 
 select, 
 textarea {
-  /* Increase touch target size for better mobile usability */
   min-height: 44px;
-  /* Remove default mobile styling */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
 }
 
-/* Improve focus states for accessibility */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #4a4eee;
-  outline-offset: 2px;
-}
-
-/* --- Main Layout: Desktop First --- */
+/* Main App Layout */
 .app-layout {
   display: grid;
-  grid-template-columns: auto 1fr; /* Sidebar takes content width, main content takes the rest */
+  grid-template-columns: auto 1fr;
   height: 100vh;
-  overflow: hidden; /* Prevents whole-page scrollbars */
+  overflow: hidden;
+  background-color: var(--color-light-grey);
 }
 
 .main-content {
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Allow main content to scroll if it's long */
+  overflow-y: auto;
+  background-color: var(--color-light-grey);
 }
 
-/* --- App Header (Top bar) --- */
+/* App Header */
 .app-header {
-  /* MODIFICATION 2: Hide the header by default on desktop */
   display: none;
   align-items: center;
-  padding: 0 2rem;
-  height: 70px; /* Example fixed height */
-  background-color: #fff;
-  flex-shrink: 0; /* Prevents header from shrinking */
+  padding: 0 var(--spacing-6);
+  height: 70px;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-light-grey);
+  flex-shrink: 0;
 }
 
 .title-group h1 {
-  font-size: 1.5rem;
-  color: #333;
+  font-size: var(--font-size-2xl);
+  color: var(--color-dark-grey);
+  font-weight: 700;
 }
 
-/* --- Learning Content Area --- */
+/* Learning Container */
 .learning-container {
   flex-grow: 1;
   display: flex;
   justify-content: center;
-  /* MODIFICATION 1: Changed back to 'center' to vertically center the welcome message */
   align-items: center;
-  padding: 1rem;
+  padding: var(--spacing-6);
+  background-color: var(--color-light-grey);
 }
 
-/* --- Mobile Hamburger Menu & Overlay --- */
+/* Hamburger Menu */
 .hamburger-menu {
-  display: none; /* Hidden by default on desktop */
+  display: none;
   background: none;
   border: none;
-  padding: 10px;
-  margin-right: 1rem;
+  padding: var(--spacing-2);
+  margin-right: var(--spacing-4);
   cursor: pointer;
   flex-direction: column;
-  gap: 5px;
-  z-index: 1001; /* Must be on top of the overlay */
+  gap: var(--spacing-1);
+  z-index: 1001;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.hamburger-menu:hover {
+  background-color: var(--color-light-grey);
 }
 
 .hamburger-menu span {
   display: block;
-  width: 25px;
-  height: 3px;
-  background-color: #333;
-  border-radius: 3px;
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-white);
+  border-radius: 1px;
+  transition: all var(--transition-fast);
 }
 
+/* Overlay */
 .overlay {
-  display: none; /* Hidden by default */
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(31, 41, 55, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(4px);
 }
 
+/* Welcome Container */
+.welcome-container {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
 
-/* --- Mobile First Responsive Design --- */
+.welcome-container h1 {
+  font-size: var(--font-size-4xl);
+  color: var(--color-dark-grey);
+  margin-bottom: var(--spacing-4);
+  font-weight: 700;
+}
 
-/* Tablet breakpoint (768px - 1023px) */
+.welcome-container p {
+  font-size: var(--font-size-xl);
+  color: var(--color-dark-grey);
+  margin-bottom: var(--spacing-8);
+  line-height: 1.6;
+}
+
+.welcome-buttons {
+  display: flex;
+  gap: var(--spacing-4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Button Styles */
+.btn-primary, .btn-secondary {
+  padding: var(--spacing-4) var(--spacing-8);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--color-green);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-green);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--color-dark-grey);
+  border-color: var(--color-light-grey);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-light-grey);
+  border-color: var(--color-light-grey);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Auth Container */
+.auth-container {
+  min-height: 100vh;
+  background: var(--color-light-grey);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-6);
+}
+
+.split-screen-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1200px;
+  width: 100%;
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  min-height: 600px;
+}
+
+.split-screen-visual {
+  background: var(--color-green);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-12);
+  color: var(--color-white);
+  text-align: center;
+}
+
+.visual-header {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-6);
+  color: var(--color-white);
+}
+
+.visual-quote {
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.split-screen-form {
+  padding: var(--spacing-12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Initial State */
+.initial-state-container {
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.initial-state-container h2 {
+  font-size: var(--font-size-3xl);
+  color: var(--color-dark-grey);
+  margin-bottom: var(--spacing-4);
+  font-weight: 600;
+}
+
+.initial-state-container p {
+  font-size: var(--font-size-lg);
+  color: var(--color-dark-grey);
+  margin-bottom: var(--spacing-8);
+}
+
+/* Responsive Design */
+
+/* Large Desktop (1200px+) */
+@media (min-width: 1200px) {
+  .split-screen-container {
+    max-width: 1400px;
+  }
+  
+  .visual-header {
+    font-size: 3.5rem;
+  }
+  
+  .visual-quote {
+    font-size: 1.5rem;
+  }
+}
+
+/* Desktop (1024px - 1199px) */
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .split-screen-container {
+    max-width: 1000px;
+  }
+  
+  .visual-header {
+    font-size: 3rem;
+  }
+}
+
+/* Tablet (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
   .app-layout {
     display: block;
@@ -113,26 +410,12 @@ textarea:focus-visible {
 
   .app-header {
     display: flex;
-    border-bottom: 1px solid #ddd;
-    padding: 0 1.5rem;
+    padding: 0 var(--spacing-5);
     height: 60px;
   }
 
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-    width: 320px;
-    max-width: 85vw;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
+  .learning-container {
+    padding: var(--spacing-5);
   }
 
   .hamburger-menu {
@@ -141,17 +424,29 @@ textarea:focus-visible {
 
   .overlay {
     display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
   }
 
-  .learning-container {
-    padding: 1.5rem;
+  .split-screen-container {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+    min-height: auto;
+  }
+
+  .split-screen-visual {
+    padding: var(--spacing-8);
+    min-height: 300px;
+  }
+
+  .visual-header {
+    font-size: 2.5rem;
+  }
+
+  .visual-quote {
+    font-size: 1.25rem;
+  }
+
+  .split-screen-form {
+    padding: var(--spacing-8);
   }
 
   .welcome-container h1 {
@@ -159,23 +454,23 @@ textarea:focus-visible {
   }
 
   .welcome-container p {
-    font-size: 1.1rem;
+    font-size: 1.125rem;
   }
 
   .welcome-buttons {
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
   }
 
   .btn-primary, .btn-secondary {
-    padding: 0.875rem 1.75rem;
-    font-size: 0.95rem;
+    padding: var(--spacing-3) var(--spacing-6);
+    font-size: var(--font-size-base);
     min-width: 200px;
   }
 }
 
-/* Mobile breakpoint (< 768px) */
+/* Mobile (480px - 767px) */
 @media (max-width: 767px) {
   .app-layout {
     display: block;
@@ -183,52 +478,51 @@ textarea:focus-visible {
 
   .app-header {
     display: flex;
-    border-bottom: 1px solid #ddd;
-    padding: 0 1rem;
+    padding: 0 var(--spacing-4);
     height: 56px;
   }
 
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-    width: 280px;
-    max-width: 90vw;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
+  .learning-container {
+    padding: var(--spacing-4);
+    min-height: calc(100vh - 56px);
   }
 
   .hamburger-menu {
     display: flex;
-    padding: 8px;
+    padding: var(--spacing-2);
   }
 
   .hamburger-menu span {
-    width: 22px;
+    width: 20px;
     height: 2px;
   }
 
   .overlay {
     display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
   }
 
-  .learning-container {
-    padding: 1rem;
-    min-height: calc(100vh - 56px);
+  .split-screen-container {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    min-height: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .split-screen-visual {
+    padding: var(--spacing-6);
+    min-height: 250px;
+  }
+
+  .visual-header {
+    font-size: 2rem;
+  }
+
+  .visual-quote {
+    font-size: 1.125rem;
+  }
+
+  .split-screen-form {
+    padding: var(--spacing-6);
   }
 
   .welcome-container h1 {
@@ -237,43 +531,60 @@ textarea:focus-visible {
   }
 
   .welcome-container p {
-    font-size: 1rem;
+    font-size: var(--font-size-base);
     text-align: center;
   }
 
   .welcome-buttons {
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
   }
 
   .btn-primary, .btn-secondary {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
+    padding: var(--spacing-3) var(--spacing-5);
+    font-size: var(--font-size-sm);
     min-width: 180px;
     width: 100%;
     max-width: 280px;
   }
 }
 
-/* Small mobile breakpoint (< 480px) */
+/* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
   .app-header {
-    padding: 0 0.75rem;
+    padding: 0 var(--spacing-3);
     height: 52px;
   }
 
   .hamburger-menu {
-    padding: 6px;
+    padding: var(--spacing-1);
   }
 
   .hamburger-menu span {
-    width: 20px;
+    width: 18px;
     height: 2px;
   }
 
   .learning-container {
-    padding: 0.75rem;
+    padding: var(--spacing-3);
+  }
+
+  .split-screen-visual {
+    padding: var(--spacing-4);
+    min-height: 200px;
+  }
+
+  .visual-header {
+    font-size: 1.75rem;
+  }
+
+  .visual-quote {
+    font-size: var(--font-size-base);
+  }
+
+  .split-screen-form {
+    padding: var(--spacing-4);
   }
 
   .welcome-container h1 {
@@ -281,116 +592,118 @@ textarea:focus-visible {
   }
 
   .welcome-container p {
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
   }
 
   .btn-primary, .btn-secondary {
-    padding: 0.7rem 1.25rem;
-    font-size: 0.85rem;
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
     min-width: 160px;
   }
 }
 
-/* Landscape orientation on mobile devices */
+/* Landscape Mobile */
 @media (max-height: 500px) and (orientation: landscape) {
   .learning-container {
-    padding: 0.5rem;
+    padding: var(--spacing-2);
   }
 
   .welcome-container h1 {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-2);
   }
 
   .welcome-container p {
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-4);
   }
 
   .welcome-buttons {
     flex-direction: row;
-    gap: 0.5rem;
+    gap: var(--spacing-2);
   }
 
   .btn-primary, .btn-secondary {
-    padding: 0.6rem 1rem;
-    font-size: 0.8rem;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
     min-width: 140px;
   }
 }
 
-/* Very small screens (iPhone SE, etc.) */
+/* Very Small Screens (iPhone SE, etc.) */
 @media (max-width: 375px) {
-  .sidebar {
-    width: 260px;
-    max-width: 95vw;
-  }
-
   .welcome-container h1 {
     font-size: 1.5rem;
   }
 
   .welcome-container p {
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
   }
 
   .btn-primary, .btn-secondary {
-    padding: 0.6rem 1rem;
-    font-size: 0.8rem;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
     min-width: 140px;
   }
 }
 
-.welcome-container h1 {
-  font-size: 3rem;
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.welcome-container p {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.welcome-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-primary, .btn-secondary {
-  padding: 1rem 2rem;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-
-.btn-primary {
-  background-color: #4a4eee;
-  color: white;
-}
-.btn-primary:hover {
-  background-color: #3a3dbb;
-}
-
-.btn-secondary {
-  background-color: #e0e0e0;
-  color: #333;
-}
-.btn-secondary:hover {
-  background-color: #c7c7c7;
-}
-
 /* User Button positioning */
 .app-header {
-  /* ... keep existing styles ... */
   display: flex;
-  justify-content: space-between; /* This will push items to the ends */
+  justify-content: space-between;
   align-items: center;
 }
 
 .user-button-container {
-  margin-right: 20px; /* Add some spacing */
+  margin-right: var(--spacing-5);
+}
+
+/* Utility Classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Loading States */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn var(--transition-normal) ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn var(--transition-normal) ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

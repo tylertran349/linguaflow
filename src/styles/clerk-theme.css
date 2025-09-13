@@ -1,80 +1,364 @@
-/* src/styles/clerk-theme.css */
+/* Modern Clerk Theme Styles */
 
-/* --- Main Auth Page Background --- */
+/* Main Auth Page Background */
 .auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 2rem;
-  background-color: #f8f9fa;
-  background-image:
-    radial-gradient(at 0% 0%, hsla(212, 100%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(212, 100%, 95%, 1) 0px, transparent 50%);
+  padding: var(--spacing-6);
+  background: var(--color-light-grey);
 }
 
-/* --- Split Screen Layout --- */
+/* Split Screen Layout */
 .split-screen-container {
   display: flex;
   width: 100%;
-  max-width: 1100px; /* Control the max width of the card */
+  max-width: 1200px;
   min-height: 600px;
-  background-color: #fff;
-  border-radius: 1.5rem; /* More prominent rounded corners */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* Important for keeping child corners rounded */
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-light-grey);
 }
 
-/* --- Left Side: Visuals & Branding --- */
+/* Left Side: Visuals & Branding */
 .split-screen-visual {
-  flex-basis: 45%; /* Take up 45% of the width */
+  flex-basis: 45%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 3rem;
-  color: #fff;
-  background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+  padding: var(--spacing-12);
+  color: var(--color-white);
+  background: var(--color-green);
+  position: relative;
+  overflow: hidden;
+}
+
+.split-screen-visual::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .visual-header {
-  font-size: 1.5rem;
+  font-size: var(--font-size-4xl);
   font-weight: 700;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-6);
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .visual-quote {
-  font-size: 2.25rem;
-  font-weight: 600;
-  line-height: 1.3;
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  line-height: 1.4;
   margin: 0;
-  border-left: 4px solid rgba(255, 255, 255, 0.5);
-  padding-left: 1.5rem;
+  position: relative;
+  z-index: 1;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Right Side: The Form --- */
+/* Right Side: The Form */
 .split-screen-form {
-  flex-basis: 55%; /* Take up the remaining 55% */
+  flex-basis: 55%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: var(--spacing-8);
+  background-color: var(--color-white);
 }
 
-/* --- Responsive Design for Mobile --- */
-@media (max-width: 992px) {
+/* Clerk Component Overrides */
+.cl-rootBox {
+  width: 100%;
+  max-width: 400px;
+}
+
+.cl-card {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.cl-headerTitle {
+  font-size: var(--font-size-3xl) !important;
+  font-weight: 700 !important;
+  color: var(--color-dark-grey) !important;
+  margin-bottom: var(--spacing-2) !important;
+  text-align: center !important;
+}
+
+.cl-headerSubtitle {
+  font-size: var(--font-size-base) !important;
+  color: var(--color-dark-grey) !important;
+  text-align: center !important;
+  margin-bottom: var(--spacing-6) !important;
+  line-height: 1.5 !important;
+}
+
+.cl-formField {
+  margin-bottom: var(--spacing-5) !important;
+}
+
+.cl-formFieldLabel {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  color: var(--color-dark-grey) !important;
+  margin-bottom: var(--spacing-2) !important;
+}
+
+.cl-input {
+  width: 100% !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  font-size: var(--font-size-base) !important;
+  border: 1px solid var(--color-light-grey) !important;
+  border-radius: var(--radius-lg) !important;
+  background-color: var(--color-white) !important;
+  color: var(--color-dark-grey) !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.cl-input:focus {
+  outline: none !important;
+  border-color: var(--color-green) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+.cl-input:hover {
+  border-color: var(--color-light-grey) !important;
+}
+
+.cl-formButtonPrimary {
+  width: 100% !important;
+  padding: var(--spacing-3) var(--spacing-6) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 600 !important;
+  background: var(--color-green) !important;
+  color: var(--color-white) !important;
+  border: none !important;
+  border-radius: var(--radius-lg) !important;
+  cursor: pointer !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-sm) !important;
+  min-height: 48px !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background: var(--color-green) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cl-formButtonPrimary:active {
+  transform: translateY(0) !important;
+}
+
+.cl-formButtonSecondary {
+  width: 100% !important;
+  padding: var(--spacing-3) var(--spacing-6) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 600 !important;
+  background-color: var(--color-white) !important;
+  color: var(--color-dark-grey) !important;
+  border: 1px solid var(--color-light-grey) !important;
+  border-radius: var(--radius-lg) !important;
+  cursor: pointer !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-sm) !important;
+  min-height: 48px !important;
+}
+
+.cl-formButtonSecondary:hover {
+  background-color: var(--color-light-grey) !important;
+  border-color: var(--color-light-grey) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cl-footerActionLink {
+  color: var(--color-dark-grey) !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.cl-footerActionLink:hover {
+  color: var(--color-dark-grey) !important;
+  text-decoration: underline !important;
+}
+
+.cl-dividerLine {
+  background-color: var(--color-light-grey) !important;
+  height: 1px !important;
+}
+
+.cl-dividerText {
+  color: var(--color-dark-grey) !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 500 !important;
+}
+
+.cl-socialButtonsBlockButton {
+  border: 1px solid var(--color-light-grey) !important;
+  border-radius: var(--radius-lg) !important;
+  background-color: var(--color-white) !important;
+  color: var(--color-dark-grey) !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: var(--color-light-grey) !important;
+  border-color: var(--color-light-grey) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cl-alert {
+  background: var(--color-light-grey) !important;
+  border: 1px solid var(--color-light-grey) !important;
+  border-radius: var(--radius-lg) !important;
+  color: var(--color-dark-grey) !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  margin-bottom: var(--spacing-4) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.cl-alertText {
+  color: var(--color-dark-grey) !important;
+  font-weight: 500 !important;
+}
+
+/* Responsive Design */
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
   .split-screen-visual {
-    display: none; /* Hide the visual pane on smaller screens to save space */
+    padding: var(--spacing-8);
+  }
+
+  .visual-header {
+    font-size: var(--font-size-3xl);
+  }
+
+  .visual-quote {
+    font-size: var(--font-size-xl);
   }
 
   .split-screen-form {
-    flex-basis: 100%; /* The form takes up the full width */
+    padding: var(--spacing-6);
+  }
+
+  .cl-headerTitle {
+    font-size: var(--font-size-2xl) !important;
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) {
+  .split-screen-visual {
+    display: none;
+  }
+
+  .split-screen-form {
+    flex-basis: 100%;
+    padding: var(--spacing-6);
   }
 
   .split-screen-container {
     min-height: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .cl-headerTitle {
+    font-size: var(--font-size-xl) !important;
+  }
+
+  .cl-headerSubtitle {
+    font-size: var(--font-size-sm) !important;
+  }
+
+  .cl-input {
+    padding: var(--spacing-2) var(--spacing-3) !important;
+    font-size: var(--font-size-sm) !important;
+  }
+
+  .cl-formButtonPrimary,
+  .cl-formButtonSecondary {
+    padding: var(--spacing-2) var(--spacing-4) !important;
+    font-size: var(--font-size-sm) !important;
   }
 }
 
-.cl-formButtonPrimary:hover {
-  background-color: #0056b3 !important; /* Use a darker shade of your primary blue */
+/* Small Mobile (320px - 479px) */
+@media (max-width: 479px) {
+  .split-screen-form {
+    padding: var(--spacing-4);
+  }
+
+  .cl-headerTitle {
+    font-size: var(--font-size-lg) !important;
+  }
+
+  .cl-headerSubtitle {
+    font-size: var(--font-size-xs) !important;
+  }
+
+  .cl-input {
+    padding: var(--spacing-2) !important;
+    font-size: var(--font-size-sm) !important;
+  }
+
+  .cl-formButtonPrimary,
+  .cl-formButtonSecondary {
+    padding: var(--spacing-2) var(--spacing-3) !important;
+    font-size: var(--font-size-sm) !important;
+  }
+}
+
+/* Focus states for accessibility */
+.cl-input:focus-visible,
+.cl-formButtonPrimary:focus-visible,
+.cl-formButtonSecondary:focus-visible,
+.cl-footerActionLink:focus-visible,
+.cl-socialButtonsBlockButton:focus-visible {
+  outline: 2px solid var(--color-green) !important;
+  outline-offset: 2px !important;
+}
+
+/* Loading states */
+.cl-formButtonPrimary:disabled {
+  opacity: 0.7 !important;
+  cursor: wait !important;
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Animation for form entrance */
+.cl-card {
+  animation: formSlideIn var(--transition-normal) ease-out !important;
+}
+
+@keyframes formSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
