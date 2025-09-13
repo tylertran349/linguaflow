@@ -259,8 +259,7 @@ function LinguaFlowApp() {
 
   useEffect(() => {
     if (!geminiApiKey && isSignedIn) {
-      console.log('No API key detected, opening settings modal and starting retry');
-      setIsSettingsModalOpen(true);
+      console.log('No API key detected, starting retry to fetch settings');
       // Only start retrying if we're not already fetching settings
       if (!isRetryingSettings) {
         startRetryingSettings();

@@ -70,7 +70,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     let intervalId;
     if (isLoading || reviewLoading) {
       let dotCount = 0;
-      const baseMessage = isLoading ? 'Generating sentences, please wait' : 'Fetching review sentences, please wait';
+      const baseMessage = isLoading ? 'Generating sentences, please wait' : 'Fetching sentences to review';
       setLoadingMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 
@@ -96,21 +96,57 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     setReviewLoading(true);
     setReviewError(null);
     setShowTranslation(false);
-    try {
+    
+    const maxRetries = 5;
+    const timeoutDuration = 15000; // 15 seconds
+    let retryCount = 0;
+    let timeoutId;
+    
+    const attemptFetch = async () => {
+      try {
         const token = await getToken();
         const response = await fetch(`${API_BASE_URL}/api/sentences/review`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Failed to fetch review sentences.');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Failed to fetch review sentences.`);
+        }
         
         const data = await response.json();
         setReviewSentences(data);
         setCurrentReviewIndex(0);
-    } catch (err) {
-        setReviewError(err.message);
-    } finally {
         setReviewLoading(false);
-    }
+        clearTimeout(timeoutId);
+        return true; // Success
+      } catch (err) {
+        console.error(`Fetch attempt ${retryCount + 1} failed:`, err);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 16000);
+          setTimeout(attemptFetch, delay);
+        } else {
+          // All retries exhausted
+          setReviewError("Error: Failed to fetch sentences. Please click on \"Review Due\" again to try again.");
+          setReviewLoading(false);
+          clearTimeout(timeoutId);
+        }
+        return false; // Failed
+      }
+    };
+    
+    // Set up timeout
+    timeoutId = setTimeout(() => {
+      if (retryCount < maxRetries) {
+        setReviewError("Error: Failed to fetch sentences. Please click on \"Review Due\" again to try again.");
+        setReviewLoading(false);
+      }
+    }, timeoutDuration);
+    
+    // Start the first attempt
+    attemptFetch();
   };
 
   // --- FUNCTION: SAVE SENTENCE FOR REVIEW ---
