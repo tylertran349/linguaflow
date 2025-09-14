@@ -21,6 +21,14 @@ export const isLocalEnvironment = () => {
 };
 
 /**
+ * Gets the base URL for API calls based on the current environment
+ * @returns {string} Empty string for local development, full origin for production
+ */
+export const getApiBaseUrl = () => {
+  return isLocalEnvironment() ? '' : window.location.origin;
+};
+
+/**
  * Gets the current environment type
  * @returns {string} 'local' or 'production'
  */

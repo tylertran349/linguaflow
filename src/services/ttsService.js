@@ -3,6 +3,9 @@
 let currentGoogleAudio = null;
 let currentPuterAudio = null;
 
+// Use the same API_BASE_URL pattern as the rest of the app
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
+
 // Enhanced mapping from basic language codes to BCP 47 language tags for Web Speech API
 // This mapping prioritizes the most commonly supported language variants
 const languageCodeToBCP47 = {
@@ -182,9 +185,11 @@ const speakWithWebSpeech = (text, langCode, rate = 1) => {
   }
 };
 
-// --- MODIFIED: Removed redundant cancellation logic ---
+// --- MODIFIED: Updated to work in both local and production environments ---
 const speakWithGoogleTranslateProxy = (text, langCode, rate = 1) => {
-  const url = `/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}&speed=${rate}`;
+  // Use the same API_BASE_URL pattern as the rest of the app
+  const url = `${API_BASE_URL}/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}&speed=${rate}`;
+  
   const audio = new Audio(url);
   currentGoogleAudio = audio;
   audio.onended = () => { currentGoogleAudio = null; };
