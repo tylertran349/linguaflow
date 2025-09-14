@@ -1,6 +1,4 @@
-# [LinguaFlow (latest version with login functionality and MongoDB integration)](https://linguaflow-production-be4d.up.railway.app/)
-
-# [LinguaFlow (old GitHub Pages website)](https://tylertran349.github.io/linguaflow/) 
+# [LinguaFlow](https://linguaflow-production-be4d.up.railway.app/)
 
 ## Overview
 
