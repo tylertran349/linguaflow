@@ -578,7 +578,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
 
             <div className="navigation">
                 {/* The Back/Next buttons are no longer needed in review mode, as decisions drive navigation */}
-                <span>Reviewing: {currentReviewPosition + 1} of {totalReviewSentences}</span>
+                <span className="review-counter">Reviewing: {currentReviewPosition + 1} of {totalReviewSentences}</span>
             </div>
         </div>
     );
