@@ -15,42 +15,32 @@ const modules = [
 function Sidebar({ isOpen, activeModule, onNavigate, onOpenSettings }) {
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <div className="sidebar-header">
-        <h1>LinguaFlow</h1>
-      </div>
-
-      <nav className="sidebar-nav">
-        <h2>Modules</h2>
-        <ul>
-          {modules.map(module => (
-            <li key={module.id}>
-              <button
-                className={`nav-item ${activeModule === module.id ? 'active' : ''}`}
-                onClick={() => onNavigate(module.id)}
-              >
-                {module.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="user-button-container">
-          <UserButton afterSignOutUrl='/' />
-        </div>
-        <button className="nav-item" onClick={onOpenSettings}>
-          Settings
-        </button>
-        <a
-          href="https://github.com/tylertran349/linguaflow/blob/main/README.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="nav-item"
+      <h1>LinguaFlow</h1>
+      
+      {modules.map(module => (
+        <button
+          key={module.id}
+          className={`nav-item ${activeModule === module.id ? 'active' : ''}`}
+          onClick={() => onNavigate(module.id)}
         >
-          Help
-        </a>
+          {module.name}
+        </button>
+      ))}
+
+      <div className="user-button-container">
+        <UserButton afterSignOutUrl='/' />
       </div>
+      <button className="nav-item" onClick={onOpenSettings}>
+        Settings
+      </button>
+      <a
+        href="https://github.com/tylertran349/linguaflow/blob/main/README.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="nav-item"
+      >
+        Help
+      </a>
     </aside>
   );
 }

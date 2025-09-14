@@ -5,6 +5,7 @@
   padding: var(--spacing-8) var(--spacing-6);
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-2);
   border-right: 1px solid var(--color-light-grey);
   transition: transform var(--transition-normal);
   box-shadow: var(--shadow-sm);
@@ -12,15 +13,8 @@
   min-width: 280px;
 }
 
-.sidebar-header {
-  margin-bottom: var(--spacing-10);
-  text-align: center;
-  padding: var(--spacing-4) var(--spacing-2);
-  border-bottom: 1px solid var(--color-light-grey);
-}
-
-.sidebar-header h1 {
-  margin: 0;
+.sidebar h1 {
+  margin: 0 0 var(--spacing-2) 0;
   font-size: var(--font-size-2xl);
   color: var(--color-white);
   font-weight: 700;
@@ -29,42 +23,13 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-align: left;
+  padding-left: var(--spacing-4);
 }
 
-.sidebar-nav {
-  flex-grow: 1;
-  margin-bottom: var(--spacing-8);
-  padding: 0 var(--spacing-1);
-}
 
-.sidebar-nav h2 {
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  color: var(--color-dark-grey);
-  margin: 0 0 var(--spacing-4) 0;
-  padding: var(--spacing-2) 0;
-  border-bottom: 1px solid var(--color-light-grey);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
 
-.sidebar-nav ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: var(--spacing-6) var(--spacing-1) 0;
-  border-top: 1px solid var(--color-light-grey);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
 
 /* Navigation Items */
 .nav-item {
@@ -129,7 +94,7 @@
 }
 
 /* User Button Container */
-.sidebar-footer .user-button-container {
+.user-button-container {
   padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-lg);
   transition: background-color var(--transition-fast);
@@ -138,11 +103,11 @@
   align-items: center;
 }
 
-.sidebar-footer .user-button-container:hover {
+.user-button-container:hover {
   background-color: var(--color-light-grey);
 }
 
-.sidebar-footer .cl-userButton-root {
+.cl-userButton-root {
   justify-content: flex-start;
   width: 100%;
 }
@@ -168,19 +133,11 @@
     transform: translateX(0);
   }
 
-  .sidebar-header {
-    margin-bottom: var(--spacing-8);
-    padding: var(--spacing-4) var(--spacing-2);
-  }
 
-  .sidebar-header h1 {
+  .sidebar h1 {
     font-size: var(--font-size-xl);
   }
 
-  .sidebar-nav {
-    margin-bottom: var(--spacing-8);
-    padding: 0 var(--spacing-1);
-  }
 
   .nav-item {
     padding: var(--spacing-4) var(--spacing-4);
@@ -188,11 +145,8 @@
     min-height: 48px;
   }
 
-  .sidebar-footer {
-    padding: var(--spacing-6) var(--spacing-1) 0;
-  }
 
-  .sidebar-footer .user-button-container {
+  .user-button-container {
     padding: var(--spacing-3) var(--spacing-4);
     min-height: 48px;
   }
@@ -217,25 +171,12 @@
     transform: translateX(0);
   }
 
-  .sidebar-header {
-    margin-bottom: var(--spacing-8);
-    padding: var(--spacing-3) var(--spacing-2);
-  }
 
-  .sidebar-header h1 {
+  .sidebar h1 {
     font-size: var(--font-size-lg);
   }
 
-  .sidebar-nav {
-    margin-bottom: var(--spacing-8);
-    padding: 0 var(--spacing-1);
-  }
 
-  .sidebar-nav h2 {
-    font-size: var(--font-size-xs);
-    margin-bottom: var(--spacing-3);
-    padding: var(--spacing-2) 0;
-  }
 
   .nav-item {
     padding: var(--spacing-4) var(--spacing-4);
@@ -243,11 +184,8 @@
     min-height: 48px;
   }
 
-  .sidebar-footer {
-    padding: var(--spacing-6) var(--spacing-1) 0;
-  }
 
-  .sidebar-footer .user-button-container {
+  .user-button-container {
     padding: var(--spacing-3) var(--spacing-4);
     min-height: 48px;
   }
@@ -261,12 +199,8 @@
     padding: var(--spacing-5) var(--spacing-3);
   }
 
-  .sidebar-header {
-    margin-bottom: var(--spacing-6);
-    padding: var(--spacing-3) var(--spacing-1);
-  }
 
-  .sidebar-header h1 {
+  .sidebar h1 {
     font-size: var(--font-size-base);
   }
 
@@ -281,11 +215,7 @@
     min-height: 44px;
   }
 
-  .sidebar-footer {
-    padding: var(--spacing-5) 0 0;
-  }
-
-  .sidebar-footer .user-button-container {
+  .user-button-container {
     padding: var(--spacing-3) var(--spacing-3);
     min-height: 44px;
   }
