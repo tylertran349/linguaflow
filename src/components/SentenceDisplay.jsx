@@ -1,6 +1,6 @@
 // src/components/SentenceDisplay.jsx
 import { useState, useEffect } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, Star } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -59,6 +59,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [isFirstReviewSentence, setIsFirstReviewSentence] = useState(true);
   const [totalReviewSentences, setTotalReviewSentences] = useState(0);
   const [currentReviewPosition, setCurrentReviewPosition] = useState(0);
+  const [starredSentences, setStarredSentences] = useState(new Set()); // Track starred sentences
 
   // Existing State
   const [sentences, setSentences] = useLocalStorage('sentences', []);
@@ -101,16 +102,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
 
-  useEffect(() => {
-    // Identify the sentence that is currently being displayed.
-    const currentSentence = sentences[currentSentenceIndex];
-
-    // If there is a sentence on screen, save it for review.
-    if (currentSentence) {
-      saveSentenceForReview(currentSentence);
-    }
-    // The dependency array ensures this runs only when the view changes.
-  }, [sentences, currentSentenceIndex]);
+  // Removed automatic saving - users now choose which sentences to star
 
   // Effect to handle translation state in review mode
   useEffect(() => {
@@ -158,6 +150,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         setCurrentReviewIndex(0);
         setTotalReviewSentences(data.length);
         setCurrentReviewPosition(0);
+        // Initialize starredSentences with review sentences since they are all starred by default
+        setStarredSentences(new Set(data.map(sentence => sentence.targetSentence)));
         setReviewLoading(false);
         clearTimeout(timeoutId);
         return true; // Success
@@ -191,24 +185,72 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     attemptFetch();
   };
 
-  // --- FUNCTION: SAVE SENTENCE FOR REVIEW ---
-  const saveSentenceForReview = async (sentenceToSave) => {
+  // --- FUNCTION: STAR/UNSTAR SENTENCE ---
+  const handleStarSentence = async (sentence, isStarred) => {
     if (!isSignedIn) return; // Only save if logged in
 
-    try {
+    // Update local state immediately for instant visual feedback
+    setStarredSentences(prev => {
+        const newSet = new Set(prev);
+        if (isStarred) {
+            newSet.add(sentence.targetSentence);
+        } else {
+            newSet.delete(sentence.targetSentence);
+        }
+        return newSet;
+    });
+
+    const maxRetries = 5;
+    const baseDelay = 1000; // 1 second base delay
+    let retryCount = 0;
+
+    const attemptStarUpdate = async () => {
+      try {
         const token = await getToken();
-        await fetch(`${API_BASE_URL}/api/sentences/save`, {
-            method: 'POST',
+        const response = await fetch(`${API_BASE_URL}/api/sentences/star`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ sentence: sentenceToSave })
+            body: JSON.stringify({ sentence, starred: isStarred })
         });
-    } catch (err) {
-        console.error("Failed to save sentence for review:", err);
-        // Non-critical error, so we don't need to show it to the user
-    }
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Failed to update star status`);
+        }
+
+        console.log(`Successfully ${isStarred ? 'starred' : 'unstarred'} sentence: ${sentence.targetSentence}`);
+        return true; // Success
+
+      } catch (err) {
+        console.error(`Star update attempt ${retryCount + 1} failed:`, err);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          const delay = Math.min(baseDelay * Math.pow(2, retryCount - 1), 16000);
+          console.log(`Retrying star update in ${delay}ms...`);
+          setTimeout(attemptStarUpdate, delay);
+        } else {
+          console.error(`Failed to ${isStarred ? 'star' : 'unstar'} sentence after ${maxRetries} attempts:`, sentence.targetSentence);
+          // Revert the local state since the operation ultimately failed
+          setStarredSentences(prev => {
+              const newSet = new Set(prev);
+              if (isStarred) {
+                  newSet.delete(sentence.targetSentence);
+              } else {
+                  newSet.add(sentence.targetSentence);
+              }
+              return newSet;
+          });
+        }
+        return false; // Failed
+      }
+    };
+
+    // Start the first attempt
+    attemptStarUpdate();
   };
 
   const handleReviewDecision = async (sentenceId, decision) => {
@@ -326,7 +368,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
   };
 
-  const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak) => {
+  const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak, starButton) => {
     if (!fullSentence) return null;
 
     // If no colorMap, make the entire sentence clickable
@@ -344,6 +386,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
               <Volume2 size={24} color="var(--color-green)" />
             </button>
+          )}
+          {starButton && (
+            <span style={{ marginLeft: '8px' }}>
+              {starButton}
+            </span>
           )}
         </span>
       );
@@ -369,6 +416,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
               <Volume2 size={24} color="var(--color-green)" />
             </button>
+          )}
+          {starButton && (
+            <span style={{ marginLeft: '8px' }}>
+              {starButton}
+            </span>
           )}
         </span>
       );
@@ -449,6 +501,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
           <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
             <Volume2 size={24} color="var(--color-green)" />
           </button>
+        )}
+        {starButton && (
+          <span style={{ marginLeft: '8px' }}>
+            {starButton}
+          </span>
         )}
       </span>
     );
@@ -536,12 +593,26 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         return null; // This will cause a re-render with the correct index
     }
 
+    const starButton = isSignedIn ? (
+        <button 
+            className={`star-button ${starredSentences.has(currentReview.targetSentence) ? 'starred' : ''}`}
+            onClick={() => handleStarSentence(currentReview, !starredSentences.has(currentReview.targetSentence))}
+            title={starredSentences.has(currentReview.targetSentence) ? 'Remove from review' : 'Add to review'}
+        >
+            <Star 
+                size={24} 
+                color="#ffdc62"
+                fill={starredSentences.has(currentReview.targetSentence) ? "#ffdc62" : "none"}
+            />
+        </button>
+    ) : null;
+
     return (
         <div className="sentence-card">
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        {renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping, () => handleSentenceSpeak(currentReview.targetSentence))}
+                        {renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping, () => handleSentenceSpeak(currentReview.targetSentence), starButton)}
                     </span>
                 </section>
                 {showTranslation && (
@@ -606,13 +677,27 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
 
     const currentSentence = sentences[currentSentenceIndex];
+    const starButton = isSignedIn ? (
+        <button 
+            className={`star-button ${starredSentences.has(currentSentence.targetSentence) ? 'starred' : ''}`}
+            onClick={() => handleStarSentence(currentSentence, !starredSentences.has(currentSentence.targetSentence))}
+            title={starredSentences.has(currentSentence.targetSentence) ? 'Remove from review' : 'Add to review'}
+        >
+            <Star 
+                size={24} 
+                color="#ffdc62"
+                fill={starredSentences.has(currentSentence.targetSentence) ? "#ffdc62" : "none"}
+            />
+        </button>
+    ) : null;
+
     return (
         <div className="sentence-card">
             {error && <p className="status-message error small">Error: {error}</p>}
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        {renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping, () => handleSentenceSpeak(currentSentence.targetSentence))}
+                        {renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping, () => handleSentenceSpeak(currentSentence.targetSentence), starButton)}
                     </span>
                 </section>
                 {showTranslation && (

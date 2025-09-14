@@ -279,6 +279,39 @@ app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, r
     }
 });
 
+// --- STAR/UNSTAR A SENTENCE ---
+app.put('/api/sentences/star', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { sentence, starred } = req.body;
+
+        if (starred) {
+            // Star the sentence - save to MongoDB
+            await Sentence.findOneAndUpdate(
+                { userId: userId, targetSentence: sentence.targetSentence },
+                { 
+                    ...sentence, 
+                    userId: userId,
+                    starred: true,
+                    $setOnInsert: { reviewDueDate: new Date() }
+                },
+                { upsert: true, new: true }
+            );
+        } else {
+            // Unstar the sentence - remove from MongoDB
+            await Sentence.findOneAndDelete({
+                userId: userId,
+                targetSentence: sentence.targetSentence
+            });
+        }
+
+        res.json({ message: starred ? 'Sentence starred successfully.' : 'Sentence unstarred successfully.' });
+    } catch (error) {
+        console.error("Error updating star status:", error);
+        res.status(500).json({ message: 'Failed to update star status.' });
+    }
+});
+
 // --- 7. FRONTEND CATCH-ALL ROUTE ---
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));

@@ -157,6 +157,31 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Star Button */
+.star-button {
+  background: transparent !important;
+  color: inherit !important;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.star-button:hover {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
 .generate-button,
 .actions button:last-child {
   background: var(--color-green);
@@ -238,6 +263,15 @@
 
 .inline-speak-button:active {
   transform: scale(0.95);
+}
+
+/* Ensure consistent vertical alignment of speaker and star icons */
+.inline-speak-button,
+.star-button {
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Layout for Actions & Navigation */
@@ -367,6 +401,15 @@
     margin-left: var(--spacing-1);
   }
 
+  /* Ensure proper vertical alignment of speaker and star icons on small screens */
+  .inline-speak-button,
+  .star-button {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .actions, .navigation {
     flex-direction: column;
     width: 100%;
@@ -377,6 +420,11 @@
     width: 100%;
     padding: var(--spacing-2) var(--spacing-5);
     font-size: var(--font-size-sm);
+  }
+
+  .star-button {
+    width: auto;
+    min-width: 44px;
   }
 
   .mode-toggle {
@@ -442,6 +490,15 @@
     margin-left: var(--spacing-1);
   }
 
+  /* Ensure proper vertical alignment of speaker and star icons on very small screens */
+  .inline-speak-button,
+  .star-button {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .actions button, .navigation button, .generate-button {
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--font-size-sm);
@@ -480,7 +537,8 @@
 .generate-button:focus-visible,
 .speak-button:focus-visible,
 .inline-speak-button:focus-visible,
-.decision-button:focus-visible {
+.decision-button:focus-visible,
+.star-button:focus-visible {
   outline: 2px solid var(--color-green);
   outline-offset: 2px;
 }

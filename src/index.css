@@ -14,7 +14,14 @@
   --color-text-primary: #333333;   /* Dark grey for primary text */
   --color-text-secondary: #666666; /* Medium grey for secondary text/labels */
   --color-error: #ef4444;        /* Red for error messages */
+  --color-yellow: #fbbf24;       /* Yellow for starred items */
   --color-border: #e5e7eb;       /* Light grey border color for inputs/dividers */
+  
+  /* Additional color variables used throughout the app */
+  --color-white: #ffffff;        /* Pure white */
+  --color-dark-grey: #333333;    /* Dark grey for text */
+  --color-light-grey: #e5e7eb;   /* Light grey for borders and backgrounds */
+  --color-green: #10b981;        /* Green accent color */
 
   /* Layout & Font */
   --font-main: 'Inter', sans-serif;

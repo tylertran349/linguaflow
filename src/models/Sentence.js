@@ -7,6 +7,7 @@ const sentenceSchema = new mongoose.Schema({
     nativeSentence: { type: String, required: true },
     colorMapping: [Object],
     reviewDueDate: { type: Date, default: () => new Date(), index: true },
+    starred: { type: Boolean, default: false, index: true },
     // Add any other fields you might need, like interval, easeFactor, etc.
 });
 
