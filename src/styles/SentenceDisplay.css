@@ -220,7 +220,7 @@
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
-  padding: var(--spacing-3);
+  padding: 0;
   line-height: 1;
   border-radius: var(--radius-md);
   display: inline-flex;
@@ -233,7 +233,6 @@
 }
 
 .inline-speak-button:hover {
-  background: var(--color-light-grey);
   transform: scale(1.1);
 }
 
