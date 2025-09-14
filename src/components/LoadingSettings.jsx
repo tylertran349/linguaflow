@@ -3,19 +3,20 @@ import { useState, useEffect } from 'react';
 import '../styles/LoadingSettings.css';
 
 function LoadingSettings() {
-  const [dots, setDots] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Please wait while we load your preferences from the database');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDots(prev => {
-        if (prev === '') return '.';
-        if (prev === '.') return '..';
-        if (prev === '..') return '...';
-        return '';
-      });
-    }, 500); // Change every 500ms
+    let intervalId;
+    let dotCount = 0;
+    const baseMessage = 'Please wait while we load your preferences from the database';
+    setLoadingMessage(baseMessage);
+    
+    intervalId = setInterval(() => {
+      dotCount = (dotCount + 1) % 4; 
+      setLoadingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+    }, 400); // Same timing as SentenceDisplay: 400ms
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
@@ -26,8 +27,7 @@ function LoadingSettings() {
         </div>
         <h2 className="loading-title">Loading settings</h2>
         <p className="loading-subtitle">
-          Please wait while we load your preferences from the database
-          <span className="loading-dots">{dots}</span>
+          {loadingMessage}
         </p>
       </div>
     </div>

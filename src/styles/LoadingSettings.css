@@ -27,7 +27,6 @@
 .loading-settings-content {
   text-align: center;
   color: var(--color-white);
-  max-width: 400px;
   padding: var(--spacing-8);
   animation: contentFadeIn 0.8s ease-out;
 }
@@ -87,6 +86,7 @@
   color: var(--color-white);
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
 }
 
 .loading-dots {
@@ -145,7 +145,6 @@
 @media (max-width: 1023px) and (min-width: 768px) {
   .loading-settings-content {
     padding: var(--spacing-6);
-    max-width: 350px;
   }
   
   .loading-title {
@@ -167,7 +166,6 @@
 @media (max-width: 767px) {
   .loading-settings-content {
     padding: var(--spacing-5);
-    max-width: 320px;
   }
   
   .loading-title {
@@ -193,7 +191,6 @@
 @media (max-width: 479px) {
   .loading-settings-content {
     padding: var(--spacing-4);
-    max-width: 280px;
   }
   
   .loading-title {
@@ -219,7 +216,6 @@
 @media (max-height: 500px) and (orientation: landscape) {
   .loading-settings-content {
     padding: var(--spacing-4);
-    max-width: 300px;
   }
   
   .loading-title {
