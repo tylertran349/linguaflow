@@ -8,9 +8,9 @@ const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-l
 
 // TTS engines - available in all environments
 const getTtsEngines = () => [
-  { value: "web-speech", label: "Web Speech API (default)" }, 
+  { value: "google-translate", label: "Google Translate" },
   { value: "puter", label: "Puter AI (doesn't support some languages)" }, 
-  { value: "google-translate", label: "Google Translate" }
+  { value: "web-speech", label: "Web Speech API" }
 ];
 
 function SettingsModal({

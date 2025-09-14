@@ -25,7 +25,7 @@ function LinguaFlowApp() {
     targetLanguage: "Vietnamese",
     difficulty: "B2",
     model: "gemini-2.5-flash", 
-    ttsEngine: "web-speech",
+    ttsEngine: "google-translate",
     sentenceCount: 20,
     webSpeechRate: 0.6,
     googleTranslateRate: 1,
