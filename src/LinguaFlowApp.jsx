@@ -47,6 +47,7 @@ function LinguaFlowApp() {
   const [isRetryingSave, setIsRetryingSave] = useState(false);
   const [saveRetryInterval, setSaveRetryInterval] = useState(null);
   const [pendingSaveData, setPendingSaveData] = useState(null);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
@@ -67,6 +68,7 @@ function LinguaFlowApp() {
       console.log('Stopping save retry - settings saved successfully');
     }
     setIsRetryingSave(false);
+    setIsSavingSettings(false);
     if (saveRetryInterval) {
       clearInterval(saveRetryInterval);
       setSaveRetryInterval(null);
@@ -75,6 +77,7 @@ function LinguaFlowApp() {
   };
 
   const attemptSaveSettings = async (data) => {
+    setIsSavingSettings(true);
     try {
       const token = await getToken();
       const response = await fetch(`${API_BASE_URL}/api/settings`, {
@@ -114,6 +117,8 @@ function LinguaFlowApp() {
     } catch (error) {
       console.error("Failed to save settings to DB:", error);
       return false; // Failure
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -122,6 +127,7 @@ function LinguaFlowApp() {
     
     console.log('Starting save retry - attempting to save settings to MongoDB');
     setIsRetryingSave(true);
+    setIsSavingSettings(true);
     setPendingSaveData(data);
     
     // Try immediately first
@@ -302,13 +308,13 @@ function LinguaFlowApp() {
   const renderActiveModule = () => {
     switch (activeModule) {
       case 'sentence-generator':
-        return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+        return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
       case 'unscramble-words':
-        return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+        return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
       case 'read-and-respond':
-        return <ReadAndRespond geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+        return <ReadAndRespond geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
       case 'write-a-response':
-        return <WriteAResponse geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings}/>;
+        return <WriteAResponse geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
       default:
         return (
           <div className="initial-state-container">

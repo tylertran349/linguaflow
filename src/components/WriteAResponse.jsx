@@ -10,7 +10,7 @@ import { supportedLanguages } from '../utils/languages';
 import '../styles/WriteAResponse.css';
 
 // Renamed component function
-function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
+function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings }) {
   const [questions, setQuestions] = useLocalStorage('practiceQuestions', []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useLocalStorage('practiceQuestionIndex', 0);
   const [questionHistory, setQuestionHistory] = useLocalStorage('practiceQuestionHistory', []);
@@ -24,6 +24,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating questions, please wait...');
   const [feedbackLoadingMessage, setFeedbackLoadingMessage] = useState('Getting feedback...');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings');
 
   const currentQuestion = questions[currentQuestionIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
@@ -58,7 +59,26 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     return () => clearInterval(intervalId);
   }, [isFetchingFeedback]);
 
+  // Effect for animated ellipsis during settings saving
+  useEffect(() => {
+    let intervalId;
+    if (isSavingSettings) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setSavingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setSavingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isSavingSettings]);
+
   const generateQuestions = async () => {
+    if (isSavingSettings) {
+      return; // Prevent generation while settings are being saved
+    }
+
     if (!geminiApiKey) {
       if (onApiKeyMissing) onApiKeyMissing();
       return;
@@ -139,6 +159,8 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   
   if (isLoadingQuestions) return <p className="status-message">{loadingMessage}</p>;
   
+  if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
+  
   if (questions.length === 0) {
     return (
       <div className="initial-state-container">
@@ -146,7 +168,11 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
         <p className="status-message">
           Practice your writing skills. Generate questions to get started.
         </p>
-        <button className="generate-button" onClick={generateQuestions}>
+        <button 
+          className="generate-button" 
+          onClick={generateQuestions}
+          disabled={isSavingSettings}
+        >
           Generate Questions
         </button>
       </div>
@@ -212,8 +238,12 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing }) {
                     Next Question
                 </button>
             ) : (
-                <button className="nav-button generate-new" onClick={generateQuestions}>
-                    Generate New Questions
+                <button 
+                  className="nav-button generate-new" 
+                  onClick={generateQuestions}
+                  disabled={isSavingSettings}
+                >
+                    {isSavingSettings ? savingMessage : 'Generate New Questions'}
                 </button>
             )
         )}

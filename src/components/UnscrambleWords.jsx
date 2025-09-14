@@ -23,7 +23,7 @@ import '../styles/UnscrambleWords.css';
 
 const CORRECT_ADVANCE_DELAY = 1500;
 
-function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
+function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings }) {
   // ... (all other state remains the same)
   const [sentences, setSentences] = useLocalStorage('unscrambleSentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('unscrambleCurrentIndex', 0);
@@ -35,6 +35,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings');
 
   // --- NEW STATE for DragOverlay ---
   const [activeItem, setActiveItem] = useState(null);
@@ -62,6 +63,21 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     }
     return () => clearInterval(intervalId);
   }, [isLoading]);
+
+  // Effect for animated ellipsis during settings saving
+  useEffect(() => {
+    let intervalId;
+    if (isSavingSettings) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setSavingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setSavingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isSavingSettings]);
 
   // ... (shuffleArray, useEffect hooks, and other functions remain the same)
   const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
@@ -94,6 +110,10 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
   };
 
   const generate = async () => {
+    if (isSavingSettings) {
+      return; // Prevent generation while settings are being saved
+    }
+
     if (!geminiApiKey) {
       setError("Gemini API Key is not set.");
       if (onApiKeyMissing) onApiKeyMissing();
@@ -175,6 +195,10 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
     return <p className="status-message">{loadingMessage}</p>;
   }
 
+  if (isSavingSettings) {
+    return <p className="status-message">{savingMessage}</p>;
+  }
+
   // 2. Second Priority: Handle the initial state before any sentences have been generated.
   if (sentences.length === 0) {
     return (
@@ -182,7 +206,11 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
         {error && <p className="status-message error">{error}</p>}
         <h2>Unscramble Words</h2>
         <p>Drag and drop the words to form a correct sentence.</p>
-        <button className="generate-button" onClick={generate}>
+        <button 
+          className="generate-button" 
+          onClick={generate}
+          disabled={isSavingSettings}
+        >
           Start Game
         </button>
       </div>
@@ -231,7 +259,13 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing }) {
       <div className="actions-panel">
         <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>{isHintVisible ? 'Hide Hint' : 'Show Hint'}</button>
         <button className="action-button" onClick={showSolution}>Show Solution</button>
-        <button className="action-button" onClick={generate}>Generate New Set</button>
+        <button 
+          className="action-button" 
+          onClick={generate}
+          disabled={isSavingSettings}
+        >
+          {isSavingSettings ? savingMessage : 'Generate New Set'}
+        </button>
       </div>
 
       {isHintVisible && (

@@ -46,7 +46,7 @@ const escapeRegExp = (string) => {
 };
 
 
-function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
+function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSavingSettings }) {
   // --- STATE FOR REVIEW MODE ---
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
@@ -65,6 +65,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   const [error, setError] = useState(null);
   const [showTranslation, setShowTranslation] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings');
 
   // Effect for the animated ellipsis during loading
   useEffect(() => {
@@ -80,6 +81,21 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
     }
     return () => clearInterval(intervalId);
   }, [isLoading, reviewLoading]);
+
+  // Effect for animated ellipsis during settings saving
+  useEffect(() => {
+    let intervalId;
+    if (isSavingSettings) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setSavingMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setSavingMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isSavingSettings]);
 
   useEffect(() => {
     // Identify the sentence that is currently being displayed.
@@ -206,6 +222,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
   };
 
   const handleGenerateSentences = async () => {
+    if (isSavingSettings) {
+      return; // Prevent generation while settings are being saved
+    }
+
     if (!geminiApiKey) {
       onApiKeyMissing();
       return;
@@ -453,6 +473,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
 
   const renderLearnMode = () => {
     if (isLoading) return <p className="status-message">{loadingMessage}</p>;
+    if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
     if (sentences.length === 0) {
         return (
           <div className="initial-state-container">
@@ -460,7 +481,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
             <p className="status-message">
               Click the button to generate contextual sentences and start learning new vocabulary.
             </p>
-            <button className="generate-button" onClick={handleGenerateSentences}>
+            <button 
+              className="generate-button" 
+              onClick={handleGenerateSentences}
+              disabled={isSavingSettings}
+            >
               Generate Sentences
             </button>
           </div>
@@ -487,7 +512,12 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing }) {
                 <button onClick={() => setShowTranslation(prev => !prev)}>
                     {showTranslation ? 'Hide' : 'Show'} Translation
                 </button>
-                <button onClick={handleGenerateSentences}>Generate New Sentences</button>
+                <button 
+                  onClick={handleGenerateSentences}
+                  disabled={isSavingSettings}
+                >
+                  {isSavingSettings ? savingMessage : 'Generate New Sentences'}
+                </button>
             </div>
             <div className="navigation">
                 <button onClick={handleBack} disabled={currentSentenceIndex === 0}>Back</button>
