@@ -308,7 +308,6 @@ textarea {
 .btn-primary:hover {
   background-color: var(--color-green);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -322,7 +321,6 @@ textarea {
   background-color: var(--color-light-grey);
   border-color: var(--color-light-grey);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
 /* Auth Container */
@@ -377,6 +375,11 @@ textarea {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.split-screen-form h1,
+.split-screen-form p {
+  margin: 0;
 }
 
 /* Initial State */

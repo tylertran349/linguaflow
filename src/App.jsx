@@ -48,9 +48,11 @@ function App() {
 // The WelcomePage no longer needs the container, as App.jsx provides it.
 function WelcomePage() {
     return (
-        <div>
-            <h1>Welcome to LinguaFlow</h1>
-            <p style={{ marginBottom: '2rem' }}>Your journey to language mastery starts here.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <h1>Welcome to LinguaFlow</h1>
+                <p style={{ textAlign: 'center' }}>Your journey to language mastery starts here.</p>
+            </div>
             <div className="welcome-buttons">
                 <Link to="/sign-in" className="btn-primary" style={{ padding: '0.75rem 1.5rem' }}>Sign In</Link>
                 <Link to="/sign-up" className="btn-secondary" style={{ padding: '0.75rem 1.5rem' }}>Sign Up</Link>
