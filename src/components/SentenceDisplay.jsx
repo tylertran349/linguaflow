@@ -55,6 +55,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState(null);
+  const [previousTranslationState, setPreviousTranslationState] = useState(false);
+  const [isFirstReviewSentence, setIsFirstReviewSentence] = useState(true);
+  const [totalReviewSentences, setTotalReviewSentences] = useState(0);
+  const [currentReviewPosition, setCurrentReviewPosition] = useState(0);
 
   // Existing State
   const [sentences, setSentences] = useLocalStorage('sentences', []);
@@ -107,12 +111,31 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
     // The dependency array ensures this runs only when the view changes.
   }, [sentences, currentSentenceIndex]);
+
+  // Effect to handle translation state in review mode
+  useEffect(() => {
+    if (mode === 'review' && reviewSentences.length > 0) {
+      // For the first sentence, hide translation by default
+      // For subsequent sentences, set translation state to the opposite of the previous sentence's state
+      setShowTranslation(isFirstReviewSentence ? false : !previousTranslationState);
+    }
+  }, [mode, previousTranslationState, isFirstReviewSentence]);
+
+  // Effect to reset translation state when review sentences change
+  useEffect(() => {
+    if (mode === 'review' && reviewSentences.length > 0) {
+      // Reset translation state when new sentences are loaded
+      setShowTranslation(false);
+    }
+  }, [reviewSentences, mode]);
   
   // --- FUNCTION: FETCH SENTENCES FOR REVIEW ---
   const handleFetchReviewSentences = async () => {
     setReviewLoading(true);
     setReviewError(null);
     setShowTranslation(false);
+    setPreviousTranslationState(false);
+    setIsFirstReviewSentence(true);
     
     const maxRetries = 5;
     const timeoutDuration = 15000; // 15 seconds
@@ -133,6 +156,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         const data = await response.json();
         setReviewSentences(data);
         setCurrentReviewIndex(0);
+        setTotalReviewSentences(data.length);
+        setCurrentReviewPosition(0);
         setReviewLoading(false);
         clearTimeout(timeoutId);
         return true; // Success
@@ -198,11 +223,25 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             body: JSON.stringify({ sentenceId, decision })
         });
 
+        // Store the current translation state for the next sentence
+        setPreviousTranslationState(showTranslation);
+        
+        // Mark that we're no longer on the first review sentence
+        setIsFirstReviewSentence(false);
+
+        // Increment the position counter
+        setCurrentReviewPosition(prev => prev + 1);
+
         // After successfully updating in the DB, remove the sentence from the current session's review list
         // This provides immediate feedback and moves to the next card.
-        setReviewSentences(prevSentences =>
-            prevSentences.filter(s => s._id !== sentenceId)
-        );
+        setReviewSentences(prevSentences => {
+            const filtered = prevSentences.filter(s => s._id !== sentenceId);
+            // Reset currentReviewIndex if it's now out of bounds
+            if (currentReviewIndex >= filtered.length && filtered.length > 0) {
+                setCurrentReviewIndex(0);
+            }
+            return filtered;
+        });
 
     } catch (err) {
         console.error("Failed to update review:", err);
@@ -453,7 +492,14 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         <div className="mode-toggle">
             <button 
                 className={mode === 'learn' ? 'active' : ''}
-                onClick={() => setMode('learn')}
+                onClick={() => {
+                    addCurrentSentenceToHistory();
+                    setMode('learn');
+                    // Reset review mode state when switching to learn mode
+                    setShowTranslation(false);
+                    setPreviousTranslationState(false);
+                    setIsFirstReviewSentence(true);
+                }}
             >
                 Learn New
             </button>
@@ -483,6 +529,12 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
 
     const currentReview = reviewSentences[currentReviewIndex];
+
+    // Safety check: if currentReviewIndex is out of bounds, reset it
+    if (!currentReview && reviewSentences.length > 0) {
+        setCurrentReviewIndex(0);
+        return null; // This will cause a re-render with the correct index
+    }
 
     return (
         <div className="sentence-card">
@@ -526,7 +578,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
 
             <div className="navigation">
                 {/* The Back/Next buttons are no longer needed in review mode, as decisions drive navigation */}
-                <span>Reviewing: {currentReviewIndex + 1} of {reviewSentences.length}</span>
+                <span>Reviewing: {currentReviewPosition + 1} of {totalReviewSentences}</span>
             </div>
         </div>
     );
