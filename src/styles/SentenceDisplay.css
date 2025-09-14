@@ -125,7 +125,7 @@
 }
 
 .mode-toggle button:first-child {
-  border-right: 1px solid var(--color-light-grey);
+  border-right: none;
 }
 
 .mode-toggle button:hover:not(.active) {
