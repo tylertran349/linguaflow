@@ -288,7 +288,27 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak) => {
-    if (!fullSentence || !colorMap) return null;
+    if (!fullSentence) return null;
+
+    // If no colorMap, make the entire sentence clickable
+    if (!colorMap) {
+      return (
+        <span>
+          <span
+            className="word"
+            onClick={() => handleWordSpeak(fullSentence)}
+            style={{ color: 'var(--color-dark-grey)' }}
+          >
+            {fullSentence}
+          </span>
+          {onSentenceSpeak && (
+            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
+              <Volume2 size={24} color="var(--color-green)" />
+            </button>
+          )}
+        </span>
+      );
+    }
 
     const targetToInfoMap = new Map(
       colorMap.filter(item => item.target && item.target.trim() !== '').map(item => [item.target.trim().toLowerCase(), item])
@@ -299,7 +319,13 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     if (phrasesToFind.length === 0) {
       return (
         <span>
-          {fullSentence}
+          <span
+            className="word"
+            onClick={() => handleWordSpeak(fullSentence)}
+            style={{ color: 'var(--color-dark-grey)' }}
+          >
+            {fullSentence}
+          </span>
           {onSentenceSpeak && (
             <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
               <Volume2 size={24} color="var(--color-green)" />
@@ -315,8 +341,27 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     let lastIndex = 0;
 
     for (const match of matches) {
+      // Add any text before the match as clickable spans
       if (match.index > lastIndex) {
-        result.push(fullSentence.substring(lastIndex, match.index));
+        const beforeText = fullSentence.substring(lastIndex, match.index);
+        // Split by whitespace and make each word clickable
+        const words = beforeText.split(/(\s+)/);
+        words.forEach((word, wordIndex) => {
+          if (word.trim()) {
+            result.push(
+              <span
+                key={`before-${lastIndex}-${wordIndex}`}
+                className="word"
+                onClick={() => handleWordSpeak(word.trim())}
+                style={{ color: 'var(--color-dark-grey)' }}
+              >
+                {word}
+              </span>
+            );
+          } else {
+            result.push(word);
+          }
+        });
       }
 
       const matchedText = match[0];
@@ -336,15 +381,31 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       lastIndex = match.index + matchedText.length;
     }
 
+    // Add any remaining text as clickable spans
     if (lastIndex < fullSentence.length) {
-      result.push(fullSentence.substring(lastIndex));
+      const remainingText = fullSentence.substring(lastIndex);
+      const words = remainingText.split(/(\s+)/);
+      words.forEach((word, wordIndex) => {
+        if (word.trim()) {
+          result.push(
+            <span
+              key={`after-${lastIndex}-${wordIndex}`}
+              className="word"
+              onClick={() => handleWordSpeak(word.trim())}
+              style={{ color: 'var(--color-dark-grey)' }}
+            >
+              {word}
+            </span>
+          );
+        } else {
+          result.push(word);
+        }
+      });
     }
-
-    const sentenceParts = result.map((part, index) => <span key={index}>{part}</span>);
 
     return (
       <span>
-        {sentenceParts}
+        {result}
         {onSentenceSpeak && (
           <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
             <Volume2 size={24} color="var(--color-green)" />
