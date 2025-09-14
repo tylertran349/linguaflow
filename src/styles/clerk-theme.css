@@ -88,7 +88,7 @@
   background-color: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  padding: 0 !important;
+  padding: var(--spacing-6) !important;
 }
 
 .cl-headerTitle {
