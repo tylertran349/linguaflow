@@ -59,6 +59,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [isFirstReviewSentence, setIsFirstReviewSentence] = useState(true);
   const [totalReviewSentences, setTotalReviewSentences] = useState(0);
   const [currentReviewPosition, setCurrentReviewPosition] = useState(0);
+  const [initialReviewCount, setInitialReviewCount] = useState(0); // Track initial count for accurate progress
   const [starredSentences, setStarredSentences] = useState(new Set()); // Track starred sentences
 
   // Existing State
@@ -149,6 +150,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         setReviewSentences(data);
         setCurrentReviewIndex(0);
         setTotalReviewSentences(data.length);
+        setInitialReviewCount(data.length); // Store initial count for accurate progress tracking
         setCurrentReviewPosition(0);
         // Initialize starredSentences with review sentences since they are all starred by default
         setStarredSentences(new Set(data.map(sentence => sentence.targetSentence)));
@@ -199,6 +201,20 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         }
         return newSet;
     });
+
+    // If we're in review mode and unstarring a sentence, remove it from the review list
+    if (mode === 'review' && !isStarred) {
+        setReviewSentences(prevSentences => {
+            const filtered = prevSentences.filter(s => s.targetSentence !== sentence.targetSentence);
+            // Update total count to reflect the actual number of sentences in review
+            setTotalReviewSentences(filtered.length);
+            // Reset currentReviewIndex if it's now out of bounds
+            if (currentReviewIndex >= filtered.length && filtered.length > 0) {
+                setCurrentReviewIndex(0);
+            }
+            return filtered;
+        });
+    }
 
     const maxRetries = 5;
     const baseDelay = 1000; // 1 second base delay
@@ -278,6 +294,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         // This provides immediate feedback and moves to the next card.
         setReviewSentences(prevSentences => {
             const filtered = prevSentences.filter(s => s._id !== sentenceId);
+            // Update total count to reflect the actual number of sentences remaining
+            setTotalReviewSentences(filtered.length);
             // Reset currentReviewIndex if it's now out of bounds
             if (currentReviewIndex >= filtered.length && filtered.length > 0) {
                 setCurrentReviewIndex(0);
@@ -556,6 +574,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                     setShowTranslation(false);
                     setPreviousTranslationState(false);
                     setIsFirstReviewSentence(true);
+                    // Reset review counters and state
+                    setCurrentReviewPosition(0);
+                    setTotalReviewSentences(0);
+                    setInitialReviewCount(0);
+                    setCurrentReviewIndex(0);
                 }}
             >
                 Learn New
@@ -649,7 +672,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
 
             <div className="navigation">
                 {/* The Back/Next buttons are no longer needed in review mode, as decisions drive navigation */}
-                <span className="review-counter">Reviewing: {currentReviewPosition + 1} of {totalReviewSentences}</span>
+                <span className="review-counter">
+                    Reviewing: {Math.min(currentReviewPosition + 1, initialReviewCount)} of {initialReviewCount}
+                </span>
             </div>
         </div>
     );
