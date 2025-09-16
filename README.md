@@ -1,4 +1,4 @@
-# [LinguaFlow](https://linguaflow-production-be4d.up.railway.app/)
+# [LinguaFlow](https://linguaflow.up.railway.app/)
 
 ## Overview
 
