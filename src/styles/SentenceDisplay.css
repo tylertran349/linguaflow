@@ -348,11 +348,11 @@
 }
 
 .decision-button.good {
-  background: #eab308; /* Yellow for good */
+  background: #ffea00; /* Bright yellow for good */
 }
 
 .decision-button.easy {
-  background: #10b981; /* Emerald for easy */
+  background: 	#009200; /* Emerald for easy */
 }
 
 /* Responsive Design */
