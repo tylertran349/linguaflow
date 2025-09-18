@@ -1,6 +1,6 @@
 // src/components/SentenceDisplay.jsx
 import { useState, useEffect } from 'react';
-import { Volume2, Star } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -678,7 +678,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                             onClick={() => handleReviewDecision(currentReview._id, 1)}
                             disabled={isProcessingReview}
                         >
-                            <div className="grade-icon">❌</div>
+                            <div className="grade-icon"><X size={24} /></div>
                             <div className="grade-label">Forgot</div>
                             <div className="grade-description">Completely forgot it</div>
                         </button>
@@ -687,7 +687,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                             onClick={() => handleReviewDecision(currentReview._id, 2)}
                             disabled={isProcessingReview}
                         >
-                            <div className="grade-icon">⚠️</div>
+                            <div className="grade-icon"><AlertTriangle size={24} /></div>
                             <div className="grade-label">Hard</div>
                             <div className="grade-description">It took a while to remember</div>
                         </button>
@@ -696,7 +696,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                             onClick={() => handleReviewDecision(currentReview._id, 3)}
                             disabled={isProcessingReview}
                         >
-                            <div className="grade-icon">✅</div>
+                            <div className="grade-icon"><Check size={24} /></div>
                             <div className="grade-label">Good</div>
                             <div className="grade-description">I knew it</div>
                         </button>
@@ -705,7 +705,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                             onClick={() => handleReviewDecision(currentReview._id, 4)}
                             disabled={isProcessingReview}
                         >
-                            <div className="grade-icon">🎯</div>
+                            <div className="grade-icon"><Crown size={24} /></div>
                             <div className="grade-label">Easy</div>
                             <div className="grade-description">I knew it immediately</div>
                         </button>
