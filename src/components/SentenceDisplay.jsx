@@ -669,38 +669,47 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             {/* Show the decision buttons only after the user reveals the translation */}
             {showTranslation && (
                 <div className="review-decision">
-                    <button
-                        className="decision-button forgot"
-                        onClick={() => handleReviewDecision(currentReview._id, 1)}
-                        title="Forgot - Complete blackout"
-                        disabled={isProcessingReview}
-                    >
-                        {isProcessingReview ? '...' : 'Forgot'}
-                    </button>
-                    <button
-                        className="decision-button hard"
-                        onClick={() => handleReviewDecision(currentReview._id, 2)}
-                        title="Hard - Incorrect response; correct one remembered"
-                        disabled={isProcessingReview}
-                    >
-                        {isProcessingReview ? '...' : 'Hard'}
-                    </button>
-                    <button
-                        className="decision-button good"
-                        onClick={() => handleReviewDecision(currentReview._id, 3)}
-                        title="Good - Correct response after hesitation"
-                        disabled={isProcessingReview}
-                    >
-                        {isProcessingReview ? '...' : 'Good'}
-                    </button>
-                    <button
-                        className="decision-button easy"
-                        onClick={() => handleReviewDecision(currentReview._id, 4)}
-                        title="Easy - Perfect response"
-                        disabled={isProcessingReview}
-                    >
-                        {isProcessingReview ? '...' : 'Easy'}
-                    </button>
+                    <div className="grade-instructions">
+                        <p>How well did you know this sentence?</p>
+                    </div>
+                    <div className="grade-buttons">
+                        <button
+                            className="decision-button forgot"
+                            onClick={() => handleReviewDecision(currentReview._id, 1)}
+                            disabled={isProcessingReview}
+                        >
+                            <div className="grade-icon">❌</div>
+                            <div className="grade-label">Forgot</div>
+                            <div className="grade-description">Completely forgot it</div>
+                        </button>
+                        <button
+                            className="decision-button hard"
+                            onClick={() => handleReviewDecision(currentReview._id, 2)}
+                            disabled={isProcessingReview}
+                        >
+                            <div className="grade-icon">⚠️</div>
+                            <div className="grade-label">Hard</div>
+                            <div className="grade-description">It took a while to remember</div>
+                        </button>
+                        <button
+                            className="decision-button good"
+                            onClick={() => handleReviewDecision(currentReview._id, 3)}
+                            disabled={isProcessingReview}
+                        >
+                            <div className="grade-icon">✅</div>
+                            <div className="grade-label">Good</div>
+                            <div className="grade-description">I knew it</div>
+                        </button>
+                        <button
+                            className="decision-button easy"
+                            onClick={() => handleReviewDecision(currentReview._id, 4)}
+                            disabled={isProcessingReview}
+                        >
+                            <div className="grade-icon">🎯</div>
+                            <div className="grade-label">Easy</div>
+                            <div className="grade-description">I knew it immediately</div>
+                        </button>
+                    </div>
                 </div>
             )}
             {/* --- END: FSRS GRADE SYSTEM --- */}

@@ -307,18 +307,41 @@
 /* Review Decision */
 .review-decision {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   gap: var(--spacing-4);
   margin-top: var(--spacing-4);
   border-top: 1px solid var(--color-light-grey);
   padding-top: var(--spacing-6);
-  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Grade Instructions */
+.grade-instructions {
+  text-align: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.grade-instructions p {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-dark-grey);
+  margin: 0;
+}
+
+/* Grade Buttons Container */
+.grade-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-6);
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .decision-button {
-  padding: var(--spacing-3) var(--spacing-8);
-  font-size: var(--font-size-base);
+  padding: var(--spacing-2) var(--spacing-2);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   border-radius: var(--radius-lg);
   border: none;
@@ -326,6 +349,14 @@
   transition: all var(--transition-fast);
   color: var(--color-white);
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 80px;
 }
 
 .decision-button:hover:not(:disabled) {
@@ -339,20 +370,67 @@
   transform: none;
 }
 
+/* Grade Button Content */
+.grade-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-1);
+  line-height: 1;
+}
+
+.grade-label {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  margin-bottom: var(--spacing-1);
+  line-height: 1.2;
+}
+
+.grade-description {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  opacity: 0.9;
+  line-height: 1.3;
+  max-width: 150px;
+}
+
+/* Grade Button Colors */
 .decision-button.forgot {
-  background: #dc2626; /* Red for forgot */
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: 2px solid #dc2626;
+}
+
+.decision-button.forgot:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  border-color: #b91c1c;
 }
 
 .decision-button.hard {
-  background: #f59e0b; /* Orange for hard */
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 2px solid #f59e0b;
+}
+
+.decision-button.hard:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  border-color: #d97706;
 }
 
 .decision-button.good {
-  background: #ffea00; /* Bright yellow for good */
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: 2px solid #10b981;
+}
+
+.decision-button.good:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: #059669;
 }
 
 .decision-button.easy {
-  background: 	#009200; /* Emerald for easy */
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 2px solid #3b82f6;
+}
+
+.decision-button.easy:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #3b82f6;
 }
 
 /* Responsive Design */
@@ -457,11 +535,29 @@
     padding-top: var(--spacing-4);
   }
 
+  .grade-buttons {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-4);
+    max-width: 100%;
+  }
+
   .decision-button {
-    padding: var(--spacing-2) var(--spacing-6);
-    font-size: var(--font-size-sm);
-    width: 100%;
-    max-width: 200px;
+    padding: var(--spacing-1) var(--spacing-1);
+    font-size: var(--font-size-xs);
+    min-height: 70px;
+  }
+
+  .grade-icon {
+    font-size: 1rem;
+  }
+
+  .grade-label {
+    font-size: var(--font-size-xs);
+  }
+
+  .grade-description {
+    font-size: 10px;
+    max-width: 100px;
   }
 
   .initial-state-container {
@@ -524,10 +620,32 @@
     font-size: var(--font-size-sm);
   }
 
+  .grade-buttons {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-2);
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
   .decision-button {
-    padding: var(--spacing-2) var(--spacing-5);
-    font-size: var(--font-size-sm);
-    max-width: 180px;
+    padding: var(--spacing-1);
+    font-size: 10px;
+    min-height: 60px;
+    min-width: 50px;
+  }
+
+  .grade-icon {
+    font-size: 0.875rem;
+  }
+
+  .grade-label {
+    font-size: 10px;
+  }
+
+  .grade-description {
+    font-size: 9px;
+    max-width: 70px;
+    line-height: 1.1;
   }
 
   .initial-state-container {
