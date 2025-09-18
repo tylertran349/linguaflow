@@ -36,6 +36,8 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
   const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [matchedSolution, setMatchedSolution] = useState(null);
+  const [hasUserMovedCards, setHasUserMovedCards] = useState(false);
 
   // --- NEW STATE for DragOverlay ---
   const [activeItem, setActiveItem] = useState(null);
@@ -144,6 +146,8 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     setIncorrectIndices([]);
     setIsHintVisible(false);
     setIsRevealed(false);
+    setMatchedSolution(null);
+    setHasUserMovedCards(false);
   };
 
   const generate = async () => {
@@ -180,6 +184,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     // Check if current order matches any valid solution
     let isCorrect = false;
     let incorrectIndices = [];
+    let matchedSolution = null;
 
     for (const solution of allValidSolutions) {
       const correctElements = splitIntoElements(solution);
@@ -200,6 +205,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
       if (solutionIsCorrect && currentElementOrder.length === correctElements.length) {
         isCorrect = true;
         incorrectIndices = [];
+        matchedSolution = solution;
         break;
       }
 
@@ -210,7 +216,15 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     }
 
     setIsCorrect(isCorrect);
-    setIncorrectIndices(incorrectIndices);
+    // Only show incorrect indices if user has moved cards
+    setIncorrectIndices(hasUserMovedCards ? incorrectIndices : []);
+    
+    // Store which solution was matched for better feedback
+    if (isCorrect) {
+      setMatchedSolution(matchedSolution);
+    } else {
+      setMatchedSolution(null);
+    }
   };
 
   // --- UPDATED DRAG HANDLERS ---
@@ -229,6 +243,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
       
       const newUserOrder = arrayMove(userOrder, oldIndex, newIndex);
       setUserOrder(newUserOrder);
+      setHasUserMovedCards(true);
       checkOrder(newUserOrder);
     }
 
@@ -315,7 +330,18 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
 
       {isCorrect === true && (
         <div className="feedback-message correct">
-          Correct! <PartyPopper size={20} color="var(--color-green)" />
+          {matchedSolution === currentSentence.target ? (
+            <>
+              Correct! <PartyPopper size={20} color="var(--color-green)" />
+            </>
+          ) : (
+            <>
+              Great! That's also correct! <PartyPopper size={20} color="var(--color-green)" />
+              <div className="alternative-solution-note">
+                <small>💡 You found an alternative valid arrangement!</small>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -336,7 +362,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
           <span className="hint-label">{settings.nativeLanguage} translation:</span>{currentSentence.native}
           {currentSentence.alternatives && currentSentence.alternatives.length > 0 && (
             <div className="hint-note">
-              <small>💡 Multiple grammatically correct arrangements are accepted!</small>
+              <small>💡 Multiple grammatically correct arrangements are accepted! Try different word orders.</small>
             </div>
           )}
         </div>
