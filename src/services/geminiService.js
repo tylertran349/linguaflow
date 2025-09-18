@@ -192,8 +192,38 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 export const fetchUnscrambleSentences = async (apiKey, settings, topic, history = []) => {
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
-    Provide the output as a single, valid JSON array of objects. Each object must have "target" and "native" keys.
-    Example: [{ "target": "Un exemple de phrase.", "native": "An example sentence." }]
+    Generate sentences for a word unscrambling game where multiple grammatically correct arrangements should be accepted.
+    
+    **OUTPUT FORMAT:**
+    Provide the output as a single, valid JSON array of objects. Each object must have:
+    - "target": The primary correct sentence (string)
+    - "native": The native language translation (string)  
+    - "alternatives": An array of alternative grammatically correct arrangements (array of strings)
+    
+    **ALTERNATIVE ARRANGEMENTS:**
+    For each sentence, provide 2-4 alternative arrangements that are grammatically correct but have different word orders.
+    Examples of valid alternatives:
+    - "I usually sip coffee in the morning before work." vs "I usually sip coffee before work in the morning."
+    - "She quickly ran to the store." vs "She ran quickly to the store."
+    - "The big red house is beautiful." vs "The red big house is beautiful." (if both are grammatically acceptable)
+    
+    **RULES FOR ALTERNATIVES:**
+    1. All alternatives must be grammatically correct
+    2. All alternatives must have the same meaning as the primary sentence
+    3. Focus on different word orders, not just punctuation changes
+    4. Include variations in adverb placement, adjective order, and phrase positioning
+    5. Do NOT include alternatives that change the meaning or are grammatically incorrect
+    
+    **EXAMPLE:**
+    [{
+      "target": "I usually sip coffee in the morning before work.",
+      "native": "Je bois habituellement du café le matin avant le travail.",
+      "alternatives": [
+        "I usually sip coffee before work in the morning.",
+        "In the morning, I usually sip coffee before work.",
+        "Before work, I usually sip coffee in the morning."
+      ]
+    }]
   `;
   return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate unscramble sentences.");
 };

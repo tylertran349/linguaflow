@@ -79,16 +79,53 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
 
-  // ... (shuffleArray, useEffect hooks, and other functions remain the same)
+  // Function to split text into words and punctuation separately
+  const splitIntoElements = (text) => {
+    // Split by spaces and then separate punctuation from words
+    const elements = [];
+    const parts = text.split(' ');
+    
+    parts.forEach((part, partIndex) => {
+      // Check if the part contains punctuation at the end
+      const punctuationMatch = part.match(/^(.+?)([.,!?;:]+)$/);
+      
+      if (punctuationMatch) {
+        const [, word, punctuation] = punctuationMatch;
+        // Add the word
+        if (word) {
+          elements.push({
+            id: `${text}-word-${partIndex}`,
+            word: word,
+            type: 'word'
+          });
+        }
+        // Add each punctuation mark as a separate element
+        punctuation.split('').forEach((punct, punctIndex) => {
+          elements.push({
+            id: `${text}-punct-${partIndex}-${punctIndex}`,
+            word: punct,
+            type: 'punctuation'
+          });
+        });
+      } else {
+        // No punctuation, just add the word
+        elements.push({
+          id: `${text}-word-${partIndex}`,
+          word: part,
+          type: 'word'
+        });
+      }
+    });
+    
+    return elements;
+  };
+
   const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
   useEffect(() => {
     if (currentSentence) {
-      const correctWords = currentSentence.target.split(' ').map((word, index) => ({
-        id: `${currentSentence.target}-${index}`,
-        word,
-      }));
-      setUserOrder(shuffleArray(correctWords));
+      const correctElements = splitIntoElements(currentSentence.target);
+      setUserOrder(shuffleArray(correctElements));
       resetStateForNewSentence();
     }
   }, [currentSentence]);
@@ -133,20 +170,47 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     }
   };
 
-  const checkOrder = (currentWordOrder) => {
-    const correctWords = currentSentence.target.split(' ');
-    const newIncorrectIndices = [];
-    let allCorrect = true;
+  const checkOrder = (currentElementOrder) => {
+    // Get all valid solutions (primary + alternatives)
+    const allValidSolutions = [currentSentence.target];
+    if (currentSentence.alternatives && Array.isArray(currentSentence.alternatives)) {
+      allValidSolutions.push(...currentSentence.alternatives);
+    }
 
-    currentWordOrder.forEach((item, index) => {
-      if (item.word !== correctWords[index]) {
-        allCorrect = false;
-        newIncorrectIndices.push(index);
+    // Check if current order matches any valid solution
+    let isCorrect = false;
+    let incorrectIndices = [];
+
+    for (const solution of allValidSolutions) {
+      const correctElements = splitIntoElements(solution);
+      let solutionIsCorrect = true;
+      const solutionIncorrectIndices = [];
+
+      // Check if current order matches this solution
+      currentElementOrder.forEach((item, index) => {
+        if (index >= correctElements.length || 
+            item.word !== correctElements[index].word || 
+            item.type !== correctElements[index].type) {
+          solutionIsCorrect = false;
+          solutionIncorrectIndices.push(index);
+        }
+      });
+
+      // If this solution matches, we're done
+      if (solutionIsCorrect && currentElementOrder.length === correctElements.length) {
+        isCorrect = true;
+        incorrectIndices = [];
+        break;
       }
-    });
 
-    setIsCorrect(allCorrect);
-    setIncorrectIndices(newIncorrectIndices);
+      // Keep track of incorrect indices for the primary solution
+      if (solution === currentSentence.target) {
+        incorrectIndices = solutionIncorrectIndices;
+      }
+    }
+
+    setIsCorrect(isCorrect);
+    setIncorrectIndices(incorrectIndices);
   };
 
   // --- UPDATED DRAG HANDLERS ---
@@ -172,11 +236,9 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   };
   
   const showSolution = () => {
-    const correctWords = currentSentence.target.split(' ').map((word, index) => ({
-      id: `${currentSentence.target}-${index}`,
-      word,
-    }));
-    setUserOrder(correctWords);
+    // Show the primary solution (first valid arrangement)
+    const correctElements = splitIntoElements(currentSentence.target);
+    setUserOrder(correctElements);
     setIsCorrect(true);
     setIsRevealed(true);
     setIncorrectIndices([]);
@@ -236,6 +298,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
                 key={item.id}
                 id={item.id}
                 word={item.word}
+                type={item.type}
                 isIncorrect={isCorrect === false && incorrectIndices.includes(index)}
               />
             ))}
@@ -271,6 +334,11 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
       {isHintVisible && (
         <div className="hint-box">
           <span className="hint-label">{settings.nativeLanguage} translation:</span>{currentSentence.native}
+          {currentSentence.alternatives && currentSentence.alternatives.length > 0 && (
+            <div className="hint-note">
+              <small>💡 Multiple grammatically correct arrangements are accepted!</small>
+            </div>
+          )}
         </div>
       )}
 

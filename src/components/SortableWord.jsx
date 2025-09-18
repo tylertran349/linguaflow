@@ -2,7 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export function SortableWord({ id, word, isIncorrect }) {
+export function SortableWord({ id, word, type, isIncorrect }) {
   const {
     attributes,
     listeners,
@@ -20,7 +20,7 @@ export function SortableWord({ id, word, isIncorrect }) {
   };
   
   // We remove the 'dragging' class here since the overlay will handle the visual representation
-  const className = `word-tile ${isIncorrect ? 'incorrect' : ''}`;
+  const className = `word-tile ${type === 'punctuation' ? 'punctuation-tile' : ''} ${isIncorrect ? 'incorrect' : ''}`;
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={className}>
