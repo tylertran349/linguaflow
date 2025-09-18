@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 import { ClerkExpressWithAuth, ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
 import { Webhook } from 'svix';
 import Sentence from './src/models/Sentence.js';
-import UserSettings from './src/models/UserSettings.js'; 
+import UserSettings from './src/models/UserSettings.js';
+import { calculateNextReview, isCardDue, Grade } from './src/services/fsrsService.js'; 
 
 // --- 1. INITIAL SETUP ---
 const app = express();
@@ -211,12 +212,20 @@ app.put('/api/settings', ClerkExpressRequireAuth(), async (req, res) => {
 app.get('/api/sentences/review', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
-        const now = new Date();
         
-        // Find sentences for the logged-in user where the due date is in the past
-        const sentencesToReview = await Sentence.find({
+        // Find all starred sentences for the user
+        const allSentences = await Sentence.find({
             userId: userId,
-            reviewDueDate: { $lte: now }
+            starred: true
+        });
+
+        // Filter sentences that are due for review using FSRS algorithm
+        const sentencesToReview = allSentences.filter(sentence => {
+            // If no FSRS state exists, consider it due (first review)
+            if (!sentence.stability || !sentence.difficulty) {
+                return true;
+            }
+            return isCardDue(sentence);
         });
 
         res.json(sentencesToReview);
@@ -258,21 +267,46 @@ app.post('/api/sentences/save', ClerkExpressRequireAuth(), async (req, res) => {
 // --- UPDATE A SENTENCE'S REVIEW DATE ---
 app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, res) => {
     try {
-        const { sentenceId, decision } = req.body;
+        const { sentenceId, grade } = req.body;
         
-        // Spaced Repetition Logic (Simplified)
-        const now = new Date();
-        let newDueDate;
-
-        if (decision === 'correct') {
-            newDueDate = new Date(now.getTime() + (24 * 60 * 60 * 1000)); // 1 day from now
-        } else { // incorrect
-            newDueDate = new Date(now.getTime() + (1 * 60 * 1000)); // 1 minute from now
+        // Validate grade
+        if (!grade || ![1, 2, 3, 4].includes(grade)) {
+            return res.status(400).json({ message: 'Invalid grade. Must be 1, 2, 3, or 4.' });
         }
 
-        await Sentence.findByIdAndUpdate(sentenceId, { reviewDueDate: newDueDate });
+        // Get the current sentence
+        const sentence = await Sentence.findById(sentenceId);
+        if (!sentence) {
+            return res.status(404).json({ message: 'Sentence not found.' });
+        }
 
-        res.json({ message: 'Review updated successfully.' });
+        // Calculate next review using FSRS algorithm
+        let fsrsUpdate;
+        try {
+            fsrsUpdate = calculateNextReview(sentence, grade);
+        } catch (fsrsError) {
+            console.error("FSRS calculation error:", fsrsError);
+            return res.status(500).json({ message: 'Failed to calculate next review.' });
+        }
+        
+        // Update the sentence with new FSRS state
+        await Sentence.findByIdAndUpdate(sentenceId, {
+            stability: fsrsUpdate.stability,
+            difficulty: fsrsUpdate.difficulty,
+            lastReviewed: fsrsUpdate.lastReviewed,
+            nextReviewDate: fsrsUpdate.nextReviewDate,
+            interval: fsrsUpdate.interval,
+            reviewCount: (sentence.reviewCount || 0) + 1,
+            // Keep the old reviewDueDate for backward compatibility
+            reviewDueDate: fsrsUpdate.nextReviewDate
+        });
+
+        res.json({ 
+            message: 'Review updated successfully.',
+            nextReviewDate: fsrsUpdate.nextReviewDate,
+            interval: fsrsUpdate.interval,
+            intervalMinutes: fsrsUpdate.interval
+        });
     } catch (error) {
         console.error("Error updating review:", error);
         res.status(500).json({ message: 'Failed to update review.' });

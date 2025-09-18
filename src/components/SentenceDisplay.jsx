@@ -61,6 +61,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [currentReviewPosition, setCurrentReviewPosition] = useState(0);
   const [initialReviewCount, setInitialReviewCount] = useState(0); // Track initial count for accurate progress
   const [starredSentences, setStarredSentences] = useState(new Set()); // Track starred sentences
+  const [isProcessingReview, setIsProcessingReview] = useState(false); // Prevent double-clicks
 
   // Existing State
   const [sentences, setSentences] = useLocalStorage('sentences', []);
@@ -269,17 +270,26 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     attemptStarUpdate();
   };
 
-  const handleReviewDecision = async (sentenceId, decision) => {
+  const handleReviewDecision = async (sentenceId, grade) => {
+    // Prevent double-clicks
+    if (isProcessingReview) return;
+    
+    setIsProcessingReview(true);
     try {
         const token = await getToken();
-        await fetch(`${API_BASE_URL}/api/sentences/update-review`, {
+        const response = await fetch(`${API_BASE_URL}/api/sentences/update-review`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ sentenceId, decision })
+            body: JSON.stringify({ sentenceId, grade })
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP ${response.status}: Failed to update review`);
+        }
 
         // Store the current translation state for the next sentence
         setPreviousTranslationState(showTranslation);
@@ -305,7 +315,12 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
 
     } catch (err) {
         console.error("Failed to update review:", err);
-        // Optionally set an error state to show the user
+        // Show error to user
+        setReviewError(`Failed to update review: ${err.message}`);
+        // Clear error after 5 seconds
+        setTimeout(() => setReviewError(null), 5000);
+    } finally {
+        setIsProcessingReview(false);
     }
   };
 
@@ -650,25 +665,45 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                 </button>
             </div>
             
-            {/* --- START: MODIFIED SECTION --- */}
+            {/* --- START: FSRS GRADE SYSTEM --- */}
             {/* Show the decision buttons only after the user reveals the translation */}
             {showTranslation && (
                 <div className="review-decision">
                     <button
                         className="decision-button forgot"
-                        onClick={() => handleReviewDecision(currentReview._id, 'incorrect')}
+                        onClick={() => handleReviewDecision(currentReview._id, 1)}
+                        title="Forgot - Complete blackout"
+                        disabled={isProcessingReview}
                     >
-                        Forgot
+                        {isProcessingReview ? '...' : 'Forgot'}
                     </button>
                     <button
-                        className="decision-button knew-it"
-                        onClick={() => handleReviewDecision(currentReview._id, 'correct')}
+                        className="decision-button hard"
+                        onClick={() => handleReviewDecision(currentReview._id, 2)}
+                        title="Hard - Incorrect response; correct one remembered"
+                        disabled={isProcessingReview}
                     >
-                        Knew it
+                        {isProcessingReview ? '...' : 'Hard'}
+                    </button>
+                    <button
+                        className="decision-button good"
+                        onClick={() => handleReviewDecision(currentReview._id, 3)}
+                        title="Good - Correct response after hesitation"
+                        disabled={isProcessingReview}
+                    >
+                        {isProcessingReview ? '...' : 'Good'}
+                    </button>
+                    <button
+                        className="decision-button easy"
+                        onClick={() => handleReviewDecision(currentReview._id, 4)}
+                        title="Easy - Perfect response"
+                        disabled={isProcessingReview}
+                    >
+                        {isProcessingReview ? '...' : 'Easy'}
                     </button>
                 </div>
             )}
-            {/* --- END: MODIFIED SECTION --- */}
+            {/* --- END: FSRS GRADE SYSTEM --- */}
 
             <div className="navigation">
                 {/* The Back/Next buttons are no longer needed in review mode, as decisions drive navigation */}

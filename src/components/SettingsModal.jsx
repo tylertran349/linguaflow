@@ -27,8 +27,8 @@ function SettingsModal({
   const [tempApiKey, setTempApiKey] = useState(currentApiKey);
   const [tempTopic, setTempTopic] = useState(currentTopic);
   const [errors, setErrors] = useState({});
-  const [ellipses, setEllipses] = useState('');
   const [saveEllipses, setSaveEllipses] = useState('');
+  const [loadingEllipses, setLoadingEllipses] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -39,25 +39,6 @@ function SettingsModal({
     }
   }, [isOpen, currentSettings, currentApiKey, currentTopic]);
 
-  // Animate ellipses when retrying
-  useEffect(() => {
-    let interval;
-    if (isRetrying) {
-      let dotCount = 0;
-      interval = setInterval(() => {
-        setEllipses('.'.repeat(dotCount));
-        dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
-      }, 500); // Change every 500ms
-    } else {
-      setEllipses('');
-    }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isRetrying]);
 
   // Animate ellipses when retrying save
   useEffect(() => {
@@ -78,6 +59,26 @@ function SettingsModal({
       }
     };
   }, [isRetryingSave]);
+
+  // Animate ellipses when loading settings (matching SentenceDisplay.jsx timing)
+  useEffect(() => {
+    let interval;
+    if (isRetrying) {
+      let dotCount = 0;
+      interval = setInterval(() => {
+        setLoadingEllipses('.'.repeat(dotCount));
+        dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
+      }, 400); // Change every 400ms to match SentenceDisplay.jsx
+    } else {
+      setLoadingEllipses('');
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isRetrying]);
 
   const handleSettingChange = (e) => {
     const { name, value } = e.target;
@@ -164,7 +165,6 @@ function SettingsModal({
       <div className="modal-content">
         <div className="modal-scroll-wrapper" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
           <h2>Settings 
-            {isRetrying && <span style={{ color: '#007bff', fontSize: '0.8em' }}>Retrieving settings{ellipses}</span>}
             {isRetryingSave && <span style={{ color: '#28a745', fontSize: '0.8em' }}>Saving settings{saveEllipses}</span>}
           </h2>
 
@@ -173,14 +173,14 @@ function SettingsModal({
               <p>Your API key is encrypted and stored securely in the database.</p>
               <div className="setting-item">
                   <label htmlFor="gemini-key">Google Gemini API Key</label>
-                  <input id="gemini-key" type="text" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key"/>
+                  <input id="gemini-key" type="text" value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key" disabled={isRetrying}/>
               </div>
           </div>
 
           <div className="settings-section">
               <h3>Topic/Theme</h3>
               <p>Specify a topic or theme to guide the sentence generation. If left blank, random sentences will be generated.</p>
-              <textarea value={tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="Enter words or paragraphs here..." rows="10" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'none' }}/>
+              <textarea value={isRetrying ? `Loading${loadingEllipses}` : tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="Enter words or paragraphs here..." rows="10" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'none' }} disabled={isRetrying}/>
           </div>
 
           <div className="settings-section">
@@ -193,9 +193,10 @@ function SettingsModal({
                       id="webSpeechRate"
                       name="webSpeechRate"
                       min="0" max="2" step="0.1"
-                      value={tempSettings.webSpeechRate}
+                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.webSpeechRate}
                       onChange={handleSettingChange}
                       className={errors.webSpeechRate ? 'input-error' : ''}
+                      disabled={isRetrying}
                   />
                   {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
               </div>
@@ -206,9 +207,10 @@ function SettingsModal({
                       id="googleTranslateRate"
                       name="googleTranslateRate"
                       min="0" max="2" step="0.1"
-                      value={tempSettings.googleTranslateRate}
+                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.googleTranslateRate}
                       onChange={handleSettingChange}
                       className={errors.googleTranslateRate ? 'input-error' : ''}
+                      disabled={isRetrying}
                   />
                   {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
               </div>
@@ -218,31 +220,31 @@ function SettingsModal({
               <h3>Generation Options</h3>
               <div className="setting-item">
                   <label htmlFor="ttsEngine">Text-to-Speech Engine</label>
-                  <select name="ttsEngine" id="ttsEngine" value={tempSettings.ttsEngine} onChange={handleSettingChange}>
+                  <select name="ttsEngine" id="ttsEngine" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.ttsEngine} onChange={handleSettingChange} disabled={isRetrying}>
                       {getTtsEngines().map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
                   </select>
               </div>
               <div className="setting-item">
                   <label htmlFor="nativeLanguage">Your Native Language:</label>
-                  <select name="nativeLanguage" id="nativeLanguage" value={tempSettings.nativeLanguage} onChange={handleSettingChange}>
+                  <select name="nativeLanguage" id="nativeLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.nativeLanguage} onChange={handleSettingChange} disabled={isRetrying}>
                       {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
                   </select>
               </div>
               <div className="setting-item">
                   <label htmlFor="targetLanguage">Language to Learn:</label>
-                  <select name="targetLanguage" id="targetLanguage" value={tempSettings.targetLanguage} onChange={handleSettingChange}>
+                  <select name="targetLanguage" id="targetLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.targetLanguage} onChange={handleSettingChange} disabled={isRetrying}>
                       {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
                   </select>
               </div>
               <div className="setting-item">
                   <label htmlFor="difficulty">Difficulty (CEFR):</label>
-                  <select name="difficulty" id="difficulty" value={tempSettings.difficulty} onChange={handleSettingChange}>
+                  <select name="difficulty" id="difficulty" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.difficulty} onChange={handleSettingChange} disabled={isRetrying}>
                       {CEFR_LEVELS.map(level => ( <option key={level.value} value={level.value}>{level.label}</option>))}
                   </select>
               </div>
               <div className="setting-item">
                   <label htmlFor="model">Gemini Model:</label>
-                  <select name="model" id="model" value={tempSettings.model} onChange={handleSettingChange}>
+                  <select name="model" id="model" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.model} onChange={handleSettingChange} disabled={isRetrying}>
                       {GEMINI_MODELS.map(model => ( <option key={model} value={model}>{model}</option>))}
                   </select>
               </div>
@@ -253,9 +255,10 @@ function SettingsModal({
                       id="temperature"
                       name="temperature"
                       min="0" max="2" step="0.1"
-                      value={tempSettings.temperature}
+                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.temperature}
                       onChange={handleSettingChange}
                       className={errors.temperature ? 'input-error' : ''}
+                      disabled={isRetrying}
                   />
                   {errors.temperature && <p className="error-text">{errors.temperature}</p>}
                   <p style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
@@ -264,19 +267,19 @@ function SettingsModal({
               </div>
               <div className="setting-item">
                   <label htmlFor="sentenceCount">Number of Sentences to Generate</label>
-                  <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={tempSettings.sentenceCount} onChange={handleSettingChange}/>
+                  <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceCount} onChange={handleSettingChange} disabled={isRetrying}/>
               </div>
               <div className="setting-item">
                   <label htmlFor="sentenceDisplayHistorySize">Sentence Display History Size</label>
-                  <input type="number" id="sentenceDisplayHistorySize" name="sentenceDisplayHistorySize" min="0" max="1000" value={tempSettings.sentenceDisplayHistorySize} onChange={handleSettingChange}/>
+                  <input type="number" id="sentenceDisplayHistorySize" name="sentenceDisplayHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceDisplayHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
               </div>
                <div className="setting-item">
                   <label htmlFor="readAndRespondHistorySize">Read & Respond History Size</label>
-                  <input type="number" id="readAndRespondHistorySize" name="readAndRespondHistorySize" min="0" max="1000" value={tempSettings.readAndRespondHistorySize} onChange={handleSettingChange}/>
+                  <input type="number" id="readAndRespondHistorySize" name="readAndRespondHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.readAndRespondHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
               </div>
                <div className="setting-item">
                   <label htmlFor="writeAResponseHistorySize">Write a Response History Size</label>
-                  <input type="number" id="writeAResponseHistorySize" name="writeAResponseHistorySize" min="0" max="1000" value={tempSettings.writeAResponseHistorySize} onChange={handleSettingChange}/>
+                  <input type="number" id="writeAResponseHistorySize" name="writeAResponseHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.writeAResponseHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
               </div>
           </div>
 

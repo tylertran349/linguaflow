@@ -309,10 +309,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-6);
+  gap: var(--spacing-4);
   margin-top: var(--spacing-4);
   border-top: 1px solid var(--color-light-grey);
   padding-top: var(--spacing-6);
+  flex-wrap: wrap;
 }
 
 .decision-button {
@@ -327,17 +328,31 @@
   box-shadow: var(--shadow-sm);
 }
 
-.decision-button:hover {
+.decision-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-.decision-button.forgot {
-  background: var(--color-dark-grey);
+.decision-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.decision-button.knew-it {
-  background: var(--color-green);
+.decision-button.forgot {
+  background: #dc2626; /* Red for forgot */
+}
+
+.decision-button.hard {
+  background: #f59e0b; /* Orange for hard */
+}
+
+.decision-button.good {
+  background: #eab308; /* Yellow for good */
+}
+
+.decision-button.easy {
+  background: #10b981; /* Emerald for easy */
 }
 
 /* Responsive Design */
