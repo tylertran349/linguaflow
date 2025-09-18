@@ -330,18 +330,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
 
       {isCorrect === true && (
         <div className="feedback-message correct">
-          {matchedSolution === currentSentence.target ? (
-            <>
-              Correct! <PartyPopper size={20} color="var(--color-green)" />
-            </>
-          ) : (
-            <>
-              Great! That's also correct! <PartyPopper size={20} color="var(--color-green)" />
-              <div className="alternative-solution-note">
-                <small>💡 You found an alternative valid arrangement!</small>
-              </div>
-            </>
-          )}
+          Correct! <PartyPopper size={20} color="var(--color-green)" />
         </div>
       )}
 
