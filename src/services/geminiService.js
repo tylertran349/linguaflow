@@ -206,13 +206,21 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic, history 
     - "I usually sip coffee in the morning before work." vs "I usually sip coffee before work in the morning."
     - "She quickly ran to the store." vs "She ran quickly to the store."
     - "The big red house is beautiful." vs "The red big house is beautiful." (if both are grammatically acceptable)
+    - "Yesterday, I went to the store." vs "I went to the store yesterday."
+    - "In the garden, flowers bloom beautifully." vs "Flowers bloom beautifully in the garden."
     
     **RULES FOR ALTERNATIVES:**
-    1. All alternatives must be grammatically correct
+    1. All alternatives must be grammatically correct in the target language
     2. All alternatives must have the same meaning as the primary sentence
     3. Focus on different word orders, not just punctuation changes
-    4. Include variations in adverb placement, adjective order, and phrase positioning
+    4. Include variations in:
+       - Adverb placement (quickly, usually, often, etc.)
+       - Adjective order (when multiple adjectives are present)
+       - Phrase positioning (time phrases, location phrases)
+       - Subject-verb-object variations
+       - Prepositional phrase placement
     5. Do NOT include alternatives that change the meaning or are grammatically incorrect
+    6. Consider natural speech patterns and common variations in the target language
     
     **EXAMPLE:**
     [{
