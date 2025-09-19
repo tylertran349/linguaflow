@@ -3,13 +3,25 @@ import '../styles/SettingsModal.css';
 import { supportedLanguages } from '../utils/languages';
 
 // --- Constants ---
-const CEFR_LEVELS = [{ value: "A1", label: "A1 (Beginner)" }, { value: "A2", label: "A2 (Upper Beginner)" }, { value: "B1", label: "B1 (Intermediate)" }, { value: "B2", label: "B2 (Upper Intermediate)" }, { value: "C1", label: "C1 (Advanced)" }, { value: "C2", label: "C2 (Native-like)" }];
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+const CEFR_LEVELS = [
+  { value: "A1", label: "A1 - Beginner", description: "Basic words and simple sentences" },
+  { value: "A2", label: "A2 - Elementary", description: "Common phrases and basic conversations" },
+  { value: "B1", label: "B1 - Intermediate", description: "Clear text on familiar topics" },
+  { value: "B2", label: "B2 - Upper Intermediate", description: "Complex text and detailed discussions" },
+  { value: "C1", label: "C1 - Advanced", description: "Long, complex text with implicit meaning" },
+  { value: "C2", label: "C2 - Proficient/Near-native", description: "Native-like understanding and expression" }
+];
+
+const GEMINI_MODELS = [
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Balances speed and accuracy (recommended)" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Slowest but most accurate" },
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", description: "Fastest but least accurate" }
+];
 
 // TTS engines - available in all environments
 const getTtsEngines = () => [
-  { value: "google-translate", label: "Google Translate" },
-  { value: "puter", label: "Puter AI (doesn't support some languages)" }, 
+  { value: "google-translate", label: "Google Translate (recommended)" },
+  { value: "puter", label: "Puter AI" }, 
   { value: "web-speech", label: "Web Speech API" }
 ];
 
@@ -160,131 +172,306 @@ function SettingsModal({
   }
 
   return (
-    // --- ATTACH THE NEW ONCLICK HANDLER HERE ---
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="modal-content">
         <div className="modal-scroll-wrapper" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-          <h2>Settings 
-            {isRetryingSave && <span style={{ color: '#28a745', fontSize: '0.8em' }}>Saving settings{saveEllipses}</span>}
-          </h2>
-
-          <div className="settings-section">
-              <h3>API Key</h3>
-              <p>Your API key is encrypted and stored securely in the database.</p>
-              <div className="setting-item">
-                  <label htmlFor="gemini-key">Google Gemini API Key</label>
-                  <input id="gemini-key" type="text" value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Enter your Gemini API Key" disabled={isRetrying}/>
-              </div>
+          <div className="modal-header">
+            <h2>Settings</h2>
+            {isRetryingSave && <span className="saving-indicator">Saving settings{saveEllipses}</span>}
+            <p className="modal-description">Customize your language learning experience</p>
           </div>
 
-          <div className="settings-section">
-              <h3>Topic/Theme</h3>
-              <p>Specify a topic or theme to guide the sentence generation. If left blank, random sentences will be generated.</p>
-              <textarea value={isRetrying ? `Loading${loadingEllipses}` : tempTopic} onChange={(e) => setTempTopic(e.target.value)} placeholder="Enter words or paragraphs here..." rows="10" style={{ width: '100%', fontFamily: 'inherit', fontSize: '1rem', resize: 'none' }} disabled={isRetrying}/>
+          {/* Essential Setup Section */}
+          <div className="settings-section essential">
+            <div className="section-header">
+              <h3>Essential Setup</h3>
+              <p>Required settings to get started</p>
+            </div>
+            
+            <div className="setting-item">
+              <label htmlFor="gemini-key">
+                <span className="label-text">Google Gemini API Key</span>
+                <span className="label-required">*Required</span>
+              </label>
+              <p className="setting-description">
+                This key allows the app to generate sentences using Google's AI.
+                <a href="https://github.com/tylertran349/linguaflow/blob/main/README.md#getting-your-google-gemini-api-key-required" target="_blank" rel="noopener noreferrer" className="help-link">
+                  Click here for instructions on how to get a free Google Gemini API key
+                </a>
+              </p>
+              <input 
+                id="gemini-key" 
+                type="text" 
+                value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} 
+                onChange={(e) => setTempApiKey(e.target.value)} 
+                placeholder="Enter your API key here..." 
+                disabled={isRetrying}
+                className="api-key-input"
+              />
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="nativeLanguage">
+                <span className="label-text">Your Native Language</span>
+                <span className="label-required">*Required</span>
+              </label>
+              <p className="setting-description">The language you speak best (for translations and explanations)</p>
+              <select name="nativeLanguage" id="nativeLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.nativeLanguage} onChange={handleSettingChange} disabled={isRetrying}>
+                {supportedLanguages.map(lang => ( 
+                  <option key={lang.code} value={lang.name}>{lang.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="targetLanguage">
+                <span className="label-text">Language You Want to Learn</span>
+                <span className="label-required">*Required</span>
+              </label>
+              <p className="setting-description">The language you are learning</p>
+              <select name="targetLanguage" id="targetLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.targetLanguage} onChange={handleSettingChange} disabled={isRetrying}>
+                {supportedLanguages.map(lang => ( 
+                  <option key={lang.code} value={lang.name}>{lang.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
+          {/* Learning Level Section */}
           <div className="settings-section">
-              <h3>Voice Settings</h3>
-              <p>Control the playback speed for each voice engine (0.1 to 2.0).</p>
-              <div className="setting-item">
-                  <label htmlFor="webSpeechRate">Web Speech API TTS Speed</label>
-                  <input
-                      type="number"
-                      id="webSpeechRate"
-                      name="webSpeechRate"
-                      min="0" max="2" step="0.1"
-                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.webSpeechRate}
-                      onChange={handleSettingChange}
-                      className={errors.webSpeechRate ? 'input-error' : ''}
-                      disabled={isRetrying}
-                  />
-                  {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="googleTranslateRate">Google Translate TTS Speed</label>
-                  <input
-                      type="number"
-                      id="googleTranslateRate"
-                      name="googleTranslateRate"
-                      min="0" max="2" step="0.1"
-                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.googleTranslateRate}
-                      onChange={handleSettingChange}
-                      className={errors.googleTranslateRate ? 'input-error' : ''}
-                      disabled={isRetrying}
-                  />
-                  {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
-              </div>
+            <div className="section-header">
+              <h3>Learning Level</h3>
+              <p>Choose your current skill level</p>
+            </div>
+            
+            <div className="setting-item">
+              <label htmlFor="difficulty">
+                <span className="label-text">Your Current Level</span>
+                <span className="label-required">*Required</span>
+              </label>
+              <p className="setting-description">This helps generate sentences/exercises at the right difficulty for you</p>
+              <select name="difficulty" id="difficulty" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.difficulty} onChange={handleSettingChange} disabled={isRetrying}>
+                {CEFR_LEVELS.map(level => ( 
+                  <option key={level.value} value={level.value}>
+                    {level.label} - {level.description}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
+          {/* Voice & Audio Section */}
           <div className="settings-section">
-              <h3>Generation Options</h3>
-              <div className="setting-item">
-                  <label htmlFor="ttsEngine">Text-to-Speech Engine</label>
-                  <select name="ttsEngine" id="ttsEngine" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.ttsEngine} onChange={handleSettingChange} disabled={isRetrying}>
-                      {getTtsEngines().map(engine => ( <option key={engine.value} value={engine.value}>{engine.label}</option> ))}
-                  </select>
+            <div className="section-header">
+              <h3>Voice & Audio</h3>
+              <p>Control how sentences are spoken</p>
+            </div>
+            
+            <div className="setting-item">
+              <label htmlFor="ttsEngine">
+                <span className="label-text">Voice Engine</span>
+              </label>
+              <p className="setting-description">Choose which voice system to use for pronunciation</p>
+              <select name="ttsEngine" id="ttsEngine" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.ttsEngine} onChange={handleSettingChange} disabled={isRetrying}>
+                {getTtsEngines().map(engine => ( 
+                  <option key={engine.value} value={engine.value}>
+                    {engine.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="googleTranslateRate">
+                <span className="label-text">Google Voice Speed</span>
+              </label>
+              <p className="setting-description">
+                How fast the Google voice speaks<br/>
+                Lower values are slower (minimum value is 0.1)<br/>
+                Higher values are faster (maximum value is 2.0)<br/>
+                The default value is 1.0
+              </p>
+              <input
+                type="number"
+                id="googleTranslateRate"
+                name="googleTranslateRate"
+                min="0.1" max="2.0" step="0.1"
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.googleTranslateRate}
+                onChange={handleSettingChange}
+                className={errors.googleTranslateRate ? 'input-error' : ''}
+                disabled={isRetrying}
+              />
+              {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="webSpeechRate">
+                <span className="label-text">Web Speech API Voice Speed</span>
+              </label>
+              <p className="setting-description">
+                How fast the Web Speech API voice speaks<br/>
+                Lower values are slower (minimum value is 0.1)<br/>
+                Higher values are faster (maximum value is 2.0)<br/>
+                The default value is 0.6
+              </p>
+              <input
+                type="number"
+                id="webSpeechRate"
+                name="webSpeechRate"
+                min="0.1" max="2.0" step="0.1"
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.webSpeechRate}
+                onChange={handleSettingChange}
+                className={errors.webSpeechRate ? 'input-error' : ''}
+                disabled={isRetrying}
+              />
+              {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
+            </div>
+          </div>
+
+          {/* Content Generation Section */}
+          <div className="settings-section">
+            <div className="section-header">
+              <h3>Content Generation</h3>
+              <p>Control what content is created for you</p>
+            </div>
+            
+            <div className="setting-item">
+              <label htmlFor="topic">
+                <span className="label-text">Topic (Optional)</span>
+              </label>
+              <p className="setting-description">
+                Write words or paragraphs about what you want to learn to guide the AI on what to generate. For example: "cooking, travel, work, family" or "I want to learn business English for meetings"
+              </p>
+              <textarea 
+                id="topic"
+                value={isRetrying ? `Loading${loadingEllipses}` : tempTopic} 
+                onChange={(e) => setTempTopic(e.target.value)} 
+                placeholder="Enter topics you want to learn about..." 
+                rows="8" 
+                disabled={isRetrying}
+                className="topic-textarea"
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="sentenceCount">
+                <span className="label-text">Number of Sentences/Exercises to Generate</span>
+              </label>
+              <p className="setting-description">
+                How many sentences/exercises to generate at once (1-100)<br/>
+                Higher values will result in longer content generation times and could lead to more mistakes
+              </p>
+              <input 
+                type="number" 
+                id="sentenceCount" 
+                name="sentenceCount" 
+                min="1" max="100" 
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceCount} 
+                onChange={handleSettingChange} 
+                disabled={isRetrying}
+              />
+            </div>
+
+
+          </div>
+
+          {/* Advanced Settings Section */}
+          <div className="settings-section advanced">
+            <div className="section-header">
+              <h3>Advanced Settings</h3>
+              <p>Fine-tune your experience</p>
+            </div>
+            
+            <div className="setting-item">
+              <label htmlFor="sentenceDisplayHistorySize">
+                <span className="label-text">Sentence History Size</span>
+              </label>
+              <p className="setting-description">How many previous sentences to store in your browser to allow the AI to avoid using the same vocabulary in subsequent sentences (0-1000)</p>
+              <input 
+                type="number" 
+                id="sentenceDisplayHistorySize" 
+                name="sentenceDisplayHistorySize" 
+                min="0" max="1000" 
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceDisplayHistorySize} 
+                onChange={handleSettingChange} 
+                disabled={isRetrying}
+              />
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="readAndRespondHistorySize">
+                <span className="label-text">Read & Respond History</span>
+              </label>
+              <p className="setting-description">How many previous conversations to store in your browser to allow the AI to avoid using the same vocabulary in subsequent questions (0-1000)</p>
+              <input 
+                type="number" 
+                id="readAndRespondHistorySize" 
+                name="readAndRespondHistorySize" 
+                min="0" max="1000" 
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.readAndRespondHistorySize} 
+                onChange={handleSettingChange} 
+                disabled={isRetrying}
+              />
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="writeAResponseHistorySize">
+                <span className="label-text">Write Response History</span>
+              </label>
+              <p className="setting-description">How many previous writing exercises to store in your browser to allow the AI to avoid using the same vocabulary in subsequent exercises (0-1000)</p>
+              <input 
+                type="number" 
+                id="writeAResponseHistorySize" 
+                name="writeAResponseHistorySize" 
+                min="0" max="1000" 
+                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.writeAResponseHistorySize} 
+                onChange={handleSettingChange} 
+                disabled={isRetrying}
+              />
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="model">
+                <span className="label-text">AI Model</span>
+              </label>
+              <p className="setting-description">Choose the AI model used for generating content</p>
+              <select name="model" id="model" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.model} onChange={handleSettingChange} disabled={isRetrying}>
+                {GEMINI_MODELS.map(model => ( 
+                  <option key={model.value} value={model.value}>
+                    {model.label} - {model.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="temperature">
+                <span className="label-text">Temperature</span>
+              </label>
+              <p className="setting-description">
+                Lower values = more predictable and focused content<br/>
+                Higher values = more creative and varied content<br/>
+                The default value is 1.0
+              </p>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  id="temperature"
+                  name="temperature"
+                  min="0.0" max="2.0" step="0.1"
+                  value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.temperature}
+                  onChange={handleSettingChange}
+                  className={errors.temperature ? 'input-error' : ''}
+                  disabled={isRetrying}
+                />
               </div>
-              <div className="setting-item">
-                  <label htmlFor="nativeLanguage">Your Native Language:</label>
-                  <select name="nativeLanguage" id="nativeLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.nativeLanguage} onChange={handleSettingChange} disabled={isRetrying}>
-                      {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
-                  </select>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="targetLanguage">Language to Learn:</label>
-                  <select name="targetLanguage" id="targetLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.targetLanguage} onChange={handleSettingChange} disabled={isRetrying}>
-                      {supportedLanguages.map(lang => ( <option key={lang.code} value={lang.name}>{lang.name}</option>))}
-                  </select>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="difficulty">Difficulty (CEFR):</label>
-                  <select name="difficulty" id="difficulty" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.difficulty} onChange={handleSettingChange} disabled={isRetrying}>
-                      {CEFR_LEVELS.map(level => ( <option key={level.value} value={level.value}>{level.label}</option>))}
-                  </select>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="model">Gemini Model:</label>
-                  <select name="model" id="model" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.model} onChange={handleSettingChange} disabled={isRetrying}>
-                      {GEMINI_MODELS.map(model => ( <option key={model} value={model}>{model}</option>))}
-                  </select>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="temperature">Temperature (0.0 - 2.0):</label>
-                  <input
-                      type="number"
-                      id="temperature"
-                      name="temperature"
-                      min="0" max="2" step="0.1"
-                      value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.temperature}
-                      onChange={handleSettingChange}
-                      className={errors.temperature ? 'input-error' : ''}
-                      disabled={isRetrying}
-                  />
-                  {errors.temperature && <p className="error-text">{errors.temperature}</p>}
-                  <p style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
-                      Lower values (0.1-0.5) make responses more focused and deterministic. Higher values (0.7-2.0) make responses more creative and varied.
-                  </p>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="sentenceCount">Number of Sentences to Generate</label>
-                  <input type="number" id="sentenceCount" name="sentenceCount" min="1" max="100" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceCount} onChange={handleSettingChange} disabled={isRetrying}/>
-              </div>
-              <div className="setting-item">
-                  <label htmlFor="sentenceDisplayHistorySize">Sentence Display History Size</label>
-                  <input type="number" id="sentenceDisplayHistorySize" name="sentenceDisplayHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceDisplayHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
-              </div>
-               <div className="setting-item">
-                  <label htmlFor="readAndRespondHistorySize">Read & Respond History Size</label>
-                  <input type="number" id="readAndRespondHistorySize" name="readAndRespondHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.readAndRespondHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
-              </div>
-               <div className="setting-item">
-                  <label htmlFor="writeAResponseHistorySize">Write a Response History Size</label>
-                  <input type="number" id="writeAResponseHistorySize" name="writeAResponseHistorySize" min="0" max="1000" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.writeAResponseHistorySize} onChange={handleSettingChange} disabled={isRetrying}/>
-              </div>
+              {errors.temperature && <p className="error-text">{errors.temperature}</p>}
+            </div>
           </div>
 
           <div className="modal-actions">
-            <button onClick={handleSave}>Close and Save Settings</button>
+            <button onClick={handleSave} className="save-button">Save Settings</button>
           </div>
         </div>
       </div>

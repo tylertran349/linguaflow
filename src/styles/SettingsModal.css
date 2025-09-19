@@ -17,17 +17,17 @@
 
 .modal-content {
   background-color: var(--color-white);
-  padding: var(--spacing-8);
+  padding: 0;
   border-radius: var(--radius-xl);
-  width: 40%;
-  max-width: 600px;
-  min-width: 300px;
+  width: 50%;
+  max-width: 700px;
+  min-width: 350px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--color-light-grey);
   animation: modalSlideIn var(--transition-normal) ease-out;
+  overflow: hidden;
 }
 
 @keyframes modalSlideIn {
@@ -41,22 +41,47 @@
   }
 }
 
-.modal-content h2 {
-  text-align: center;
+/* Modal Header */
+.modal-header {
+  background: var(--color-white);
   color: var(--color-dark-grey);
-  margin: 0;
+  padding: var(--spacing-6);
+  text-align: center;
+  position: relative;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0 0 var(--spacing-2) 0;
   font-size: var(--font-size-2xl);
   font-weight: 700;
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--color-light-grey);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  color: #10b981;
+}
+
+.modal-description {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.saving-indicator {
+  color: #4ade80;
+  font-size: 0.8em;
+  font-weight: 500;
+  margin-left: var(--spacing-2);
 }
 
 .modal-scroll-wrapper {
-  padding: var(--spacing-4);
+  padding: var(--spacing-6);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
-  max-height: 60vh;
+  max-height: 70vh;
   overflow-y: auto;
 }
 
@@ -80,8 +105,9 @@
 
 /* Settings Sections */
 .settings-section {
-  border-top: 1px solid var(--color-light-grey);
+  border-top: 1px solid #e5e7eb;
   padding-top: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
 }
 
 .settings-section:first-of-type {
@@ -89,19 +115,25 @@
   padding-top: 0;
 }
 
-.settings-section h3 {
-  margin: 0 0 var(--spacing-3) 0;
-  color: var(--color-dark-grey);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+.section-header {
+  margin-bottom: var(--spacing-4);
 }
 
-.settings-section p {
-  text-align: left;
-  margin: 0 0 var(--spacing-4) 0;
+.section-header h3 {
+  margin: 0 0 var(--spacing-1) 0;
+  color: #10b981;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.section-header p {
+  margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--color-dark-grey);
-  line-height: 1.6;
+  color: #6b7280;
+  font-weight: 400;
 }
 
 /* Setting Items */
@@ -113,94 +145,149 @@
 }
 
 .setting-item label {
-  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
   color: var(--color-dark-grey);
   font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-1);
+}
+
+.label-text {
+  flex: 1;
+}
+
+.label-required {
+  color: #ef4444;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  background: #fef2f2;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.setting-description {
+  font-size: var(--font-size-sm);
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 var(--spacing-3) 0;
+}
+
+.help-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: var(--spacing-1);
+}
+
+.help-link:hover {
+  text-decoration: underline;
 }
 
 .setting-item input,
 .setting-item select,
-.settings-section textarea {
+.topic-textarea {
   width: 100%;
   padding: var(--spacing-3) var(--spacing-4);
   font-size: var(--font-size-base);
-  border: 1px solid var(--color-light-grey);
-  border-radius: var(--radius-lg);
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-md);
   background-color: var(--color-white);
   font-family: inherit;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
+}
+
+.api-key-input {
+  font-family: 'Courier New', monospace;
+}
+
+.topic-textarea {
+  min-height: 160px;
+  font-family: inherit;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.input-with-unit input {
+  flex: 1;
+}
+
+.input-unit {
+  font-size: var(--font-size-sm);
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: center;
 }
 
 .setting-item input:focus,
 .setting-item select:focus,
-.settings-section textarea:focus {
+.topic-textarea:focus {
   outline: none;
-  border-color: var(--color-green);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-  transform: translateY(-1px);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .setting-item input:hover,
 .setting-item select:hover,
-.settings-section textarea:hover {
-  border-color: var(--color-light-grey);
+.topic-textarea:hover {
+  border-color: #9ca3af;
+}
+
+/* Error states */
+.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: var(--font-size-xs);
+  margin: var(--spacing-1) 0 0 0;
+  font-weight: 500;
 }
 
 /* Modal Actions */
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: var(--spacing-3);
   margin-top: var(--spacing-6);
-  border-top: 1px solid var(--color-light-grey);
   padding-top: var(--spacing-6);
+  border-top: 1px solid #e5e7eb;
 }
 
-.modal-actions button {
+.save-button {
   padding: var(--spacing-3) var(--spacing-6);
   font-size: var(--font-size-base);
   font-weight: 600;
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-2);
+  background: #10b981;
+  color: white;
+  font-family: inherit;
 }
 
-.modal-actions button:first-of-type {
-  background-color: var(--color-white);
-  color: var(--color-dark-grey);
-  border: 1px solid var(--color-light-grey);
-  box-shadow: var(--shadow-sm);
+.save-button:hover {
+  background: #059669;
 }
 
-.modal-actions button:first-of-type:hover {
-  background-color: var(--color-light-grey);
-  border-color: var(--color-light-grey);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.modal-actions button:last-of-type {
-  background: var(--color-green);
-  color: var(--color-white);
-  box-shadow: var(--shadow-sm);
-}
-
-.modal-actions button:last-of-type:hover {
-  background: var(--color-green);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.modal-actions button:disabled {
+.save-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
+  background: #9ca3af;
 }
 
 /* Responsive Design */
@@ -212,25 +299,24 @@
   }
 
   .modal-content {
-    width: 60%;
-    max-width: 500px;
-    padding: var(--spacing-6);
+    width: 70%;
+    max-width: 600px;
   }
 
   .modal-scroll-wrapper {
-    padding: var(--spacing-3);
+    padding: var(--spacing-4);
     max-height: 65vh;
   }
 
   .settings-section {
-    padding-top: var(--spacing-5);
+    padding-top: var(--spacing-4);
   }
 
   .setting-item {
     margin-bottom: var(--spacing-4);
   }
 
-  .modal-content h2 {
+  .modal-header h2 {
     font-size: var(--font-size-xl);
   }
 }
@@ -246,36 +332,38 @@
   .modal-content {
     width: 95%;
     max-width: none;
-    min-width: 280px;
-    padding: var(--spacing-4);
+    min-width: 320px;
     max-height: 90vh;
     margin-top: 0;
   }
 
   .modal-scroll-wrapper {
-    padding: var(--spacing-2);
+    padding: var(--spacing-3);
     max-height: calc(90vh - 2rem);
   }
 
-  .modal-content h2 {
+  .modal-header {
+    padding: var(--spacing-4);
+  }
+
+  .modal-header h2 {
     font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-4);
   }
 
   .settings-section {
     padding-top: var(--spacing-4);
   }
 
-  .settings-section h3 {
+  .section-header h3 {
     font-size: var(--font-size-base);
   }
 
-  .settings-section p {
+  .section-header p {
     font-size: var(--font-size-sm);
   }
 
   .setting-item {
-    margin-bottom: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
   }
 
   .setting-item label {
@@ -284,7 +372,7 @@
 
   .setting-item input,
   .setting-item select,
-  .settings-section textarea {
+  .topic-textarea {
     padding: var(--spacing-2) var(--spacing-3);
     font-size: var(--font-size-sm);
   }
@@ -295,7 +383,7 @@
     gap: var(--spacing-3);
   }
 
-  .modal-actions button {
+  .save-button {
     width: 100%;
     padding: var(--spacing-3) var(--spacing-4);
     font-size: var(--font-size-sm);
@@ -311,27 +399,35 @@
 
   .modal-content {
     width: 98%;
-    padding: var(--spacing-3);
+    min-width: 280px;
   }
 
   .modal-scroll-wrapper {
-    padding: var(--spacing-1);
+    padding: var(--spacing-2);
   }
 
-  .modal-content h2 {
+  .modal-header {
+    padding: var(--spacing-3);
+  }
+
+  .modal-header h2 {
     font-size: var(--font-size-lg);
   }
 
-  .settings-section h3 {
+  .settings-section {
+    padding-top: var(--spacing-3);
+  }
+
+  .section-header h3 {
     font-size: var(--font-size-sm);
   }
 
-  .settings-section p {
+  .section-header p {
     font-size: var(--font-size-xs);
   }
 
   .setting-item {
-    margin-bottom: var(--spacing-2);
+    margin-bottom: var(--spacing-3);
   }
 
   .setting-item label {
@@ -340,20 +436,24 @@
 
   .setting-item input,
   .setting-item select,
-  .settings-section textarea {
+  .topic-textarea {
     padding: var(--spacing-2);
     font-size: var(--font-size-sm);
   }
 
-  .modal-actions button {
+  .modal-actions {
+    padding-top: var(--spacing-3);
+  }
+
+  .save-button {
     padding: var(--spacing-2) var(--spacing-3);
     font-size: var(--font-size-sm);
   }
 }
 
 /* Focus states for accessibility */
-.modal-actions button:focus-visible {
-  outline: 2px solid var(--color-green);
+.save-button:focus-visible {
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
@@ -361,26 +461,6 @@
 .modal-content.loading {
   opacity: 0.8;
   pointer-events: none;
-}
-
-/* Error states */
-.setting-item.error input,
-.setting-item.error select,
-.settings-section.error textarea {
-  border-color: var(--color-light-grey);
-  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
-}
-
-.setting-item.error label {
-  color: var(--color-white);
-}
-
-/* Success states */
-.setting-item.success input,
-.setting-item.success select,
-.settings-section.success textarea {
-  border-color: var(--color-green);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 /* Animation for modal backdrop */
