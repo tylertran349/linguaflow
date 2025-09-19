@@ -41,6 +41,14 @@ function Sidebar({ isOpen, activeModule, onNavigate, onOpenSettings }) {
       >
         Help
       </a>
+      <a
+        href="https://github.com/tylertran349/linguaflow/issues"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="nav-item"
+      >
+        Report a Bug/Make a Suggestion
+      </a>
     </aside>
   );
 }

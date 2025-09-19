@@ -44,7 +44,7 @@
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--color-dark-grey);
   text-decoration: none;
   position: relative;
@@ -61,15 +61,17 @@
   left: 0;
   width: 0;
   height: 100%;
-  background: var(--color-light-grey);
+  background: var(--color-green);
   transition: width var(--transition-fast);
   z-index: -1;
+  border-radius: var(--radius-lg);
 }
 
 .nav-item:hover {
-  background-color: var(--color-light-grey);
+  background-color: transparent;
   color: var(--color-white);
-  transform: translateX(4px);
+  transform: translateX(6px);
+  font-weight: 600;
 }
 
 .nav-item:hover::before {
@@ -90,7 +92,8 @@
 
 .nav-item.active:hover {
   background: var(--color-green);
-  transform: translateX(4px);
+  transform: translateX(6px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* User Button Container */
