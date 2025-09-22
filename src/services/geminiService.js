@@ -19,7 +19,9 @@ const createHistoryInstruction = (history) => {
   }
   const historySample = history.slice(-50); 
   return `
-    **Vocabulary History (for avoidance):** To ensure the user learns new words, please AVOID using the primary nouns, verbs, and adjectives from this list of previously generated sentences:
+    **Vocabulary History (for avoidance):** To ensure the user learns new words, please AVOID using any nouns, adjectives, adverbs, and other vocabulary words from this list of previously generated sentences. You may reuse common grammatical words like "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by", "is", "are", "was", "were", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "can", "must", "this", "that", "these", "those", "I", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "my", "your", "his", "her", "its", "our", "their", "mine", "yours", "hers", "ours", "theirs" (or their respective equivalents in the target language if the target language is not English).
+    
+    Previously generated sentences to avoid vocabulary from:
     ${JSON.stringify(historySample)}
   `;
 };
@@ -48,7 +50,7 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
     The difficulty level should be ${settings.difficulty} (CEFR).
     ${topicInstruction}
 
-    **Vocabulary Goal:** To maximize the learning opportunity, ensure the items use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives) across the different items in THIS new set.
+    **Vocabulary Goal:** To maximize the learning opportunity, ensure the items use a wide variety of vocabulary. Actively avoid repeating the same key words (nouns, verbs, adjectives, adverbs) across the different items in THIS new set. Additionally, avoid using any vocabulary words that have appeared in the user's previous sentence history.
     ${historyInstruction}
 
     ---
