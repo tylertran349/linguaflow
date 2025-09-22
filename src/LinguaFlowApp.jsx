@@ -116,9 +116,10 @@ function LinguaFlowApp() {
       return true; // Success
     } catch (error) {
       console.error("Failed to save settings to DB:", error);
-      return false; // Failure
-    } finally {
+      // Only set isSavingSettings to false on failure, not on success
+      // On success, stopRetryingSave() will handle setting it to false
       setIsSavingSettings(false);
+      return false; // Failure
     }
   };
 
@@ -308,13 +309,13 @@ function LinguaFlowApp() {
   const renderActiveModule = () => {
     switch (activeModule) {
       case 'sentence-generator':
-        return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
+        return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'unscramble-words':
-        return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
+        return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'read-and-respond':
-        return <ReadAndRespond geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
+        return <ReadAndRespond geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'write-a-response':
-        return <WriteAResponse geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings}/>;
+        return <WriteAResponse geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       default:
         return (
           <div className="initial-state-container">

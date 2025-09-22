@@ -10,7 +10,7 @@ import { supportedLanguages } from '../utils/languages';
 import '../styles/WriteAResponse.css';
 
 // Renamed component function
-function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings }) {
+function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
   const [questions, setQuestions] = useLocalStorage('practiceQuestions', []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useLocalStorage('practiceQuestionIndex', 0);
   const [questionHistory, setQuestionHistory] = useLocalStorage('practiceQuestionHistory', []);
@@ -25,6 +25,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [loadingMessage, setLoadingMessage] = useState('Generating questions, please wait...');
   const [feedbackLoadingMessage, setFeedbackLoadingMessage] = useState('Getting feedback...');
   const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   const currentQuestion = questions[currentQuestionIndex];
   const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
@@ -74,9 +75,24 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
 
+  // Effect for animated ellipsis during settings loading
+  useEffect(() => {
+    let intervalId;
+    if (isRetryingSave) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setLoadingSettingsMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingSettingsMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isRetryingSave]);
+
   const generateQuestions = async () => {
-    if (isSavingSettings) {
-      return; // Prevent generation while settings are being saved
+    if (isSavingSettings || isRetryingSave) {
+      return; // Prevent generation while settings are being saved or loaded
     }
 
     if (!geminiApiKey) {
@@ -161,6 +177,8 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   
   if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
   
+  if (isRetryingSave) return <p className="status-message">{loadingSettingsMessage}</p>;
+  
   if (questions.length === 0) {
     return (
       <div className="initial-state-container">
@@ -171,7 +189,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         <button 
           className="generate-button" 
           onClick={generateQuestions}
-          disabled={isSavingSettings}
+          disabled={isSavingSettings || isRetryingSave}
         >
           Generate Questions
         </button>
@@ -241,9 +259,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
                 <button 
                   className="nav-button generate-new" 
                   onClick={generateQuestions}
-                  disabled={isSavingSettings}
+                  disabled={isSavingSettings || isRetryingSave}
                 >
-                    {isSavingSettings ? savingMessage : 'Generate New Questions'}
+                    {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New Questions'}
                 </button>
             )
         )}

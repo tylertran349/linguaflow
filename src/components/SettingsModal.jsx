@@ -48,6 +48,10 @@ function SettingsModal({
       setTempApiKey(currentApiKey || '');
       setTempTopic(currentTopic || '');
       setErrors({}); // Clear errors when modal opens
+    } else {
+      // Clear ellipses when modal closes
+      setSaveEllipses('');
+      setLoadingEllipses('');
     }
   }, [isOpen, currentSettings, currentApiKey, currentTopic]);
 
@@ -60,7 +64,7 @@ function SettingsModal({
       interval = setInterval(() => {
         setSaveEllipses('.'.repeat(dotCount));
         dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
-      }, 500); // Change every 500ms
+      }, 400); // Change every 400ms to match other components
     } else {
       setSaveEllipses('');
     }
@@ -71,6 +75,15 @@ function SettingsModal({
       }
     };
   }, [isRetryingSave]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      // This cleanup will run on unmount
+      setSaveEllipses('');
+      setLoadingEllipses('');
+    };
+  }, []);
 
   // Animate ellipses when loading settings (matching SentenceDisplay.jsx timing)
   useEffect(() => {
@@ -107,6 +120,11 @@ function SettingsModal({
   };
 
   const handleSave = () => {
+    // Prevent multiple save attempts
+    if (isRetrying || isRetryingSave) {
+      return;
+    }
+
     const newErrors = {};
 
     // Parse rate values to numbers for validation
@@ -163,7 +181,10 @@ function SettingsModal({
     // This condition checks if the user clicked on the backdrop itself,
     // and not on any of its children (like the modal content).
     if (e.target.className === 'modal-backdrop') {
-      handleSave(); // Save settings when clicking outside
+      // Only allow backdrop save if not currently saving or loading
+      if (!isRetrying && !isRetryingSave) {
+        handleSave(); // Save settings when clicking outside
+      }
     }
   };
 
@@ -205,7 +226,7 @@ function SettingsModal({
                 value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} 
                 onChange={(e) => setTempApiKey(e.target.value)} 
                 placeholder="Enter your API key here..." 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
                 className="api-key-input"
               />
             </div>
@@ -216,7 +237,7 @@ function SettingsModal({
                 <span className="label-required">*Required</span>
               </label>
               <p className="setting-description">The language you speak best (for translations and explanations)</p>
-              <select name="nativeLanguage" id="nativeLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.nativeLanguage} onChange={handleSettingChange} disabled={isRetrying}>
+              <select name="nativeLanguage" id="nativeLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.nativeLanguage} onChange={handleSettingChange} disabled={isRetrying || isRetryingSave}>
                 {supportedLanguages.map(lang => ( 
                   <option key={lang.code} value={lang.name}>{lang.name}</option>
                 ))}
@@ -229,7 +250,7 @@ function SettingsModal({
                 <span className="label-required">*Required</span>
               </label>
               <p className="setting-description">The language you are learning</p>
-              <select name="targetLanguage" id="targetLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.targetLanguage} onChange={handleSettingChange} disabled={isRetrying}>
+              <select name="targetLanguage" id="targetLanguage" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.targetLanguage} onChange={handleSettingChange} disabled={isRetrying || isRetryingSave}>
                 {supportedLanguages.map(lang => ( 
                   <option key={lang.code} value={lang.name}>{lang.name}</option>
                 ))}
@@ -250,7 +271,7 @@ function SettingsModal({
                 <span className="label-required">*Required</span>
               </label>
               <p className="setting-description">This helps generate sentences/exercises at the right difficulty for you</p>
-              <select name="difficulty" id="difficulty" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.difficulty} onChange={handleSettingChange} disabled={isRetrying}>
+              <select name="difficulty" id="difficulty" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.difficulty} onChange={handleSettingChange} disabled={isRetrying || isRetryingSave}>
                 {CEFR_LEVELS.map(level => ( 
                   <option key={level.value} value={level.value}>
                     {level.label} - {level.description}
@@ -272,7 +293,7 @@ function SettingsModal({
                 <span className="label-text">Voice Engine</span>
               </label>
               <p className="setting-description">Choose which voice system to use for pronunciation</p>
-              <select name="ttsEngine" id="ttsEngine" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.ttsEngine} onChange={handleSettingChange} disabled={isRetrying}>
+              <select name="ttsEngine" id="ttsEngine" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.ttsEngine} onChange={handleSettingChange} disabled={isRetrying || isRetryingSave}>
                 {getTtsEngines().map(engine => ( 
                   <option key={engine.value} value={engine.value}>
                     {engine.label}
@@ -299,7 +320,7 @@ function SettingsModal({
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.googleTranslateRate}
                 onChange={handleSettingChange}
                 className={errors.googleTranslateRate ? 'input-error' : ''}
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
               {errors.googleTranslateRate && <p className="error-text">{errors.googleTranslateRate}</p>}
             </div>
@@ -322,7 +343,7 @@ function SettingsModal({
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.webSpeechRate}
                 onChange={handleSettingChange}
                 className={errors.webSpeechRate ? 'input-error' : ''}
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
               {errors.webSpeechRate && <p className="error-text">{errors.webSpeechRate}</p>}
             </div>
@@ -348,7 +369,7 @@ function SettingsModal({
                 onChange={(e) => setTempTopic(e.target.value)} 
                 placeholder="Enter topics you want to learn about..." 
                 rows="8" 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
                 className="topic-textarea"
                 style={{ resize: 'none' }}
               />
@@ -369,7 +390,7 @@ function SettingsModal({
                 min="1" max="100" 
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceCount} 
                 onChange={handleSettingChange} 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
             </div>
 
@@ -395,7 +416,7 @@ function SettingsModal({
                 min="0" max="1000" 
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceDisplayHistorySize} 
                 onChange={handleSettingChange} 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
             </div>
 
@@ -411,7 +432,7 @@ function SettingsModal({
                 min="0" max="1000" 
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.readAndRespondHistorySize} 
                 onChange={handleSettingChange} 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
             </div>
 
@@ -427,7 +448,7 @@ function SettingsModal({
                 min="0" max="1000" 
                 value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.writeAResponseHistorySize} 
                 onChange={handleSettingChange} 
-                disabled={isRetrying}
+                disabled={isRetrying || isRetryingSave}
               />
             </div>
 
@@ -436,7 +457,7 @@ function SettingsModal({
                 <span className="label-text">AI Model</span>
               </label>
               <p className="setting-description">Choose the AI model used for generating content</p>
-              <select name="model" id="model" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.model} onChange={handleSettingChange} disabled={isRetrying}>
+              <select name="model" id="model" value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.model} onChange={handleSettingChange} disabled={isRetrying || isRetryingSave}>
                 {GEMINI_MODELS.map(model => ( 
                   <option key={model.value} value={model.value}>
                     {model.label} - {model.description}
@@ -463,7 +484,7 @@ function SettingsModal({
                   value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.temperature}
                   onChange={handleSettingChange}
                   className={errors.temperature ? 'input-error' : ''}
-                  disabled={isRetrying}
+                  disabled={isRetrying || isRetryingSave}
                 />
               </div>
               {errors.temperature && <p className="error-text">{errors.temperature}</p>}
@@ -471,7 +492,7 @@ function SettingsModal({
           </div>
 
           <div className="modal-actions">
-            <button onClick={handleSave} className="save-button">Save Settings</button>
+            <button onClick={handleSave} className="save-button" disabled={isRetrying || isRetryingSave}>Save Settings</button>
           </div>
         </div>
       </div>

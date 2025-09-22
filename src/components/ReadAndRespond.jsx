@@ -8,7 +8,7 @@ import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/ReadAndRespond.css';
 
-function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings }) {
+function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
   // --- State Management ---
   const [passages, setPassages] = useLocalStorage('comprehensionPassages', []);
   const [currentPassageIndex, setCurrentPassageIndex] = useLocalStorage('comprehensionPassageIndex', 0);
@@ -18,6 +18,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating passages, please wait...');
   const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
   
   // State for the current question
   const [userAnswer, setUserAnswer] = useState(null); // Stores the selected option text
@@ -57,10 +58,25 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
 
+  // Effect for animated ellipsis during settings loading
+  useEffect(() => {
+    let intervalId;
+    if (isRetryingSave) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setLoadingSettingsMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingSettingsMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isRetryingSave]);
+
   // --- Core Functions ---
   const generate = async () => {
-    if (isSavingSettings) {
-      return; // Prevent generation while settings are being saved
+    if (isSavingSettings || isRetryingSave) {
+      return; // Prevent generation while settings are being saved or loaded
     }
 
     if (!geminiApiKey) {
@@ -146,6 +162,8 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   
   if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
   
+  if (isRetryingSave) return <p className="status-message">{loadingSettingsMessage}</p>;
+  
   if (passages.length === 0) {
     return (
       <div className="initial-state-container">
@@ -156,7 +174,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         <button 
           className="generate-button" 
           onClick={generate}
-          disabled={isSavingSettings}
+          disabled={isSavingSettings || isRetryingSave}
         >
           Generate Passages
         </button>
@@ -224,9 +242,9 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
                 <button 
                   className="generate-new-button" 
                   onClick={generate}
-                  disabled={isSavingSettings}
+                  disabled={isSavingSettings || isRetryingSave}
                 >
-                    {isSavingSettings ? savingMessage : (isLoading ? 'Generating...' : 'Generate New Passages')}
+                    {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : (isLoading ? 'Generating...' : 'Generate New Passages')}
                 </button>
             )}
         </div>

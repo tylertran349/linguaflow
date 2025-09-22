@@ -46,7 +46,7 @@ const escapeRegExp = (string) => {
 };
 
 
-function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSavingSettings }) {
+function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
   // --- STATE FOR REVIEW MODE ---
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
@@ -73,6 +73,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [showTranslation, setShowTranslation] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
   const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   // Effect for the animated ellipsis during loading
   useEffect(() => {
@@ -103,6 +104,21 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
+
+  // Effect for animated ellipsis during settings loading
+  useEffect(() => {
+    let intervalId;
+    if (isRetryingSave) {
+      let dotCount = 0;
+      const baseMessage = 'Saving your settings';
+      setLoadingSettingsMessage(baseMessage);
+      intervalId = setInterval(() => {
+        dotCount = (dotCount + 1) % 4; 
+        setLoadingSettingsMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
+      }, 400); 
+    }
+    return () => clearInterval(intervalId);
+  }, [isRetryingSave]);
 
   // Removed automatic saving - users now choose which sentences to star
 
@@ -336,8 +352,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const handleGenerateSentences = async () => {
-    if (isSavingSettings) {
-      return; // Prevent generation while settings are being saved
+    if (isSavingSettings || isRetryingSave) {
+      return; // Prevent generation while settings are being saved or loaded
     }
 
     if (!geminiApiKey) {
@@ -614,6 +630,8 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   
   const renderReviewMode = () => {
     if (reviewLoading) return <p className="status-message">{loadingMessage}</p>;
+    if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
+    if (isRetryingSave) return <p className="status-message">{loadingSettingsMessage}</p>;
     if (reviewError) return <p className="status-message error">Error: {reviewError}</p>;
     if (reviewSentences.length === 0) {
         return (
@@ -727,6 +745,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const renderLearnMode = () => {
     if (isLoading) return <p className="status-message">{loadingMessage}</p>;
     if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
+    if (isRetryingSave) return <p className="status-message">{loadingSettingsMessage}</p>;
     if (sentences.length === 0) {
         return (
           <div className="initial-state-container">
@@ -737,7 +756,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <button 
               className="generate-button" 
               onClick={handleGenerateSentences}
-              disabled={isSavingSettings}
+              disabled={isSavingSettings || isRetryingSave}
             >
               Generate Sentences
             </button>
@@ -781,9 +800,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                 </button>
                 <button 
                   onClick={handleGenerateSentences}
-                  disabled={isSavingSettings}
+                  disabled={isSavingSettings || isRetryingSave}
                 >
-                  {isSavingSettings ? savingMessage : 'Generate New Sentences'}
+                  {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New Sentences'}
                 </button>
             </div>
             <div className="navigation">
