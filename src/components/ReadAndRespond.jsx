@@ -17,7 +17,7 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating passages, please wait...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
   
   // State for the current question

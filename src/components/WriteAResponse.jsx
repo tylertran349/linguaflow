@@ -24,7 +24,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating questions, please wait...');
   const [feedbackLoadingMessage, setFeedbackLoadingMessage] = useState('Getting feedback...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   const currentQuestion = questions[currentQuestionIndex];

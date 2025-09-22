@@ -72,7 +72,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [error, setError] = useState(null);
   const [showTranslation, setShowTranslation] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   // Effect for the animated ellipsis during loading

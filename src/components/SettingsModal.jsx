@@ -181,8 +181,13 @@ function SettingsModal({
     // This condition checks if the user clicked on the backdrop itself,
     // and not on any of its children (like the modal content).
     if (e.target.className === 'modal-backdrop') {
-      // Only allow backdrop save if not currently saving or loading
-      if (!isRetrying && !isRetryingSave) {
+      // If currently saving, just close the modal without saving
+      if (isRetryingSave) {
+        onClose();
+        return;
+      }
+      // Only allow backdrop save if not currently loading
+      if (!isRetrying) {
         handleSave(); // Save settings when clicking outside
       }
     }
@@ -200,6 +205,26 @@ function SettingsModal({
             <h2>Settings</h2>
             {isRetryingSave && <span className="saving-indicator">Saving settings{saveEllipses}</span>}
             <p className="modal-description">Customize your language learning experience</p>
+            {/* Close button - always visible, even when saving */}
+            <button 
+              className="modal-close-button" 
+              onClick={onClose}
+              title="Close settings"
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '0.25rem',
+                borderRadius: '4px'
+              }}
+            >
+              ×
+            </button>
           </div>
 
           {/* Essential Setup Section */}

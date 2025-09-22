@@ -362,6 +362,8 @@ function LinguaFlowApp() {
         onClose={() => {
           setIsSettingsModalOpen(false);
           stopRetryingSettings();
+          // Also stop any ongoing save retry when modal is closed
+          stopRetryingSave();
         }}
         onSave={handleSaveSettings}
         currentSettings={settings}

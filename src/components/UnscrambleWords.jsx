@@ -35,7 +35,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
   const [matchedSolution, setMatchedSolution] = useState(null);
   const [hasUserMovedCards, setHasUserMovedCards] = useState(false);
