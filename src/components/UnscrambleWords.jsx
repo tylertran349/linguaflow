@@ -35,7 +35,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
   const [matchedSolution, setMatchedSolution] = useState(null);
   const [hasUserMovedCards, setHasUserMovedCards] = useState(false);
@@ -72,7 +72,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     let intervalId;
     if (isSavingSettings) {
       let dotCount = 0;
-      const baseMessage = 'Saving your settings';
+      const baseMessage = 'Saving your settings, please wait';
       setSavingMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 
@@ -87,7 +87,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     let intervalId;
     if (isRetryingSave) {
       let dotCount = 0;
-      const baseMessage = 'Saving your settings';
+      const baseMessage = 'Saving your settings, please wait';
       setLoadingSettingsMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 

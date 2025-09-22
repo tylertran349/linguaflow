@@ -24,7 +24,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating questions, please wait...');
   const [feedbackLoadingMessage, setFeedbackLoadingMessage] = useState('Getting feedback...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait, please wait');
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -65,7 +65,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     let intervalId;
     if (isSavingSettings) {
       let dotCount = 0;
-      const baseMessage = 'Saving your settings';
+      const baseMessage = 'Saving your settings, please wait';
       setSavingMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 
@@ -80,7 +80,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     let intervalId;
     if (isRetryingSave) {
       let dotCount = 0;
-      const baseMessage = 'Saving your settings';
+      const baseMessage = 'Saving your settings, please wait';
       setLoadingSettingsMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 
