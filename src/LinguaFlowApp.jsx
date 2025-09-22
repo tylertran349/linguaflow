@@ -22,7 +22,7 @@ function LinguaFlowApp() {
   const [geminiApiKey, setGeminiApiKey] = useState(''); 
   const [settings, setSettings] = useState({
     nativeLanguage: "English",
-    targetLanguage: "Vietnamese",
+    targetLanguage: "Spanish",
     difficulty: "B2",
     model: "gemini-2.5-flash", 
     ttsEngine: "google-translate",
