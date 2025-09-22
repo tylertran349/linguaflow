@@ -1,5 +1,10 @@
 /* Modern Clerk Theme Styles */
 
+/* Global mobile text handling */
+* {
+  box-sizing: border-box;
+}
+
 /* Main Auth Page Background */
 .auth-container {
   display: flex;
@@ -8,6 +13,9 @@
   min-height: 100vh;
   padding: var(--spacing-6);
   background: var(--color-light-grey);
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Split Screen Layout */
@@ -21,6 +29,7 @@
   box-shadow: var(--shadow-xl);
   overflow: hidden;
   border: 1px solid var(--color-light-grey);
+  box-sizing: border-box;
 }
 
 /* Left Side: Visuals & Branding */
@@ -76,12 +85,15 @@
   align-items: center;
   padding: var(--spacing-8);
   background-color: var(--color-white);
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Clerk Component Overrides */
 .cl-rootBox {
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
 }
 
 .cl-card {
@@ -97,6 +109,9 @@
   color: var(--color-dark-grey) !important;
   margin-bottom: var(--spacing-2) !important;
   text-align: center !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
 }
 
 .cl-headerSubtitle {
@@ -105,6 +120,9 @@
   text-align: center !important;
   margin-bottom: var(--spacing-6) !important;
   line-height: 1.5 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
 }
 
 .cl-formField {
@@ -269,63 +287,191 @@
 
 /* Mobile (480px - 767px) */
 @media (max-width: 767px) {
+  .auth-container {
+    padding: var(--spacing-4);
+  }
+
   .split-screen-visual {
     display: none;
   }
 
   .split-screen-form {
     flex-basis: 100%;
-    padding: var(--spacing-6);
+    padding: var(--spacing-4);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .split-screen-container {
     min-height: auto;
     border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .cl-rootBox {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .cl-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: var(--spacing-4) !important;
+    box-sizing: border-box !important;
   }
 
   .cl-headerTitle {
     font-size: var(--font-size-xl) !important;
+    word-wrap: break-word !important;
   }
 
   .cl-headerSubtitle {
     font-size: var(--font-size-sm) !important;
+    word-wrap: break-word !important;
   }
 
   .cl-input {
     padding: var(--spacing-2) var(--spacing-3) !important;
     font-size: var(--font-size-sm) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .cl-formButtonPrimary,
   .cl-formButtonSecondary {
     padding: var(--spacing-2) var(--spacing-4) !important;
     font-size: var(--font-size-sm) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+  }
+
+  .cl-formField {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
+  .auth-container {
+    padding: var(--spacing-2);
+  }
+
+  .split-screen-container {
+    margin: 0;
+    border-radius: var(--radius-lg);
+    min-height: auto;
+  }
+
   .split-screen-form {
-    padding: var(--spacing-4);
+    padding: var(--spacing-3);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cl-rootBox {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .cl-card {
+    padding: var(--spacing-3) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .cl-headerTitle {
     font-size: var(--font-size-lg) !important;
+    word-wrap: break-word !important;
   }
 
   .cl-headerSubtitle {
     font-size: var(--font-size-xs) !important;
+    word-wrap: break-word !important;
   }
 
   .cl-input {
     padding: var(--spacing-2) !important;
     font-size: var(--font-size-sm) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .cl-formButtonPrimary,
   .cl-formButtonSecondary {
     padding: var(--spacing-2) var(--spacing-3) !important;
     font-size: var(--font-size-sm) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+  }
+
+  .cl-formField {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Extra Small Mobile (320px and below) */
+@media (max-width: 320px) {
+  .auth-container {
+    padding: var(--spacing-1);
+  }
+
+  .split-screen-container {
+    border-radius: var(--radius-md);
+    margin: 0;
+  }
+
+  .split-screen-form {
+    padding: var(--spacing-2);
+  }
+
+  .cl-card {
+    padding: var(--spacing-2) !important;
+  }
+
+  .cl-headerTitle {
+    font-size: var(--font-size-base) !important;
+    line-height: 1.2 !important;
+  }
+
+  .cl-headerSubtitle {
+    font-size: 0.7rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .cl-input {
+    padding: var(--spacing-1) var(--spacing-2) !important;
+    font-size: 0.8rem !important;
+  }
+
+  .cl-formButtonPrimary,
+  .cl-formButtonSecondary {
+    padding: var(--spacing-1) var(--spacing-2) !important;
+    font-size: 0.8rem !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+  }
+
+  .cl-formFieldLabel {
+    font-size: 0.75rem !important;
   }
 }
 
