@@ -161,6 +161,37 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
         { "target": "la rue", "native": "street" }
       ]
     }]
+
+    **EXAMPLE 4: Target = Mandarin, Native = Spanish**
+    [{
+      "targetSentence": "我喜欢在图书馆里安静地读书。",
+      "nativeSentence": "Me gusta leer libros tranquilamente en la biblioteca.",
+      "wordMap": [
+        { "target": "我", "native": "Me" },
+        { "target": "喜欢", "native": "gusta" },
+        { "target": "在", "native": "en" },
+        { "target": "图书馆里", "native": "la biblioteca" },
+        { "target": "安静地", "native": "tranquilamente" },
+        { "target": "读", "native": "leer" },
+        { "target": "书", "native": "libros" }
+      ]
+    }]
+
+    **EXAMPLE 5: Target = German, Native = Japanese**
+    [{
+      "targetSentence": "Der alte Mann trinkt warmen Tee im Garten.",
+      "nativeSentence": "その老人は庭で温かいお茶を飲んでいます。",
+      "wordMap": [
+        { "target": "Der", "native": "その" },
+        { "target": "alte", "native": "老人" },
+        { "target": "Mann", "native": "は" },
+        { "target": "trinkt", "native": "飲んでいます" },
+        { "target": "warmen", "native": "温かい" },
+        { "target": "Tee", "native": "お茶を" },
+        { "target": "im", "native": "で" },
+        { "target": "Garten", "native": "庭" }
+      ]
+    }]
   `;
 
   console.log(specificInstructions);
