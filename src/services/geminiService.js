@@ -326,6 +326,9 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
       return;
     }
     
+    // Add targetLanguage to each sentence for TTS
+    sentence.targetLanguage = settings.targetLanguage;
+    
     if (sentence.wordMap && Array.isArray(sentence.wordMap)) {
       let colorIndex = 0; // Use a separate index for assigning rainbow colors
       sentence.colorMapping = sentence.wordMap.map((pair) => {

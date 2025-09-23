@@ -5,6 +5,7 @@ const sentenceSchema = new mongoose.Schema({
     userId: { type: String, required: true, index: true },
     targetSentence: { type: String, required: true },
     nativeSentence: { type: String, required: true },
+    targetLanguage: { type: String, required: true }, // Language code for TTS
     colorMapping: [Object],
     reviewDueDate: { type: Date, default: () => new Date(), index: true },
     starred: { type: Boolean, default: false, index: true },

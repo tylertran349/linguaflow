@@ -228,7 +228,18 @@ app.get('/api/sentences/review', ClerkExpressRequireAuth(), async (req, res) => 
             return isCardDue(sentence);
         });
 
-        res.json(sentencesToReview);
+        // Handle backward compatibility: add targetLanguage if missing
+        const processedSentences = sentencesToReview.map(sentence => {
+            if (!sentence.targetLanguage) {
+                // For existing sentences without targetLanguage, we'll need to infer it
+                // or use a default. Since we can't reliably infer the language from the text,
+                // we'll mark it as needing migration and let the frontend handle it
+                sentence.targetLanguage = null; // This will trigger fallback in frontend
+            }
+            return sentence;
+        });
+
+        res.json(processedSentences);
     } catch (error) {
         console.error("Error fetching review sentences:", error);
         res.status(500).json({ message: 'Failed to fetch sentences for review.' });
@@ -310,6 +321,37 @@ app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, r
     } catch (error) {
         console.error("Error updating review:", error);
         res.status(500).json({ message: 'Failed to update review.' });
+    }
+});
+
+// --- MIGRATE EXISTING SENTENCES WITH TARGET LANGUAGE ---
+app.post('/api/sentences/migrate-target-language', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { targetLanguage } = req.body;
+        
+        if (!targetLanguage) {
+            return res.status(400).json({ message: 'Target language is required for migration.' });
+        }
+
+        // Update all sentences for this user that don't have targetLanguage
+        const result = await Sentence.updateMany(
+            { 
+                userId: userId,
+                targetLanguage: { $exists: false }
+            },
+            { 
+                $set: { targetLanguage: targetLanguage }
+            }
+        );
+
+        res.json({ 
+            message: `Successfully migrated ${result.modifiedCount} sentences with target language: ${targetLanguage}`,
+            modifiedCount: result.modifiedCount
+        });
+    } catch (error) {
+        console.error("Error migrating sentences:", error);
+        res.status(500).json({ message: 'Failed to migrate sentences.' });
     }
 });
 

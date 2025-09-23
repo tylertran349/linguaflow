@@ -1,6 +1,6 @@
 // src/components/SentenceDisplay.jsx
 import { useState, useEffect } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, AlertCircle } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -140,6 +140,37 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   }, [reviewSentences, mode]);
   
   // --- FUNCTION: FETCH SENTENCES FOR REVIEW ---
+  // --- FUNCTION: MIGRATE EXISTING SENTENCES ---
+  const migrateExistingSentences = async () => {
+    if (!settings?.targetLanguage) {
+      console.warn('Cannot migrate sentences: no target language in settings');
+      return false;
+    }
+
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE_URL}/api/sentences/migrate-target-language`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetLanguage: settings.targetLanguage })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Failed to migrate sentences.`);
+      }
+
+      const data = await response.json();
+      console.log(`Migration successful: ${data.message}`);
+      return true;
+    } catch (err) {
+      console.error('Migration failed:', err);
+      return false;
+    }
+  };
+
   const handleFetchReviewSentences = async () => {
     setReviewLoading(true);
     setReviewError(null);
@@ -164,6 +195,14 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         }
         
         const data = await response.json();
+        
+        // Check if any sentences need migration (have null targetLanguage)
+        const needsMigration = data.some(sentence => sentence.targetLanguage === null);
+        if (needsMigration) {
+          console.log('Found sentences without targetLanguage, attempting migration...');
+          await migrateExistingSentences();
+        }
+        
         setReviewSentences(data);
         setCurrentReviewIndex(0);
         setTotalReviewSentences(data.length);
@@ -208,6 +247,16 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const handleStarSentence = async (sentence, isStarred) => {
     if (!isSignedIn) return; // Only save if logged in
 
+    // Ensure sentence has targetLanguage before saving
+    const sentenceToSave = {
+      ...sentence,
+      targetLanguage: sentence.targetLanguage || settings?.targetLanguage
+    };
+
+    if (!sentence.targetLanguage && settings?.targetLanguage) {
+      console.log(`Adding targetLanguage (${settings.targetLanguage}) to sentence before saving:`, sentence.targetSentence);
+    }
+
     // Update local state immediately for instant visual feedback
     setStarredSentences(prev => {
         const newSet = new Set(prev);
@@ -246,7 +295,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ sentence, starred: isStarred })
+            body: JSON.stringify({ sentence: sentenceToSave, starred: isStarred })
         });
 
         if (!response.ok) {
@@ -399,34 +448,57 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
   };
 
-  const handleWordSpeak = (word) => {
-    if (!settings || !settings.targetLanguage) {
-      console.error('Settings or target language not available');
+  const handleWordSpeak = (word, sentence = null) => {
+    // Use sentence-specific target language if available and valid, otherwise fall back to settings
+    let targetLanguage = sentence?.targetLanguage;
+    
+    // If sentence has no targetLanguage or it's null/undefined, use settings
+    if (!targetLanguage) {
+      targetLanguage = settings?.targetLanguage;
+    }
+    
+    if (!targetLanguage) {
+      console.error('Target language not available for word:', word);
       return;
     }
-    const langCode = getLanguageCode(settings.targetLanguage);
+    
+    const langCode = getLanguageCode(targetLanguage);
     if (langCode) {
+      console.log(`TTS: Speaking word "${word}" in language ${targetLanguage} (${langCode})`);
       speakText(word, langCode, settings);
     } else {
-      console.error(`Language code not found for ${settings.targetLanguage}`);
+      console.error(`Language code not found for ${targetLanguage}`);
     }
   };
 
-  const handleSentenceSpeak = (sentence) => {
-    if (!settings || !settings.targetLanguage) {
-      console.error('Settings or target language not available');
+  const handleSentenceSpeak = (sentenceText, sentence = null) => {
+    // Use sentence-specific target language if available and valid, otherwise fall back to settings
+    let targetLanguage = sentence?.targetLanguage;
+    
+    // If sentence has no targetLanguage or it's null/undefined, use settings
+    if (!targetLanguage) {
+      targetLanguage = settings?.targetLanguage;
+    }
+    
+    if (!targetLanguage) {
+      console.error('Target language not available for sentence:', sentenceText);
       return;
     }
-    const langCode = getLanguageCode(settings.targetLanguage);
+    
+    const langCode = getLanguageCode(targetLanguage);
     if (langCode) {
-      speakText(sentence, langCode, settings);
+      console.log(`TTS: Speaking sentence "${sentenceText}" in language ${targetLanguage} (${langCode})`);
+      speakText(sentenceText, langCode, settings);
     } else {
-      console.error(`Language code not found for ${settings.targetLanguage}`);
+      console.error(`Language code not found for ${targetLanguage}`);
     }
   };
 
-  const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak, starButton) => {
+  const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak, starButton, sentence = null) => {
     if (!fullSentence || typeof fullSentence !== 'string') return null;
+
+    // Check if this sentence is using fallback language (no sentence-specific targetLanguage)
+    const isUsingFallbackLanguage = !sentence?.targetLanguage;
 
     // If no colorMap or invalid colorMap, make the entire sentence clickable
     if (!colorMap || !Array.isArray(colorMap)) {
@@ -437,9 +509,18 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
               {starButton}
             </span>
           )}
+          {isUsingFallbackLanguage && (
+            <span style={{ 
+              marginRight: '4px',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }} title="Using current settings language">
+              <AlertCircle size={14} color="#ff4444" />
+            </span>
+          )}
           <span
             className="word"
-            onClick={() => handleWordSpeak(fullSentence)}
+            onClick={() => handleWordSpeak(fullSentence, sentence)}
             style={{ color: 'var(--color-dark-grey)' }}
           >
             {fullSentence}
@@ -467,9 +548,18 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
               {starButton}
             </span>
           )}
+          {isUsingFallbackLanguage && (
+            <span style={{ 
+              marginRight: '4px',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }} title="Using current settings language">
+              <AlertCircle size={14} color="#ff4444" />
+            </span>
+          )}
           <span
             className="word"
-            onClick={() => handleWordSpeak(fullSentence)}
+            onClick={() => handleWordSpeak(fullSentence, sentence)}
             style={{ color: 'var(--color-dark-grey)' }}
           >
             {fullSentence}
@@ -500,7 +590,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
               <span
                 key={`before-${lastIndex}-${wordIndex}`}
                 className="word"
-                onClick={() => handleWordSpeak(word.trim())}
+                onClick={() => handleWordSpeak(word.trim(), sentence)}
                 style={{ color: 'var(--color-dark-grey)' }}
               >
                 {word}
@@ -520,7 +610,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         <span
           key={`match-${match.index}`}
           className="word"
-          onClick={() => handleWordSpeak(info.target)}
+          onClick={() => handleWordSpeak(info.target, sentence)}
           style={{ color: info.color }}
         >
           {matchedText}
@@ -539,7 +629,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <span
               key={`after-${lastIndex}-${wordIndex}`}
               className="word"
-              onClick={() => handleWordSpeak(word.trim())}
+              onClick={() => handleWordSpeak(word.trim(), sentence)}
               style={{ color: 'var(--color-dark-grey)' }}
             >
               {word}
@@ -556,6 +646,16 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         {starButton && (
           <span style={{ marginRight: '8px' }}>
             {starButton}
+          </span>
+        )}
+        {isUsingFallbackLanguage && (
+          <span style={{ 
+            fontSize: '12px', 
+            color: 'var(--color-grey)', 
+            marginRight: '4px',
+            fontStyle: 'italic'
+          }} title="Using current settings language">
+            ⚠
           </span>
         )}
         {result}
@@ -676,7 +776,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        {renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping, () => handleSentenceSpeak(currentReview.targetSentence), starButton)}
+                        {renderTargetSentence(currentReview.targetSentence, currentReview.colorMapping, () => handleSentenceSpeak(currentReview.targetSentence, currentReview), starButton, currentReview)}
                     </span>
                 </section>
                 {showTranslation && (
@@ -811,7 +911,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             <article className="sentence-container">
                 <section className="target-sentence">
                     <span className="sentence-text-wrapper">
-                        {renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping, () => handleSentenceSpeak(currentSentence.targetSentence), starButton)}
+                        {renderTargetSentence(currentSentence.targetSentence, currentSentence.colorMapping, () => handleSentenceSpeak(currentSentence.targetSentence, currentSentence), starButton, currentSentence)}
                     </span>
                 </section>
                 {showTranslation && (
