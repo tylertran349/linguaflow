@@ -346,7 +346,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       setSentenceHistory(prev => 
         // Prevent duplicates in history
         [...new Set([...prev, sentenceToAddToHistory.targetSentence])]
-        .slice(-settings.sentenceDisplayHistorySize)
+        .slice(-(settings && settings.sentenceDisplayHistorySize ? settings.sentenceDisplayHistorySize : 50))
       );
     }
   };
@@ -373,7 +373,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       
       setCurrentSentenceIndex(0);
 
-    } catch (err)      {
+    } catch (err) {
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -400,6 +400,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const handleWordSpeak = (word) => {
+    if (!settings || !settings.targetLanguage) {
+      console.error('Settings or target language not available');
+      return;
+    }
     const langCode = getLanguageCode(settings.targetLanguage);
     if (langCode) {
       speakText(word, langCode, settings);
@@ -409,6 +413,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const handleSentenceSpeak = (sentence) => {
+    if (!settings || !settings.targetLanguage) {
+      console.error('Settings or target language not available');
+      return;
+    }
     const langCode = getLanguageCode(settings.targetLanguage);
     if (langCode) {
       speakText(sentence, langCode, settings);
@@ -418,10 +426,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const renderTargetSentence = (fullSentence, colorMap, onSentenceSpeak, starButton) => {
-    if (!fullSentence) return null;
+    if (!fullSentence || typeof fullSentence !== 'string') return null;
 
-    // If no colorMap, make the entire sentence clickable
-    if (!colorMap) {
+    // If no colorMap or invalid colorMap, make the entire sentence clickable
+    if (!colorMap || !Array.isArray(colorMap)) {
       return (
         <span>
           <span
@@ -446,7 +454,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     }
 
     const targetToInfoMap = new Map(
-      colorMap.filter(item => item.target && item.target.trim() !== '').map(item => [item.target.trim().toLowerCase(), item])
+      colorMap.filter(item => item && typeof item === 'object' && item.target && typeof item.target === 'string' && item.target.trim() !== '').map(item => [item.target.trim().toLowerCase(), item])
     );
 
     const phrasesToFind = Array.from(targetToInfoMap.keys()).sort((a, b) => b.length - a.length);
@@ -561,9 +569,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const renderNativeSentence = (fullSentence, colorMap) => {
-    if (!fullSentence || !colorMap) return null;
+    if (!fullSentence || typeof fullSentence !== 'string' || !colorMap || !Array.isArray(colorMap)) return null;
     const nativeToColorMap = new Map(
-      colorMap.filter(item => item.native && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
+      colorMap.filter(item => item && typeof item === 'object' && item.native && typeof item.native === 'string' && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
     );
     const phrasesToFind = Array.from(nativeToColorMap.keys()).sort((a, b) => b.length - a.length);
 
@@ -764,7 +772,25 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         );
     }
 
-    const currentSentence = sentences[currentSentenceIndex];
+    const currentSentence = sentences && sentences.length > 0 ? sentences[currentSentenceIndex] : null;
+    
+    if (!currentSentence) {
+      return (
+        <div className="initial-state-container">
+          {error && <p className="status-message error">Error: {error}</p>}
+          <p className="status-message">
+            No sentences available. Click the button to generate contextual sentences and start learning new vocabulary.
+          </p>
+          <button 
+            className="generate-button" 
+            onClick={handleGenerateSentences}
+            disabled={isSavingSettings || isRetryingSave}
+          >
+            Generate Sentences
+          </button>
+        </div>
+      );
+    }
     const starButton = isSignedIn ? (
         <button 
             className={`star-button ${starredSentences.has(currentSentence.targetSentence) ? 'starred' : ''}`}

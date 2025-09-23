@@ -51,11 +51,48 @@ const createHistoryInstruction = (history) => {
 // --- PRIVATE CORE FUNCTION FOR JSON-BASED API CALLS ---
 // This function is not exported; it's a private helper for this module.
 const _callGeminiModel = async (apiKey, settings, topic, history, specificInstructions, errorMessage) => {
+  // Input validation
+  if (!apiKey || typeof apiKey !== 'string') {
+    throw new Error('Invalid API key provided');
+  }
+  
+  if (!settings || typeof settings !== 'object') {
+    throw new Error('Invalid settings object provided');
+  }
+  
+  if (!settings.model || typeof settings.model !== 'string') {
+    throw new Error('Invalid model specified in settings');
+  }
+  
+  if (!settings.nativeLanguage || typeof settings.nativeLanguage !== 'string') {
+    throw new Error('Invalid native language specified in settings');
+  }
+  
+  if (!settings.targetLanguage || typeof settings.targetLanguage !== 'string') {
+    throw new Error('Invalid target language specified in settings');
+  }
+  
+  if (!settings.difficulty || typeof settings.difficulty !== 'string') {
+    throw new Error('Invalid difficulty level specified in settings');
+  }
+  
+  if (!settings.sentenceCount || typeof settings.sentenceCount !== 'number' || settings.sentenceCount <= 0) {
+    throw new Error('Invalid sentence count specified in settings');
+  }
+  
+  if (history && !Array.isArray(history)) {
+    throw new Error('History must be an array');
+  }
+  
+  if (!specificInstructions || typeof specificInstructions !== 'string') {
+    throw new Error('Specific instructions must be provided');
+  }
+
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
-      temperature: settings.temperature || 1,
+      temperature: typeof settings.temperature === 'number' ? settings.temperature : 1,
     }
   });
 
@@ -93,12 +130,37 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
     const response = await result.response;
     const text = response.text();
     
-    const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
+    // Clean up the response text and extract JSON
+    let jsonString = text.trim();
     
-    const parsedData = JSON.parse(jsonString);
+    // Remove various markdown code block formats
+    jsonString = jsonString.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+    
+    // Remove any leading/trailing whitespace or quotes
+    jsonString = jsonString.trim();
+    
+    // Handle cases where the response might be wrapped in quotes
+    if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
+      try {
+        jsonString = JSON.parse(jsonString);
+      } catch (e) {
+        // If parsing as string fails, continue with original
+      }
+    }
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error('JSON parsing failed:', parseError);
+      console.error('Raw response:', text);
+      console.error('Cleaned JSON string:', jsonString);
+      throw new Error(`Failed to parse API response as JSON. Please check the console for details. Response: ${text.substring(0, 200)}...`);
+    }
 
     if (!Array.isArray(parsedData)) {
-      throw new Error("API response was not a valid JSON array.");
+      console.error('API response was not an array:', parsedData);
+      throw new Error("API response was not a valid JSON array. Expected array format.");
     }
     
     return parsedData;
@@ -110,6 +172,10 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
 };
 
 export const fetchSentencesFromGemini = async (apiKey, settings, topic, history = []) => {
+    // Additional validation specific to this function
+    if (topic !== undefined && topic !== null && typeof topic !== 'string') {
+      throw new Error('Topic must be a string if provided');
+    }
     const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
     Your goal is to generate sentences and a PRECISE, GRANULAR word map for color-coding. The map must show how individual words in the target language correspond to words in the native language.
@@ -139,9 +205,22 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 
     **CRITICAL MAPPING RULE:**
     The "wordMap" MUST be a complete decomposition of the "nativeSentence". EVERY SINGLE WORD that appears in the "nativeSentence" must be present as a "native" value in one of the "wordMap" objects. There can be NO omissions. Grammatical words like "the", "a", "of" must be included.
+    
+    **BALANCING NATURAL TRANSLATION WITH WORD MAPPING:**
+    When creating the word map for a natural translation:
+    1. First, create the most natural, fluent native language translation
+    2. Then, map the target language words to the native language words/phrases, even if the correspondence isn't 1:1
+    3. Group target language words together when they correspond to a single native language phrase
+    4. Use empty target strings ("") for native language words that don't have direct target language equivalents
+    5. The goal is to maintain the natural flow of the native sentence while still providing meaningful color-coding
 
     **CRITICAL RULE FOR NATIVE LANGUAGE TRANSLATION:**
-    While the "wordMap" shows the direct, granular translation, the "nativeSentence" field MUST be grammatically perfect and sound natural in the native language. You will achieve this by reassembling the "native" values from the word map into the correct syntactic order for that language.
+    The "nativeSentence" field MUST be a natural, fluent translation that sounds like it was written by a native speaker. This means:
+    1. Use natural word order and phrasing that flows smoothly when read aloud
+    2. Choose idiomatic expressions and natural vocabulary over literal word-for-word translations
+    3. Adapt the sentence structure to match the natural patterns of the native language
+    4. Prioritize meaning and naturalness over maintaining a strict word-by-word correspondence
+    5. The translation should feel natural and conversational, not like a mechanical translation
 
     **OUTPUT FORMAT:**
     Provide the output as a single, valid JSON array of objects with "targetSentence", "nativeSentence", and "wordMap" keys.
@@ -151,78 +230,76 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 
     **EXAMPLE 1: Target = Vietnamese, Native = English**
     [{
-      "targetSentence": "Khái niệm về khối lượng là nền tảng của vật lý.",
-      "nativeSentence": "The concept of mass is the foundation of physics.",
+      "targetSentence": "Tôi thích đi dạo trong công viên vào buổi sáng.",
+      "nativeSentence": "I enjoy taking morning walks in the park.",
       "wordMap": [
-        { "target": "", "native": "The" },
-        { "target": "Khái niệm về", "native": "concept of" },
-        { "target": "khối lượng", "native": "mass" },
-        { "target": "là", "native": "is" },
-        { "target": "", "native": "the" },
-        { "target": "nền tảng", "native": "foundation" },
-        { "target": "của", "native": "of" },
-        { "target": "vật lý", "native": "physics" }
+        { "target": "Tôi", "native": "I" },
+        { "target": "thích", "native": "enjoy" },
+        { "target": "đi dạo", "native": "taking" },
+        { "target": "trong", "native": "in" },
+        { "target": "công viên", "native": "the park" },
+        { "target": "vào", "native": "" },
+        { "target": "buổi sáng", "native": "morning" },
+        { "target": "", "native": "walks" }
       ]
     }]
 
-    **EXAMPLE 2: Target = English, Native = Vietnamese**
+    **EXAMPLE 2: Target = English, Native = Spanish**
     [{
-      "targetSentence": "I want to learn a new language.",
-      "nativeSentence": "Tôi muốn học một ngôn ngữ mới.",
+      "targetSentence": "I can't wait to try the new restaurant downtown.",
+      "nativeSentence": "Tengo muchas ganas de probar el nuevo restaurante del centro.",
       "wordMap": [
-        { "target": "I", "native": "Tôi" },
-        { "target": "want to", "native": "muốn" },
-        { "target": "learn", "native": "học" },
-        { "target": "a", "native": "một" },
-        { "target": "new", "native": "mới" },
-        { "target": "language", "native": "ngôn ngữ" }
+        { "target": "I", "native": "Tengo" },
+        { "target": "can't wait to", "native": "muchas ganas de" },
+        { "target": "try", "native": "probar" },
+        { "target": "the", "native": "el" },
+        { "target": "new", "native": "nuevo" },
+        { "target": "restaurant", "native": "restaurante" },
+        { "target": "downtown", "native": "del centro" }
       ]
     }]
 
     **EXAMPLE 3: Target = French, Native = English**
     [{
-      "targetSentence": "La grande maison rouge est au bout de la rue.",
-      "nativeSentence": "The big red house is at the end of the street.",
+      "targetSentence": "Il fait un temps magnifique aujourd'hui.",
+      "nativeSentence": "The weather is absolutely beautiful today.",
       "wordMap": [
-        { "target": "", "native": "The" },
-        { "target": "grande", "native": "big" },
-        { "target": "rouge", "native": "red" },
-        { "target": "maison", "native": "house" },
-        { "target": "est", "native": "is" },
-        { "target": "au bout de", "native": "at the end of" },
-        { "target": "", "native": "the" },
-        { "target": "la rue", "native": "street" }
+        { "target": "Il", "native": "" },
+        { "target": "fait", "native": "The weather is" },
+        { "target": "un", "native": "" },
+        { "target": "temps", "native": "" },
+        { "target": "magnifique", "native": "absolutely beautiful" },
+        { "target": "aujourd'hui", "native": "today" }
       ]
     }]
 
-    **EXAMPLE 4: Target = Mandarin, Native = Spanish**
+    **EXAMPLE 4: Target = Mandarin, Native = English**
     [{
-      "targetSentence": "我喜欢在图书馆里安静地读书。",
-      "nativeSentence": "Me gusta leer libros tranquilamente en la biblioteca.",
+      "targetSentence": "今天的工作特别忙，我累得不行。",
+      "nativeSentence": "Work was incredibly busy today, and I'm completely exhausted.",
       "wordMap": [
-        { "target": "我", "native": "Me" },
-        { "target": "喜欢", "native": "gusta" },
-        { "target": "在", "native": "en" },
-        { "target": "图书馆里", "native": "la biblioteca" },
-        { "target": "安静地", "native": "tranquilamente" },
-        { "target": "读", "native": "leer" },
-        { "target": "书", "native": "libros" }
+        { "target": "今天", "native": "today" },
+        { "target": "的", "native": "" },
+        { "target": "工作", "native": "Work" },
+        { "target": "特别", "native": "incredibly" },
+        { "target": "忙", "native": "busy" },
+        { "target": "，", "native": "," },
+        { "target": "我", "native": "and I'm" },
+        { "target": "累得不行", "native": "completely exhausted" }
       ]
     }]
 
-    **EXAMPLE 5: Target = German, Native = Japanese**
+    **EXAMPLE 5: Target = German, Native = English**
     [{
-      "targetSentence": "Der alte Mann trinkt warmen Tee im Garten.",
-      "nativeSentence": "その老人は庭で温かいお茶を飲んでいます。",
+      "targetSentence": "Das Wetter wird morgen wahrscheinlich regnen.",
+      "nativeSentence": "It looks like it's going to rain tomorrow.",
       "wordMap": [
-        { "target": "Der", "native": "その" },
-        { "target": "alte", "native": "老人" },
-        { "target": "Mann", "native": "は" },
-        { "target": "trinkt", "native": "飲んでいます" },
-        { "target": "warmen", "native": "温かい" },
-        { "target": "Tee", "native": "お茶を" },
-        { "target": "im", "native": "で" },
-        { "target": "Garten", "native": "庭" }
+        { "target": "Das", "native": "It" },
+        { "target": "Wetter", "native": "looks like it's going" },
+        { "target": "wird", "native": "" },
+        { "target": "morgen", "native": "tomorrow" },
+        { "target": "wahrscheinlich", "native": "" },
+        { "target": "regnen", "native": "to rain" }
       ]
     }]
   `;
@@ -233,21 +310,53 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 
   // Post-process to add colors intelligently and validate sentence lengths
   result.forEach(sentence => {
-    if (sentence.wordMap) {
+    // Validate sentence structure
+    if (!sentence || typeof sentence !== 'object') {
+      console.warn('Invalid sentence object detected:', sentence);
+      return;
+    }
+    
+    if (!sentence.targetSentence || typeof sentence.targetSentence !== 'string') {
+      console.warn('Invalid or missing targetSentence:', sentence);
+      return;
+    }
+    
+    if (!sentence.nativeSentence || typeof sentence.nativeSentence !== 'string') {
+      console.warn('Invalid or missing nativeSentence:', sentence);
+      return;
+    }
+    
+    if (sentence.wordMap && Array.isArray(sentence.wordMap)) {
       let colorIndex = 0; // Use a separate index for assigning rainbow colors
       sentence.colorMapping = sentence.wordMap.map((pair) => {
+        // Validate each mapping pair
+        if (!pair || typeof pair !== 'object') {
+          console.warn('Invalid word mapping pair:', pair);
+          return { target: '', native: '', color: '#000000' };
+        }
+        
+        // Ensure target and native are strings
+        const target = typeof pair.target === 'string' ? pair.target : '';
+        const native = typeof pair.native === 'string' ? pair.native : '';
+        
         let color;
         // If the target word exists, it's a direct translation, so give it a rainbow color
-        if (pair.target && pair.target.trim() !== '') {
+        if (target && target.trim() !== '') {
           color = RAINBOW_HEX_PALETTE[colorIndex % RAINBOW_HEX_PALETTE.length];
           colorIndex++; // Only increment the color index for "real" words
         } else {
           // If the target is empty, it's a grammatical insertion; make it black
           color = '#000000';
         }
-        return { ...pair, color };
+        return { target, native, color };
       });
       delete sentence.wordMap; // Remove original map to save space
+    } else {
+      // If no valid wordMap, create a simple fallback mapping
+      console.warn('No valid wordMap found for sentence, creating fallback:', sentence.targetSentence);
+      sentence.colorMapping = [
+        { target: sentence.targetSentence, native: sentence.nativeSentence, color: RAINBOW_HEX_PALETTE[0] }
+      ];
     }
     
     // Add sentence length validation metadata
@@ -263,6 +372,10 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 
 
 export const fetchUnscrambleSentences = async (apiKey, settings, topic, history = []) => {
+  // Additional validation specific to this function
+  if (topic !== undefined && topic !== null && typeof topic !== 'string') {
+    throw new Error('Topic must be a string if provided');
+  }
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
     Generate sentences for a word unscrambling game where multiple grammatically correct arrangements should be accepted.
@@ -311,6 +424,10 @@ export const fetchUnscrambleSentences = async (apiKey, settings, topic, history 
 
 
 export const fetchComprehensionPassages = async (apiKey, settings, topic, history = []) => {
+  // Additional validation specific to this function
+  if (topic !== undefined && topic !== null && typeof topic !== 'string') {
+    throw new Error('Topic must be a string if provided');
+  }
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
     Your goal is to create a reading comprehension exercise. Generate a JSON array of objects.
@@ -322,6 +439,10 @@ export const fetchComprehensionPassages = async (apiKey, settings, topic, histor
 
 
 export const fetchPracticeQuestions = async (apiKey, settings, topic, history = []) => {
+  // Additional validation specific to this function
+  if (topic !== undefined && topic !== null && typeof topic !== 'string') {
+    throw new Error('Topic must be a string if provided');
+  }
   const specificInstructions = `
     **IMPORTANT INSTRUCTIONS:**
     Your goal is to act as a conversation starter. Generate a JSON array of unique and engaging questions.
@@ -334,11 +455,40 @@ export const fetchPracticeQuestions = async (apiKey, settings, topic, history = 
 
 
 export const fetchResponseFeedback = async (apiKey, settings, question, userResponse) => {
+  // Input validation
+  if (!apiKey || typeof apiKey !== 'string') {
+    throw new Error('Invalid API key provided');
+  }
+  
+  if (!settings || typeof settings !== 'object') {
+    throw new Error('Invalid settings object provided');
+  }
+  
+  if (!settings.model || typeof settings.model !== 'string') {
+    throw new Error('Invalid model specified in settings');
+  }
+  
+  if (!settings.targetLanguage || typeof settings.targetLanguage !== 'string') {
+    throw new Error('Invalid target language specified in settings');
+  }
+  
+  if (!settings.nativeLanguage || typeof settings.nativeLanguage !== 'string') {
+    throw new Error('Invalid native language specified in settings');
+  }
+  
+  if (!question || typeof question !== 'string') {
+    throw new Error('Question must be provided as a string');
+  }
+  
+  if (!userResponse || typeof userResponse !== 'string') {
+    throw new Error('User response must be provided as a string');
+  }
+
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ 
     model: settings.model,
     generationConfig: {
-      temperature: settings.temperature || 1,
+      temperature: typeof settings.temperature === 'number' ? settings.temperature : 1,
     }
   });
 
