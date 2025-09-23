@@ -432,6 +432,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     if (!colorMap || !Array.isArray(colorMap)) {
       return (
         <span>
+          {starButton && (
+            <span style={{ marginRight: '8px' }}>
+              {starButton}
+            </span>
+          )}
           <span
             className="word"
             onClick={() => handleWordSpeak(fullSentence)}
@@ -440,14 +445,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             {fullSentence}
           </span>
           {onSentenceSpeak && (
-            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
+            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence" style={{ marginLeft: '8px' }}>
               <Volume2 size={24} color="var(--color-green)" />
             </button>
-          )}
-          {starButton && (
-            <span style={{ marginLeft: '8px' }}>
-              {starButton}
-            </span>
           )}
         </span>
       );
@@ -462,6 +462,11 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     if (phrasesToFind.length === 0) {
       return (
         <span>
+          {starButton && (
+            <span style={{ marginRight: '8px' }}>
+              {starButton}
+            </span>
+          )}
           <span
             className="word"
             onClick={() => handleWordSpeak(fullSentence)}
@@ -470,14 +475,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             {fullSentence}
           </span>
           {onSentenceSpeak && (
-            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
+            <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence" style={{ marginLeft: '8px' }}>
               <Volume2 size={24} color="var(--color-green)" />
             </button>
-          )}
-          {starButton && (
-            <span style={{ marginLeft: '8px' }}>
-              {starButton}
-            </span>
           )}
         </span>
       );
@@ -553,16 +553,16 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
 
     return (
       <span>
-        {result}
-        {onSentenceSpeak && (
-          <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence">
-            <Volume2 size={24} color="var(--color-green)" />
-          </button>
-        )}
         {starButton && (
-          <span style={{ marginLeft: '8px' }}>
+          <span style={{ marginRight: '8px' }}>
             {starButton}
           </span>
+        )}
+        {result}
+        {onSentenceSpeak && (
+          <button onClick={onSentenceSpeak} className="inline-speak-button" title="Pronounce Sentence" style={{ marginLeft: '8px' }}>
+            <Volume2 size={24} color="var(--color-green)" />
+          </button>
         )}
       </span>
     );
