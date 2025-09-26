@@ -33,6 +33,8 @@ function LinguaFlowApp() {
     readAndRespondHistorySize: 100,
     writeAResponseHistorySize: 100,
     temperature: 1,
+    minSentenceLength: 6,
+    maxSentenceLength: 12,
   });
   const [topic, setTopic] = useState('');
   

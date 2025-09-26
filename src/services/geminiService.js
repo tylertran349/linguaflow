@@ -12,24 +12,15 @@ const RAINBOW_HEX_PALETTE = [
   '#0000FF',
 ];
 
-// Helper function to validate sentence length appropriateness for CEFR levels
-const validateSentenceLength = (wordCount, difficulty) => {
-  const lengthRanges = {
-    'A1': { min: 4, max: 8 },
-    'A2': { min: 6, max: 12 },
-    'B1': { min: 10, max: 18 },
-    'B2': { min: 12, max: 22 },
-    'C1': { min: 15, max: 25 },
-    'C2': { min: 15, max: 30 }
-  };
-  
-  const range = lengthRanges[difficulty];
-  if (!range) return true; // If difficulty not found, assume appropriate
+// Helper function to validate sentence length based on user settings
+const validateSentenceLength = (wordCount, settings) => {
+  const minLength = settings.minSentenceLength || 6;
+  const maxLength = settings.maxSentenceLength || 12;
   
   // Allow some flexibility - consider appropriate if within 20% of range
   const flexibility = 0.2;
-  const minFlexible = Math.max(1, range.min - Math.floor(range.min * flexibility));
-  const maxFlexible = range.max + Math.floor(range.max * flexibility);
+  const minFlexible = Math.max(1, minLength - Math.floor(minLength * flexibility));
+  const maxFlexible = maxLength + Math.floor(maxLength * flexibility);
   
   return wordCount >= minFlexible && wordCount <= maxFlexible;
 };
@@ -186,14 +177,8 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
     - The "nativeSentence" field MUST be in ${settings.nativeLanguage}.
     Do NOT reverse these roles.
 
-    **SENTENCE LENGTH GUIDELINES FOR ${settings.difficulty} LEVEL:**
-    Generate sentences with appropriate length and complexity for the ${settings.difficulty} CEFR level:
-    ${settings.difficulty === 'A1' ? 'A1 (Beginner): 4-8 words per sentence. Use simple, basic sentences with common vocabulary and present tense.' : ''}
-    ${settings.difficulty === 'A2' ? 'A2 (Elementary): 6-12 words per sentence. Use simple sentences with basic conjunctions and common phrases.' : ''}
-    ${settings.difficulty === 'B1' ? 'B1 (Intermediate): 10-18 words per sentence. Use more complex sentences with subordinate clauses and varied vocabulary.' : ''}
-    ${settings.difficulty === 'B2' ? 'B2 (Upper Intermediate): 12-22 words per sentence. Use complex sentences with multiple clauses and sophisticated vocabulary.' : ''}
-    ${settings.difficulty === 'C1' ? 'C1 (Advanced): 15-25 words per sentence. Use very complex sentences with nuanced vocabulary and advanced grammatical structures.' : ''}
-    ${settings.difficulty === 'C2' ? 'C2 (Proficient): 15-30+ words per sentence. Use highly sophisticated sentences with native-like complexity and precision.' : ''}
+    **SENTENCE LENGTH GUIDELINES:**
+    Generate sentences with ${settings.minSentenceLength || 6} to ${settings.maxSentenceLength || 12} words per sentence.
     
     **IMPORTANT:** Focus on complexity and appropriateness over strict word count. The sentence should feel natural and appropriately challenging for the ${settings.difficulty} level, even if it falls slightly outside the suggested range.
 
@@ -366,7 +351,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
     if (sentence.targetSentence) {
       const wordCount = sentence.targetSentence.trim().split(/\s+/).length;
       sentence.wordCount = wordCount;
-      sentence.lengthAppropriate = validateSentenceLength(wordCount, settings.difficulty);
+      sentence.lengthAppropriate = validateSentenceLength(wordCount, settings);
     }
   });
 

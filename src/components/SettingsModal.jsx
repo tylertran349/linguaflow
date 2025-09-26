@@ -136,6 +136,10 @@ function SettingsModal({
     // Parse temperature for validation
     const temperature = parseFloat(tempSettings.temperature);
     
+    // Parse sentence length values for validation
+    const minSentenceLength = parseInt(tempSettings.minSentenceLength, 10) || 6;
+    const maxSentenceLength = parseInt(tempSettings.maxSentenceLength, 10) || 12;
+    
     // Validate each rate
     for (const key in rates) {
       const rate = rates[key];
@@ -147,6 +151,20 @@ function SettingsModal({
     // Validate temperature
     if (isNaN(temperature) || temperature < 0.0 || temperature > 2.0) {
       newErrors.temperature = "Temperature must be between 0.0 and 2.0";
+    }
+    
+    // Validate sentence length settings
+    if (isNaN(minSentenceLength) || minSentenceLength < 1 || minSentenceLength > 50) {
+      newErrors.minSentenceLength = "Minimum sentence length must be between 1 and 50";
+    }
+    
+    if (isNaN(maxSentenceLength) || maxSentenceLength < 1 || maxSentenceLength > 50) {
+      newErrors.maxSentenceLength = "Maximum sentence length must be between 1 and 50";
+    }
+    
+    // Validate that min is not greater than max
+    if (!isNaN(minSentenceLength) && !isNaN(maxSentenceLength) && minSentenceLength > maxSentenceLength) {
+      newErrors.maxSentenceLength = "Maximum sentence length must be greater than or equal to minimum sentence length";
     }
 
     // If there are any errors, update the error state and stop.
@@ -168,6 +186,8 @@ function SettingsModal({
         sentenceDisplayHistorySize: parseInt(tempSettings.sentenceDisplayHistorySize, 10) || 100,
         readAndRespondHistorySize: parseInt(tempSettings.readAndRespondHistorySize, 10) || 50,
         writeAResponseHistorySize: parseInt(tempSettings.writeAResponseHistorySize, 10) || 100,
+        minSentenceLength: minSentenceLength,
+        maxSentenceLength: maxSentenceLength,
       },
       apiKey: tempApiKey,
       topic: tempTopic,
@@ -342,7 +362,8 @@ function SettingsModal({
                 id="googleTranslateRate"
                 name="googleTranslateRate"
                 min="0.1" max="2.0" step="0.1"
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.googleTranslateRate}
+                value={isRetrying ? '' : tempSettings.googleTranslateRate}
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                 onChange={handleSettingChange}
                 className={errors.googleTranslateRate ? 'input-error' : ''}
                 disabled={isRetrying || isRetryingSave}
@@ -365,7 +386,8 @@ function SettingsModal({
                 id="webSpeechRate"
                 name="webSpeechRate"
                 min="0.1" max="2.0" step="0.1"
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.webSpeechRate}
+                value={isRetrying ? '' : tempSettings.webSpeechRate}
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                 onChange={handleSettingChange}
                 className={errors.webSpeechRate ? 'input-error' : ''}
                 disabled={isRetrying || isRetryingSave}
@@ -413,12 +435,54 @@ function SettingsModal({
                 id="sentenceCount" 
                 name="sentenceCount" 
                 min="1" max="100" 
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceCount} 
+                value={isRetrying ? '' : tempSettings.sentenceCount} 
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                 onChange={handleSettingChange} 
                 disabled={isRetrying || isRetryingSave}
               />
             </div>
 
+            <div className="setting-item">
+              <label htmlFor="minSentenceLength">
+                <span className="label-text">Minimum Sentence Length</span>
+              </label>
+              <p className="setting-description">
+                The minimum number of words per sentence (1-50)<br/>
+              </p>
+              <input 
+                type="number" 
+                id="minSentenceLength" 
+                name="minSentenceLength" 
+                min="1" max="50" 
+                value={isRetrying ? '' : tempSettings.minSentenceLength || 6} 
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
+                onChange={handleSettingChange} 
+                disabled={isRetrying || isRetryingSave}
+                className={errors.minSentenceLength ? 'input-error' : ''}
+              />
+              {errors.minSentenceLength && <p className="error-text">{errors.minSentenceLength}</p>}
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="maxSentenceLength">
+                <span className="label-text">Maximum Sentence Length</span>
+              </label>
+              <p className="setting-description">
+                The maximum number of words per sentence (1-50)<br/>
+              </p>
+              <input 
+                type="number" 
+                id="maxSentenceLength" 
+                name="maxSentenceLength" 
+                min="1" max="50" 
+                value={isRetrying ? '' : tempSettings.maxSentenceLength || 12} 
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
+                onChange={handleSettingChange} 
+                disabled={isRetrying || isRetryingSave}
+                className={errors.maxSentenceLength ? 'input-error' : ''}
+              />
+              {errors.maxSentenceLength && <p className="error-text">{errors.maxSentenceLength}</p>}
+            </div>
 
           </div>
 
@@ -439,7 +503,8 @@ function SettingsModal({
                 id="sentenceDisplayHistorySize" 
                 name="sentenceDisplayHistorySize" 
                 min="0" max="1000" 
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.sentenceDisplayHistorySize} 
+                value={isRetrying ? '' : tempSettings.sentenceDisplayHistorySize}
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''} 
                 onChange={handleSettingChange} 
                 disabled={isRetrying || isRetryingSave}
               />
@@ -455,7 +520,8 @@ function SettingsModal({
                 id="readAndRespondHistorySize" 
                 name="readAndRespondHistorySize" 
                 min="0" max="1000" 
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.readAndRespondHistorySize} 
+                value={isRetrying ? '' : tempSettings.readAndRespondHistorySize}
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''} 
                 onChange={handleSettingChange} 
                 disabled={isRetrying || isRetryingSave}
               />
@@ -471,7 +537,8 @@ function SettingsModal({
                 id="writeAResponseHistorySize" 
                 name="writeAResponseHistorySize" 
                 min="0" max="1000" 
-                value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.writeAResponseHistorySize} 
+                value={isRetrying ? '' : tempSettings.writeAResponseHistorySize}
+                placeholder={isRetrying ? `Loading${loadingEllipses}` : ''} 
                 onChange={handleSettingChange} 
                 disabled={isRetrying || isRetryingSave}
               />
@@ -506,7 +573,8 @@ function SettingsModal({
                   id="temperature"
                   name="temperature"
                   min="0.0" max="2.0" step="0.1"
-                  value={isRetrying ? `Loading${loadingEllipses}` : tempSettings.temperature}
+                  value={isRetrying ? '' : tempSettings.temperature}
+                  placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                   onChange={handleSettingChange}
                   className={errors.temperature ? 'input-error' : ''}
                   disabled={isRetrying || isRetryingSave}

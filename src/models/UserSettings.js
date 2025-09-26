@@ -21,6 +21,8 @@ const userSettingsSchema = new mongoose.Schema({
         readAndRespondHistorySize: Number,
         writeAResponseHistorySize: Number,
         temperature: Number,
+        minSentenceLength: Number,
+        maxSentenceLength: Number,
     },
     
     // The topic string
