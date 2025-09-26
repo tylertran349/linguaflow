@@ -17,10 +17,20 @@ const validateSentenceLength = (wordCount, settings) => {
   const minLength = settings.minSentenceLength || 6;
   const maxLength = settings.maxSentenceLength || 12;
   
+  // Ensure valid range
+  if (minLength < 1 || maxLength < 1 || minLength > maxLength) {
+    return true; // If settings are invalid, don't restrict
+  }
+  
   // Allow some flexibility - consider appropriate if within 20% of range
+  // For very small ranges, use a minimum flexibility of 1 word
   const flexibility = 0.2;
-  const minFlexible = Math.max(1, minLength - Math.floor(minLength * flexibility));
-  const maxFlexible = maxLength + Math.floor(maxLength * flexibility);
+  const range = maxLength - minLength;
+  const minFlexibility = range <= 2 ? 1 : Math.floor(minLength * flexibility);
+  const maxFlexibility = range <= 2 ? 1 : Math.floor(maxLength * flexibility);
+  
+  const minFlexible = Math.max(1, minLength - minFlexibility);
+  const maxFlexible = maxLength + maxFlexibility;
   
   return wordCount >= minFlexible && wordCount <= maxFlexible;
 };
@@ -179,6 +189,7 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
 
     **SENTENCE LENGTH GUIDELINES:**
     Generate sentences with ${settings.minSentenceLength || 6} to ${settings.maxSentenceLength || 12} words per sentence.
+    ${settings.minSentenceLength === settings.maxSentenceLength ? `Note: Since minimum and maximum are the same (${settings.minSentenceLength || 6} words), generate sentences with exactly ${settings.minSentenceLength || 6} words.` : ''}
     
     **IMPORTANT:** Focus on complexity and appropriateness over strict word count. The sentence should feel natural and appropriately challenging for the ${settings.difficulty} level, even if it falls slightly outside the suggested range.
 

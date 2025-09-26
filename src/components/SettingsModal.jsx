@@ -137,8 +137,12 @@ function SettingsModal({
     const temperature = parseFloat(tempSettings.temperature);
     
     // Parse sentence length values for validation
-    const minSentenceLength = parseInt(tempSettings.minSentenceLength, 10) || 6;
-    const maxSentenceLength = parseInt(tempSettings.maxSentenceLength, 10) || 12;
+    const minSentenceLength = tempSettings.minSentenceLength !== undefined && tempSettings.minSentenceLength !== '' 
+      ? parseInt(tempSettings.minSentenceLength, 10) 
+      : 6;
+    const maxSentenceLength = tempSettings.maxSentenceLength !== undefined && tempSettings.maxSentenceLength !== '' 
+      ? parseInt(tempSettings.maxSentenceLength, 10) 
+      : 12;
     
     // Validate each rate
     for (const key in rates) {
@@ -154,12 +158,12 @@ function SettingsModal({
     }
     
     // Validate sentence length settings
-    if (isNaN(minSentenceLength) || minSentenceLength < 1 || minSentenceLength > 50) {
-      newErrors.minSentenceLength = "Minimum sentence length must be between 1 and 50";
+    if (isNaN(minSentenceLength) || minSentenceLength < 1 || minSentenceLength > 50 || !Number.isInteger(minSentenceLength)) {
+      newErrors.minSentenceLength = "Minimum sentence length must be a whole number between 1 and 50";
     }
     
-    if (isNaN(maxSentenceLength) || maxSentenceLength < 1 || maxSentenceLength > 50) {
-      newErrors.maxSentenceLength = "Maximum sentence length must be between 1 and 50";
+    if (isNaN(maxSentenceLength) || maxSentenceLength < 1 || maxSentenceLength > 50 || !Number.isInteger(maxSentenceLength)) {
+      newErrors.maxSentenceLength = "Maximum sentence length must be a whole number between 1 and 50";
     }
     
     // Validate that min is not greater than max
@@ -457,6 +461,12 @@ function SettingsModal({
                 value={isRetrying ? '' : tempSettings.minSentenceLength || 6} 
                 placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                 onChange={handleSettingChange} 
+                onKeyDown={(e) => {
+                  // Prevent negative values
+                  if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                  }
+                }}
                 disabled={isRetrying || isRetryingSave}
                 className={errors.minSentenceLength ? 'input-error' : ''}
               />
@@ -478,6 +488,12 @@ function SettingsModal({
                 value={isRetrying ? '' : tempSettings.maxSentenceLength || 12} 
                 placeholder={isRetrying ? `Loading${loadingEllipses}` : ''}
                 onChange={handleSettingChange} 
+                onKeyDown={(e) => {
+                  // Prevent negative values
+                  if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                  }
+                }}
                 disabled={isRetrying || isRetryingSave}
                 className={errors.maxSentenceLength ? 'input-error' : ''}
               />
