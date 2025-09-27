@@ -281,21 +281,6 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         </div>
       )}
 
-      {/* Progress Bar */}
-      <div className="progress-container">
-        <div className="progress-bar">
-          <div 
-            className="progress-fill" 
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        <div className="progress-text">
-          <span className="progress-current">{currentPassageIndex + 1}</span>
-          <span className="progress-separator">/</span>
-          <span className="progress-total">{passages.length}</span>
-        </div>
-      </div>
-
       {/* Score Display */}
       {score.total > 0 && (
         <div className="score-container">
@@ -352,6 +337,13 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
           )}
         </div>
       </section>
+
+      {/* Sentence Counter */}
+      <div className="sentence-counter">
+        <span className="counter-current">{currentPassageIndex + 1}</span>
+        <span className="counter-separator">/</span>
+        <span className="counter-total">{passages.length}</span>
+      </div>
       
       {/* Confetti Effect */}
       {showConfetti && (

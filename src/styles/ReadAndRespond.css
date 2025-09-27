@@ -55,61 +55,27 @@
   font-weight: 500;
 }
 
-/* Progress Bar */
-.progress-container {
+/* Sentence Counter */
+.sentence-counter {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-2);
-}
-
-.progress-bar {
-  flex: 1;
-  height: 8px;
-  background: var(--color-light-grey);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-green), var(--color-dark-green));
-  border-radius: var(--radius-lg);
-  transition: width 0.5s ease;
-  position: relative;
-}
-
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: shimmer 2s infinite;
-}
-
-.progress-text {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: var(--spacing-1);
   font-weight: 600;
   color: var(--color-dark-grey);
-  min-width: 60px;
+  margin: var(--spacing-4) 0;
 }
 
-.progress-current {
+.counter-current {
   color: var(--color-green);
   font-size: var(--font-size-lg);
 }
 
-.progress-separator {
+.counter-separator {
   color: var(--color-grey);
 }
 
-.progress-total {
+.counter-total {
   color: var(--color-grey);
 }
 
@@ -154,18 +120,22 @@
   transition: all var(--transition-fast);
 }
 
+.passage-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
 
 /* Passage Header */
 .passage-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
 }
 
 .passage-header h3 {
   margin: 0;
   font-size: var(--font-size-lg);
-  color: var(--color-dark-grey);
+  color: var(--color-green);
   font-weight: 600;
 }
 
@@ -534,9 +504,8 @@
     gap: var(--spacing-3);
   }
 
-  .progress-container {
-    flex-direction: column;
-    gap: var(--spacing-2);
+  .sentence-counter {
+    margin: var(--spacing-3) 0;
   }
 
 }
@@ -616,9 +585,8 @@
     font-size: var(--font-size-base);
   }
 
-  .progress-container {
-    flex-direction: column;
-    gap: var(--spacing-1);
+  .sentence-counter {
+    margin: var(--spacing-2) 0;
   }
 
 }
