@@ -1,7 +1,7 @@
 // src/components/ReadAndRespond.jsx
 
 import { useState, useEffect } from 'react';
-import { Volume2, CheckCircle, XCircle, RotateCcw, Trophy, Target } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, Trophy, Target } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchComprehensionPassages } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -29,7 +29,6 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
 
   // --- Derived State ---
   const currentPassageData = passages[currentPassageIndex];
-  const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
   const progressPercentage = passages.length > 0 ? ((currentPassageIndex + 1) / passages.length) * 100 : 0;
   const accuracyPercentage = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
 
@@ -194,18 +193,25 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     }
   };
 
-  const handleSpeakPassage = () => {
-    if (!currentPassageData?.passage) return;
-    speakText(currentPassageData.passage, targetLangCode, settings);
-  };
   
   const handleWordClick = (word) => {
     if (!word) return;
     const cleanedWord = word.replace(/[.,!?;:"]$/, '');
-    // BEFORE (Incorrect): speakText(cleanedWord, targetLangCode, settings.ttsEngine);
-    // AFTER (Correct):
-    speakText(cleanedWord, targetLangCode, settings);
+    
+    if (!settings?.targetLanguage) {
+      console.error('Target language not available for word:', cleanedWord);
+      return;
+    }
+    
+    const langCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
+    if (langCode) {
+      console.log(`TTS: Speaking word "${cleanedWord}" in language ${settings.targetLanguage} (${langCode})`);
+      speakText(cleanedWord, langCode, settings);
+    } else {
+      console.error(`Language code not found for ${settings.targetLanguage}`);
+    }
   };
+
 
   const handleRetry = () => {
     setError('');
@@ -309,14 +315,6 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
       <article className="passage-card">
         <div className="passage-header">
             <h3>Read the passage</h3>
-            <button 
-              onClick={handleSpeakPassage} 
-              className="speak-button" 
-              title="Pronounce entire passage"
-              aria-label="Read passage aloud"
-            >
-              <Volume2 size={20} color="var(--color-green)" />
-            </button>
         </div>
         <p className="passage-text">
           {currentPassageData.passage?.split(/(\s+)/).map((word, index) => (

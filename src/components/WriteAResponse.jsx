@@ -181,94 +181,97 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   
   if (questions.length === 0) {
     return (
-      <div className="initial-state-container">
-        {error && <p className="status-message error">Error: {error}</p>}
-        <p className="status-message">
-          Practice your writing skills. Generate questions to get started.
-        </p>
-        <button 
-          className="generate-button" 
-          onClick={generateQuestions}
-          disabled={isSavingSettings || isRetryingSave}
-        >
-          Generate Questions
-        </button>
+      <div className="write-a-response-container">
+        <div className="write-a-response-card">
+          <div className="initial-state-container">
+            {error && <p className="status-message error">Error: {error}</p>}
+            <p className="status-message">
+              Practice your writing skills. Generate questions to get started.
+            </p>
+            <button 
+              className="generate-button" 
+              onClick={generateQuestions}
+              disabled={isSavingSettings || isRetryingSave}
+            >
+              Generate Questions
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Note the updated class names below
   return (
     <div className="write-a-response-container">
-      {error && <p className="status-message error small">Error: {error}</p>}
-      
-      <div className="question-card-write">
-        <div className="question-header">
-            <h3 className="question-text">
-              {currentQuestion.split(/(\s+)/).map((word, index) => (
-                word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
-              ))}
-            </h3>
-            <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">
-              <Volume2 size={20} color="var(--color-green)" />
-            </button>
-        </div>
-      </div>
-
-      <div className="response-area">
-        <textarea
-            value={userResponse}
-            onChange={(e) => setUserResponse(e.target.value)}
-            placeholder={`Type your answer in ${settings.targetLanguage}...`}
-            rows="5"
-            className="response-input"
-            disabled={isSubmitted || isFetchingFeedback}
-        />
+      <div className="write-a-response-card">
+        {error && <p className="status-message error small">Error: {error}</p>}
         
-        {!isSubmitted && (
-            <button 
-                className="submit-button" 
-                onClick={handleSubmit}
-                disabled={isFetchingFeedback}
-            >
-                {isFetchingFeedback ? feedbackLoadingMessage : 'Submit Response'}
-            </button>
-        )}
-      </div>
-
-      {feedback && (
-        <div className="feedback-box">
-            <h4>Feedback</h4>
-            <p>{feedback}</p>
+        <div className="question-card-write">
+          <div className="question-header">
+              <h3 className="question-text">
+                {currentQuestion.split(/(\s+)/).map((word, index) => (
+                  word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
+                ))}
+              </h3>
+              <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">
+                <Volume2 size={20} color="var(--color-green)" />
+              </button>
+          </div>
         </div>
-      )}
 
-      <div className="navigation-write">
-        {currentQuestionIndex < questions.length - 1 && (
-            <button className="nav-button skip" onClick={goToNextQuestion}>
-                Skip
-            </button>
+        <div className="response-area">
+          <textarea
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+              placeholder={`Type your answer in ${settings.targetLanguage}...`}
+              rows="5"
+              className="response-input"
+              disabled={isSubmitted || isFetchingFeedback}
+          />
+        </div>
+
+        {feedback && (
+          <div className="feedback-box">
+              <h4>Feedback</h4>
+              <p>{feedback}</p>
+          </div>
         )}
 
-        {isSubmitted && (
-            currentQuestionIndex < questions.length - 1 ? (
-                <button className="nav-button next" onClick={goToNextQuestion}>
-                    Next Question
-                </button>
-            ) : (
-                <button 
-                  className="nav-button generate-new" 
-                  onClick={generateQuestions}
-                  disabled={isSavingSettings || isRetryingSave}
-                >
-                    {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New Questions'}
-                </button>
-            )
-        )}
-      </div>
+        <div className="unified-button-row">
+          <button 
+            className="nav-button generate-new" 
+            onClick={generateQuestions}
+            disabled={isSavingSettings || isRetryingSave}
+          >
+            {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New'}
+          </button>
 
-      <div className="navigation">
-        <span>Question {currentQuestionIndex + 1} / {questions.length}</span>
+          {currentQuestionIndex < questions.length - 1 && (
+              <button className="nav-button skip" onClick={goToNextQuestion}>
+                  Skip Question
+              </button>
+          )}
+
+          {!isSubmitted && (
+              <button 
+                  className="nav-button submit" 
+                  onClick={handleSubmit}
+                  disabled={isFetchingFeedback}
+              >
+                  {isFetchingFeedback ? feedbackLoadingMessage : 'Submit Response'}
+              </button>
+          )}
+
+          {isSubmitted && currentQuestionIndex < questions.length - 1 && (
+              <button className="nav-button next" onClick={goToNextQuestion}>
+                  Next Question
+              </button>
+          )}
+        </div>
+
+        <div className="navigation">
+          <span>Question {currentQuestionIndex + 1} / {questions.length}</span>
+        </div>
       </div>
     </div>
   );

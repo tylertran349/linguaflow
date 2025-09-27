@@ -1,27 +1,98 @@
 /* Modern Write A Response Component Styles */
 
 .write-a-response-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Main Card */
+.write-a-response-card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-8);
+  width: 80%;
+  margin: var(--spacing-8) auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 var(--spacing-2);
+  transition: all var(--transition-normal);
+  border: 1px solid var(--color-light-grey);
 }
 
+.write-a-response-card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+/* Initial & Status States */
+.initial-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-12) var(--spacing-4);
+  gap: var(--spacing-4);
+  min-height: 300px;
+}
+
+.generate-button {
+  padding: var(--spacing-3) var(--spacing-6);
+  font-size: var(--font-size-lg);
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--color-green);
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.generate-button:hover {
+  background: var(--color-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.status-message {
+  font-size: var(--font-size-lg);
+  color: var(--color-dark-grey);
+  margin: 0;
+  font-weight: 500;
+}
+
+.status-message.error {
+  color: var(--color-dark-grey);
+  font-weight: 600;
+}
+
+.status-message.error.small {
+  font-size: var(--font-size-sm);
+  background: var(--color-light-grey);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: calc(var(--spacing-2) * -1);
+  border: 1px solid var(--color-light-grey);
+}
+
+/* Question Card */
 .question-card-write {
   background-color: var(--color-white);
   border: 1px solid var(--color-light-grey);
   border-radius: var(--radius-xl);
   padding: var(--spacing-6);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   transition: all var(--transition-fast);
+  margin-bottom: var(--spacing-4);
 }
 
 .question-card-write:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
 .question-header {
@@ -29,9 +100,16 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--color-light-grey);
+}
+
+/* Unified Button Row */
+.unified-button-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-4);
+  flex-wrap: wrap;
 }
 
 .question-text {
@@ -47,14 +125,14 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   border-radius: var(--radius-sm);
-  padding: 0 var(--spacing-1);
   position: relative;
 }
 
 .question-word:hover {
-  background: var(--color-light-grey);
-  color: var(--color-dark-grey);
-  font-weight: 500;
+  background: var(--color-green);
+  color: var(--color-white);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .speak-button {
@@ -81,10 +159,12 @@
   transform: scale(0.95);
 }
 
+/* Response Area */
 .response-area {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
 }
 
 .response-input {
@@ -92,25 +172,23 @@
   padding: var(--spacing-4);
   font-family: inherit;
   font-size: var(--font-size-lg);
-  border: 1px solid var(--color-light-grey);
+  border: 2px solid var(--color-light-grey);
   border-radius: var(--radius-lg);
   background-color: var(--color-white);
   color: var(--color-dark-grey);
   resize: vertical;
   min-height: 150px;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
 }
 
 .response-input:focus {
   outline: none;
   border-color: var(--color-green);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
   transform: translateY(-1px);
 }
 
 .response-input:hover {
-  border-color: var(--color-light-grey);
+  transform: translateY(-1px);
 }
 
 .response-input:disabled {
@@ -147,6 +225,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Feedback Box */
 .feedback-box {
   background: var(--color-light-grey);
   border: 1px solid var(--color-green);
@@ -154,6 +233,7 @@
   padding: var(--spacing-4) var(--spacing-6);
   animation: feedbackSlideIn 0.5s ease-in-out;
   box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-4);
 }
 
 @keyframes feedbackSlideIn {
@@ -182,12 +262,7 @@
   font-size: var(--font-size-base);
 }
 
-.navigation-write {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-4);
-  margin-top: var(--spacing-4);
-}
+/* Navigation */
 
 .nav-button {
   padding: var(--spacing-3) var(--spacing-6);
@@ -198,6 +273,9 @@
   transition: all var(--transition-fast);
   min-height: 44px;
   box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-button.skip {
@@ -214,7 +292,8 @@
 }
 
 .nav-button.next,
-.nav-button.generate-new {
+.nav-button.generate-new,
+.nav-button.submit {
   background: var(--color-green);
   color: var(--color-white);
   border: none;
@@ -222,19 +301,28 @@
 }
 
 .nav-button.next:hover,
-.nav-button.generate-new:hover {
+.nav-button.generate-new:hover,
+.nav-button.submit:hover {
   background: var(--color-green);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.navigation {
+  text-align: center;
+  color: var(--color-dark-grey);
+  margin-top: var(--spacing-4);
+  font-size: var(--font-size-sm);
 }
 
 /* Responsive Design */
 
 /* Tablet (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
-  .write-a-response-container {
-    gap: var(--spacing-5);
-    padding: 0 var(--spacing-1);
+  .write-a-response-card {
+    padding: var(--spacing-6);
+    margin: var(--spacing-6) auto;
+    width: 85%;
   }
 
   .question-card-write {
@@ -264,8 +352,14 @@
 /* Mobile (480px - 767px) */
 @media (max-width: 767px) {
   .write-a-response-container {
-    gap: var(--spacing-4);
-    padding: 0;
+    padding: 0 var(--spacing-2);
+  }
+
+  .write-a-response-card {
+    padding: var(--spacing-5);
+    margin: var(--spacing-4) auto;
+    width: 95%;
+    gap: var(--spacing-5);
   }
 
   .question-card-write {
@@ -277,6 +371,12 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-3);
+  }
+
+  .unified-button-row {
+    flex-direction: column;
+    gap: var(--spacing-3);
+    align-items: stretch;
   }
 
   .question-text {
@@ -320,23 +420,34 @@
     font-size: var(--font-size-sm);
   }
 
-  .navigation-write {
-    flex-direction: column;
-    gap: var(--spacing-3);
-    align-items: stretch;
-  }
 
   .nav-button {
     padding: var(--spacing-2) var(--spacing-5);
     font-size: var(--font-size-sm);
     width: 100%;
   }
+
+  .initial-state-container {
+    padding: var(--spacing-8) var(--spacing-4);
+    min-height: 250px;
+  }
+
+  .status-message {
+    font-size: var(--font-size-base);
+  }
 }
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
   .write-a-response-container {
-    gap: var(--spacing-3);
+    padding: 0 var(--spacing-1);
+  }
+
+  .write-a-response-card {
+    padding: var(--spacing-4);
+    margin: var(--spacing-3) auto;
+    width: 98%;
+    gap: var(--spacing-4);
   }
 
   .question-card-write {
@@ -381,11 +492,24 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--font-size-sm);
   }
+
+  .initial-state-container {
+    padding: var(--spacing-6) var(--spacing-3);
+    min-height: 200px;
+  }
+
+  .status-message {
+    font-size: var(--font-size-sm);
+  }
+
+  .status-message.error.small {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-1) var(--spacing-3);
+  }
 }
 
 /* Focus states for accessibility */
 .question-word:focus-visible,
-.response-input:focus-visible,
 .submit-button:focus-visible,
 .speak-button:focus-visible,
 .nav-button:focus-visible {
@@ -425,6 +549,7 @@
 }
 
 /* Animation for card entrance */
+.write-a-response-card,
 .question-card-write {
   animation: cardSlideIn var(--transition-normal) ease-out;
 }

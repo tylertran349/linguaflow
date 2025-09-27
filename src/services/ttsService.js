@@ -193,9 +193,19 @@ const speakWithGoogleTranslateProxy = (text, langCode, rate = 1) => {
   const audio = new Audio(url);
   currentGoogleAudio = audio;
   audio.onended = () => { currentGoogleAudio = null; };
+  audio.onerror = (e) => {
+    console.error("Proxy TTS playback failed:", e);
+    currentGoogleAudio = null;
+    // Fallback to Web Speech API when proxy fails
+    console.log("Falling back to Web Speech API...");
+    speakWithWebSpeech(text, langCode, rate);
+  };
   audio.play().catch(e => {
     console.error("Proxy TTS playback failed:", e);
     currentGoogleAudio = null;
+    // Fallback to Web Speech API when proxy fails
+    console.log("Falling back to Web Speech API...");
+    speakWithWebSpeech(text, langCode, rate);
   });
 };
 
