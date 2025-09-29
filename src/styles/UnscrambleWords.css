@@ -42,7 +42,7 @@
 }
 
 .sentence-counter {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-lg);
   color: var(--color-dark-grey);
   font-weight: 500;
 }
