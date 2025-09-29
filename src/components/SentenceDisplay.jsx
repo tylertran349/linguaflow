@@ -933,7 +933,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
             </div>
             <div className="navigation">
                 <button onClick={handleBack} disabled={currentSentenceIndex === 0}>Back</button>
-                <span>{currentSentenceIndex + 1} / {sentences.length}</span>
+                <span>
+                  <span className="counter-current">{currentSentenceIndex + 1}</span> / {sentences.length}
+                </span>
                 <button onClick={handleNext} disabled={currentSentenceIndex === sentences.length - 1}>Next</button>
             </div>
         </div>

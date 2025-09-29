@@ -276,7 +276,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         </div>
 
         <div className="navigation">
-          <span>Question {currentQuestionIndex + 1} / {questions.length}</span>
+          <span>
+            <span className="counter-current">{currentQuestionIndex + 1}</span> / {questions.length}
+          </span>
         </div>
       </div>
     </div>

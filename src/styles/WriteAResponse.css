@@ -332,6 +332,17 @@
   align-items: center;
 }
 
+.navigation span {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-dark-grey);
+}
+
+.navigation .counter-current {
+  color: var(--color-green);
+  font-weight: 700;
+}
+
 /* Responsive Design */
 
 /* Tablet (768px - 1023px) */
