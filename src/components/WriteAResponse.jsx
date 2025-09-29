@@ -28,7 +28,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
 
   const currentQuestion = questions[currentQuestionIndex];
-  const targetLangCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
+  const questionText = currentQuestion?.text || currentQuestion; // Handle both old string format and new object format
+  const questionTargetLanguage = currentQuestion?.targetLanguage || settings.targetLanguage; // Use saved target language or fallback to settings
+  const targetLangCode = supportedLanguages.find(l => l.name === questionTargetLanguage)?.code;
 
   // Effect for animated ellipsis during loading
   useEffect(() => {
@@ -103,7 +105,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     // Add the last viewed question to history before generating new ones
     const lastViewedQuestion = questions[currentQuestionIndex];
     if (lastViewedQuestion) {
-        setQuestionHistory(prev => [...prev, lastViewedQuestion].slice(-settings.writeAResponseHistorySize));
+        // Convert to the format expected by the API (just the text)
+        const questionForHistory = typeof lastViewedQuestion === 'string' ? lastViewedQuestion : lastViewedQuestion.text;
+        setQuestionHistory(prev => [...prev, questionForHistory].slice(-settings.writeAResponseHistorySize));
     }
 
     setIsLoadingQuestions(true);
@@ -134,7 +138,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     setFeedback('');
 
     try {
-      const aiFeedback = await fetchResponseFeedback(geminiApiKey, settings, currentQuestion, userResponse);
+      const aiFeedback = await fetchResponseFeedback(geminiApiKey, settings, questionText, userResponse);
       setFeedback(aiFeedback);
       setIsSubmitted(true);
     } catch (err) {
@@ -149,7 +153,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
       // Add the question we are leaving (or skipping) to the history
       const questionToAdd = questions[currentQuestionIndex];
       if (questionToAdd) {
-        setQuestionHistory(prev => [...prev, questionToAdd].slice(-settings.writeAResponseHistorySize));
+        // Convert to the format expected by the API (just the text)
+        const questionForHistory = typeof questionToAdd === 'string' ? questionToAdd : questionToAdd.text;
+        setQuestionHistory(prev => [...prev, questionForHistory].slice(-settings.writeAResponseHistorySize));
       }
 
       // Now, navigate to the next question
@@ -161,8 +167,8 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   };
   
   const handleSpeakQuestion = () => {
-    if (!currentQuestion) return;
-    speakText(currentQuestion, targetLangCode, settings);
+    if (!questionText) return;
+    speakText(questionText, targetLangCode, settings);
   };
   
     const handleWordClick = (word) => {
@@ -209,7 +215,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         <div className="question-card-write">
           <div className="question-header">
               <h3 className="question-text">
-                {currentQuestion.split(/(\s+)/).map((word, index) => (
+                {questionText.split(/(\s+)/).map((word, index) => (
                   word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
                 ))}
               </h3>
@@ -223,7 +229,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
           <textarea
               value={userResponse}
               onChange={(e) => setUserResponse(e.target.value)}
-              placeholder={`Type your answer in ${settings.targetLanguage}...`}
+              placeholder={`Type your answer in ${questionTargetLanguage}...`}
               rows="5"
               className="response-input"
               disabled={isSubmitted || isFetchingFeedback}
@@ -243,7 +249,7 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
             onClick={generateQuestions}
             disabled={isSavingSettings || isRetryingSave}
           >
-            {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New'}
+            {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New Questions'}
           </button>
 
           {currentQuestionIndex < questions.length - 1 && (

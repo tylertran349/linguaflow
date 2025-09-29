@@ -449,7 +449,14 @@ export const fetchPracticeQuestions = async (apiKey, settings, topic, history = 
     The output must be a single, valid JSON array of strings.
     Example: ["Quels sont tes passe-temps préférés ?", "Décris ton repas idéal."]
   `;
-  return await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate practice questions.");
+  
+  const questions = await _callGeminiModel(apiKey, settings, topic, history, specificInstructions, "Failed to generate practice questions.");
+  
+  // Transform the array of strings into objects with question text and target language
+  return questions.map(question => ({
+    text: question,
+    targetLanguage: settings.targetLanguage
+  }));
 };
 
 

@@ -176,8 +176,9 @@
   border-radius: var(--radius-lg);
   background-color: var(--color-white);
   color: var(--color-dark-grey);
-  resize: vertical;
-  min-height: 150px;
+  resize: none;
+  min-height: 250px;
+  height: 250px;
   transition: all var(--transition-fast);
 }
 
@@ -292,7 +293,6 @@
 }
 
 .nav-button.next,
-.nav-button.generate-new,
 .nav-button.submit {
   background: var(--color-green);
   color: var(--color-white);
@@ -301,10 +301,22 @@
 }
 
 .nav-button.next:hover,
-.nav-button.generate-new:hover,
 .nav-button.submit:hover {
   background: var(--color-green);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-button.generate-new {
+  background-color: var(--color-white);
+  color: var(--color-dark-grey);
+  border: 1px solid var(--color-light-grey);
+}
+
+.nav-button.generate-new:hover {
+  background-color: var(--color-light-grey);
+  border-color: var(--color-light-grey);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
@@ -336,6 +348,8 @@
   .response-input {
     font-size: var(--font-size-base);
     padding: var(--spacing-3);
+    min-height: 200px;
+    height: 200px;
   }
 
   .submit-button {
@@ -399,7 +413,8 @@
   .response-input {
     font-size: var(--font-size-base);
     padding: var(--spacing-3);
-    min-height: 120px;
+    min-height: 180px;
+    height: 180px;
   }
 
   .submit-button {
@@ -468,7 +483,8 @@
   .response-input {
     font-size: var(--font-size-sm);
     padding: var(--spacing-2);
-    min-height: 100px;
+    min-height: 150px;
+    height: 150px;
   }
 
   .submit-button {
