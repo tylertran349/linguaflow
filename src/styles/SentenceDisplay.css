@@ -209,7 +209,7 @@
 }
 
 .navigation button:disabled {
-  opacity: 0.5;
+  visibility: hidden;
   cursor: not-allowed;
   transform: none;
 }
