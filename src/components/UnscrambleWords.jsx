@@ -23,7 +23,7 @@ import '../styles/UnscrambleWords.css';
 
 const CORRECT_ADVANCE_DELAY = 1500;
 
-function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
+function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSavingSettings }) {
   // ... (all other state remains the same)
   const [sentences, setSentences] = useLocalStorage('unscrambleSentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('unscrambleCurrentIndex', 0);
@@ -35,8 +35,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Generating sentences, please wait...');
-  const [savingMessage, setSavingMessage] = useState('Saving your settings, please wait');
-  const [loadingSettingsMessage, setLoadingSettingsMessage] = useState('Loading settings');
+  const [savingMessage, setSavingMessage] = useState('Saving your settings');
   const [matchedSolution, setMatchedSolution] = useState(null);
   const [hasUserMovedCards, setHasUserMovedCards] = useState(false);
 
@@ -72,7 +71,7 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     let intervalId;
     if (isSavingSettings) {
       let dotCount = 0;
-      const baseMessage = 'Saving your settings, please wait';
+      const baseMessage = 'Saving your settings';
       setSavingMessage(baseMessage);
       intervalId = setInterval(() => {
         dotCount = (dotCount + 1) % 4; 
@@ -81,21 +80,6 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     }
     return () => clearInterval(intervalId);
   }, [isSavingSettings]);
-
-  // Effect for animated ellipsis during settings loading
-  useEffect(() => {
-    let intervalId;
-    if (isRetryingSave) {
-      let dotCount = 0;
-      const baseMessage = 'Saving your settings, please wait';
-      setLoadingSettingsMessage(baseMessage);
-      intervalId = setInterval(() => {
-        dotCount = (dotCount + 1) % 4; 
-        setLoadingSettingsMessage(`${baseMessage}${'.'.repeat(dotCount)}`);
-      }, 400); 
-    }
-    return () => clearInterval(intervalId);
-  }, [isRetryingSave]);
 
   // Function to split text into words and punctuation separately
   const splitIntoElements = (text) => {
@@ -167,8 +151,8 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
   };
 
   const generate = async () => {
-    if (isSavingSettings || isRetryingSave) {
-      return; // Prevent generation while settings are being saved or loaded
+    if (isSavingSettings) {
+      return; // Prevent generation while settings are being saved
     }
 
     if (!geminiApiKey) {
@@ -292,26 +276,20 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
     return <p className="status-message">{savingMessage}</p>;
   }
 
-  if (isRetryingSave) {
-    return <p className="status-message">{loadingSettingsMessage}</p>;
-  }
-
   // 2. Second Priority: Handle the initial state before any sentences have been generated.
   if (sentences.length === 0) {
     return (
-      <div className="unscramble-container">
-        <div className="initial-state-container">
-          {error && <p className="status-message error">{error}</p>}
-          <h2>Unscramble Words</h2>
-          <p>Drag and drop the words to form a correct sentence.</p>
-          <button 
-            className="generate-button" 
-            onClick={generate}
-            disabled={isSavingSettings || isRetryingSave}
-          >
-            Start Game
-          </button>
-        </div>
+      <div className="initial-state-container">
+        {error && <p className="status-message error">{error}</p>}
+        <h2>Unscramble Words</h2>
+        <p>Drag and drop the words to form a correct sentence.</p>
+        <button 
+          className="generate-button" 
+          onClick={generate}
+          disabled={isSavingSettings}
+        >
+          Start Game
+        </button>
       </div>
     );
   }
@@ -321,77 +299,72 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
 
   return (
     <div className="unscramble-container">
-      <div className="unscramble-card">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+      <div className="sentence-counter">Sentence {currentSentenceIndex + 1} / {sentences.length}</div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={userOrder} strategy={horizontalListSortingStrategy}>
+          <div className={dropzoneClassName}>
+            {userOrder.map((item, index) => (
+              <SortableWord
+                key={item.id}
+                id={item.id}
+                word={item.word}
+                type={item.type}
+                isIncorrect={isCorrect === false && incorrectIndices.includes(index)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activeItem ? (
+            <div className="word-tile dragging">{activeItem.word}</div>
+          ) : null}
+        </DragOverlay>
+
+      </DndContext>
+
+      {isCorrect === true && (
+        <div className="feedback-message correct">
+          Correct! <PartyPopper size={20} color="var(--color-green)" />
+        </div>
+      )}
+
+      <div className="actions-panel">
+        <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>{isHintVisible ? 'Hide Hint' : 'Show Hint'}</button>
+        <button className="action-button" onClick={showSolution}>Show Solution</button>
+        <button 
+          className="action-button generate-new" 
+          onClick={generate}
+          disabled={isSavingSettings}
         >
-          <SortableContext items={userOrder} strategy={horizontalListSortingStrategy}>
-            <div className={dropzoneClassName}>
-              {userOrder.map((item, index) => (
-                <SortableWord
-                  key={item.id}
-                  id={item.id}
-                  word={item.word}
-                  type={item.type}
-                  isIncorrect={isCorrect === false && incorrectIndices.includes(index)}
-                />
-              ))}
+          {isSavingSettings ? savingMessage : 'Generate New Set'}
+        </button>
+      </div>
+
+      {isHintVisible && (
+        <div className="hint-box">
+          <span className="hint-label">{settings.nativeLanguage} translation:</span>{currentSentence.native}
+          {currentSentence.alternatives && currentSentence.alternatives.length > 0 && (
+            <div className="hint-note">
+              <small>💡 Multiple grammatically correct arrangements are accepted! Try different word orders.</small>
             </div>
-          </SortableContext>
-
-          <DragOverlay>
-            {activeItem ? (
-              <div className="word-tile dragging">{activeItem.word}</div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-
-        {isCorrect === true && (
-          <div className="feedback-message correct">
-            Correct! <PartyPopper size={20} color="var(--color-green)" />
-          </div>
-        )}
-
-        <div className="actions">
-          <button className="action-button" onClick={() => setIsHintVisible(!isHintVisible)}>
-            {isHintVisible ? 'Hide Hint' : 'Show Hint'}
-          </button>
-          <button className="action-button" onClick={showSolution}>
-            Show Solution
-          </button>
-          <button 
-            className="action-button generate-button" 
-            onClick={generate}
-            disabled={isSavingSettings || isRetryingSave}
-          >
-            {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : 'Generate New Set'}
-          </button>
+          )}
         </div>
+      )}
 
-        {isHintVisible && (
-          <div className="hint-box">
-            <span className="hint-label">{settings.nativeLanguage} translation:</span>{currentSentence.native}
-            {currentSentence.alternatives && currentSentence.alternatives.length > 0 && (
-              <div className="hint-note">
-                <small>💡 Multiple grammatically correct arrangements are accepted! Try different word orders.</small>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="navigation">
-          <button onClick={() => handleNav(-1)} disabled={currentSentenceIndex === 0}>Back</button>
-          <span>{currentSentenceIndex + 1} / {sentences.length}</span>
-          <button
-            onClick={() => handleNav(1)}
-            disabled={currentSentenceIndex === sentences.length - 1 || (isCorrect && !isRevealed)}
-          >
-            Next
-          </button>
-        </div>
+      <div className="navigation">
+        <button onClick={() => handleNav(-1)} disabled={currentSentenceIndex === 0}>Back</button>
+        <button
+          onClick={() => handleNav(1)}
+          disabled={currentSentenceIndex === sentences.length - 1 || (isCorrect && !isRevealed)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
