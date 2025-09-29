@@ -218,10 +218,10 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
                 {questionText.split(/(\s+)/).map((word, index) => (
                   word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
                 ))}
+                <button onClick={handleSpeakQuestion} className="speak-button-inline" title="Pronounce question">
+                  <Volume2 size={20} color="var(--color-green)" />
+                </button>
               </h3>
-              <button onClick={handleSpeakQuestion} className="speak-button" title="Pronounce question">
-                <Volume2 size={20} color="var(--color-green)" />
-              </button>
           </div>
         </div>
 

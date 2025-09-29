@@ -5,27 +5,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--spacing-8);
 }
 
 /* Main Card */
 .write-a-response-card {
-  background-color: var(--color-white);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: var(--spacing-8);
   width: 80%;
-  margin: var(--spacing-8) auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
-  transition: all var(--transition-normal);
-  border: 1px solid var(--color-light-grey);
 }
 
-.write-a-response-card:hover {
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-2px);
-}
 
 /* Initial & Status States */
 .initial-state-container {
@@ -87,19 +77,11 @@
   padding: var(--spacing-6);
   box-shadow: var(--shadow-md);
   transition: all var(--transition-fast);
-  margin-bottom: var(--spacing-4);
 }
 
-.question-card-write:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-1px);
-}
 
 .question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--spacing-4);
+  display: block;
 }
 
 /* Unified Button Row */
@@ -108,7 +90,6 @@
   justify-content: center;
   align-items: center;
   gap: var(--spacing-4);
-  margin-top: var(--spacing-4);
   flex-wrap: wrap;
 }
 
@@ -129,10 +110,7 @@
 }
 
 .question-word:hover {
-  background: var(--color-green);
-  color: var(--color-white);
-  transform: scale(1.05);
-  box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
 .speak-button {
@@ -159,12 +137,39 @@
   transform: scale(0.95);
 }
 
+.speak-button-inline {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: var(--spacing-1);
+  border-radius: var(--radius-lg);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: var(--spacing-2);
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
+}
+
+.speak-button-inline:hover {
+  transform: scale(1.1);
+}
+
+.speak-button-inline:active {
+  transform: scale(0.95);
+}
+
 /* Response Area */
 .response-area {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
 }
 
 .response-input {
@@ -172,7 +177,7 @@
   padding: var(--spacing-4);
   font-family: inherit;
   font-size: var(--font-size-lg);
-  border: 2px solid var(--color-light-grey);
+  border: 2px solid transparent;
   border-radius: var(--radius-lg);
   background-color: var(--color-white);
   color: var(--color-dark-grey);
@@ -180,17 +185,15 @@
   min-height: 250px;
   height: 250px;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
 }
 
 .response-input:focus {
   outline: none;
   border-color: var(--color-green);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
 }
 
-.response-input:hover {
-  transform: translateY(-1px);
-}
 
 .response-input:disabled {
   background-color: var(--color-light-grey);
@@ -234,7 +237,6 @@
   padding: var(--spacing-4) var(--spacing-6);
   animation: feedbackSlideIn 0.5s ease-in-out;
   box-shadow: var(--shadow-sm);
-  margin-bottom: var(--spacing-4);
 }
 
 @keyframes feedbackSlideIn {
@@ -323,8 +325,11 @@
 .navigation {
   text-align: center;
   color: var(--color-dark-grey);
-  margin-top: var(--spacing-4);
   font-size: var(--font-size-sm);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Responsive Design */
@@ -332,8 +337,6 @@
 /* Tablet (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
   .write-a-response-card {
-    padding: var(--spacing-6);
-    margin: var(--spacing-6) auto;
     width: 85%;
   }
 
@@ -370,21 +373,16 @@
   }
 
   .write-a-response-card {
-    padding: var(--spacing-5);
-    margin: var(--spacing-4) auto;
     width: 95%;
     gap: var(--spacing-5);
   }
 
   .question-card-write {
     padding: var(--spacing-4);
-    margin: 0 var(--spacing-1);
   }
 
   .question-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-3);
+    display: block;
   }
 
   .unified-button-row {
@@ -459,15 +457,12 @@
   }
 
   .write-a-response-card {
-    padding: var(--spacing-4);
-    margin: var(--spacing-3) auto;
     width: 98%;
     gap: var(--spacing-4);
   }
 
   .question-card-write {
     padding: var(--spacing-3);
-    margin: 0;
   }
 
   .question-text {
@@ -565,7 +560,6 @@
 }
 
 /* Animation for card entrance */
-.write-a-response-card,
 .question-card-write {
   animation: cardSlideIn var(--transition-normal) ease-out;
 }
