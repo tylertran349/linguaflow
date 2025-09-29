@@ -359,26 +359,8 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
       )}
       
       {/* --- THIS IS THE MODIFIED LOGIC --- */}
-      {isAnswered && showFeedback && (
-        <div className="feedback-and-navigation">
-            {/* Check if we are on the last card */}
-            {currentPassageIndex < passages.length - 1 ? (
-                // If NOT the last question, show "Continue"
-                <button className="continue-button" onClick={handleContinue}>
-                    Continue
-                </button>
-            ) : (
-                // If it IS the last question, show completion message
-                <div className="completion-message">
-                  <Trophy size={24} color="var(--color-green)" />
-                  <span>All passages completed!</span>
-                </div>
-            )}
-        </div>
-      )}
-
-      {/* Always visible Generate button */}
-      <div className="generate-section">
+      <div className="button-row">
+        {/* Generate button - always visible */}
         <button 
           className="generate-new-button" 
           onClick={generate}
@@ -386,6 +368,21 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         >
           {isSavingSettings ? savingMessage : isRetryingSave ? loadingSettingsMessage : (isLoading ? 'Generating...' : 'Generate New Passages')}
         </button>
+        
+        {/* Continue button - only show when answered and not on last question */}
+        {isAnswered && showFeedback && currentPassageIndex < passages.length - 1 && (
+          <button className="continue-button" onClick={handleContinue}>
+            Continue
+          </button>
+        )}
+        
+        {/* Completion message - only show when answered and on last question */}
+        {isAnswered && showFeedback && currentPassageIndex >= passages.length - 1 && (
+          <div className="completion-message">
+            <Trophy size={24} color="var(--color-green)" />
+            <span>All passages completed!</span>
+          </div>
+        )}
       </div>
       {/* --- END OF MODIFICATION --- */}
     </div>
