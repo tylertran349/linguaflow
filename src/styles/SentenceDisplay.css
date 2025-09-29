@@ -93,10 +93,8 @@
 }
 
 .word:hover {
-  background: var(--color-green);
-  color: var(--color-white);
+  font-weight: 700;
   transform: scale(1.05);
-  box-shadow: var(--shadow-sm);
 }
 
 /* Mode Toggle */
