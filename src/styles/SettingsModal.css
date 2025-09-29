@@ -48,7 +48,6 @@
   padding: var(--spacing-6);
   text-align: center;
   position: relative;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-header h2 {
@@ -105,13 +104,11 @@
 
 /* Settings Sections */
 .settings-section {
-  border-top: 1px solid #e5e7eb;
   padding-top: var(--spacing-6);
   margin-bottom: var(--spacing-6);
 }
 
-.settings-section:first-of-type {
-  border-top: none;
+.settings-section.essential {
   padding-top: 0;
 }
 
@@ -259,7 +256,6 @@
   gap: var(--spacing-3);
   margin-top: var(--spacing-6);
   padding-top: var(--spacing-6);
-  border-top: 1px solid #e5e7eb;
 }
 
 .save-button {
