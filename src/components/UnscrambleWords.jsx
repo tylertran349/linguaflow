@@ -299,7 +299,6 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
 
   return (
     <div className="unscramble-container">
-      <div className="sentence-counter">Sentence {currentSentenceIndex + 1} / {sentences.length}</div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -359,6 +358,9 @@ function UnscrambleWords({ geminiApiKey, settings, topic, onApiKeyMissing, isSav
 
       <div className="navigation">
         <button onClick={() => handleNav(-1)} disabled={currentSentenceIndex === 0}>Back</button>
+        <div className="sentence-counter">
+          <span className="current-number">{currentSentenceIndex + 1}</span> / {sentences.length}
+        </div>
         <button
           onClick={() => handleNav(1)}
           disabled={currentSentenceIndex === sentences.length - 1 || (isCorrect && !isRevealed)}

@@ -47,6 +47,13 @@
   font-weight: 500;
 }
 
+.sentence-counter .current-number {
+  font-weight: 700;
+  color: var(--color-green);
+  min-width: auto;
+  text-align: left;
+}
+
 /* Drag-and-Drop Area */
 .word-bank {
   display: flex;
