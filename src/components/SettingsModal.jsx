@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import '../styles/SettingsModal.css';
 import { supportedLanguages } from '../utils/languages';
 
@@ -36,11 +37,12 @@ function SettingsModal({
   isRetryingSave = false
 }) {
   const [tempSettings, setTempSettings] = useState(currentSettings);
-  const [tempApiKey, setTempApiKey] = useState(currentApiKey);
-  const [tempTopic, setTempTopic] = useState(currentTopic);
+  const [tempApiKey, setTempApiKey] = useState(currentApiKey || '');
+  const [tempTopic, setTempTopic] = useState(currentTopic || '');
   const [errors, setErrors] = useState({});
   const [saveEllipses, setSaveEllipses] = useState('');
   const [loadingEllipses, setLoadingEllipses] = useState('');
+  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,6 +50,7 @@ function SettingsModal({
       setTempApiKey(currentApiKey || '');
       setTempTopic(currentTopic || '');
       setErrors({}); // Clear errors when modal opens
+      setIsApiKeyVisible(false); // Reset visibility when modal opens
     } else {
       // Clear ellipses when modal closes
       setSaveEllipses('');
@@ -269,15 +272,26 @@ function SettingsModal({
                   Click here for instructions on how to get a free Google Gemini API key
                 </a>
               </p>
-              <input 
-                id="gemini-key" 
-                type="text" 
-                value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} 
-                onChange={(e) => setTempApiKey(e.target.value)} 
-                placeholder="Enter your API key here..." 
-                disabled={isRetrying || isRetryingSave}
-                className="api-key-input"
-              />
+              <div className="api-key-container">
+                <input 
+                  id="gemini-key" 
+                  type={isApiKeyVisible ? "text" : "password"} 
+                  value={isRetrying ? `Loading${loadingEllipses}` : tempApiKey} 
+                  onChange={(e) => setTempApiKey(e.target.value)} 
+                  placeholder="Enter your API key here..." 
+                  disabled={isRetrying || isRetryingSave}
+                  className="api-key-input"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setIsApiKeyVisible(!isApiKeyVisible)} 
+                  className="api-key-toggle"
+                  title={isApiKeyVisible ? "Hide API Key" : "Show API Key"}
+                  disabled={isRetrying || isRetryingSave}
+                >
+                  {isApiKeyVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <div className="setting-item">

@@ -199,6 +199,41 @@
   font-family: 'Courier New', monospace;
 }
 
+.api-key-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.api-key-container .api-key-input {
+  padding-right: 40px; /* Make space for the icon */
+}
+
+.api-key-toggle {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
+  border: none;
+  background: transparent;
+  padding: 0 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: var(--radius-md);
+}
+
+.api-key-toggle:hover {
+  color: #1f2937;
+}
+
+.api-key-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .topic-textarea {
   min-height: 160px;
   font-family: inherit;
