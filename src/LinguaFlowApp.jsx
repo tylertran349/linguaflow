@@ -177,6 +177,7 @@ function LinguaFlowApp() {
         if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey); // <-- ADD THIS LINE
 
         // Always stop retrying when we successfully fetch settings (even if not currently retrying)
+        // This includes when the response is empty (new user with no settings)
         stopRetryingSettings();
         
         // Clear loading timeout and hide initial loading screen
@@ -187,8 +188,8 @@ function LinguaFlowApp() {
         setIsInitialLoading(false);
 
         const totalTime = Date.now() - startTime;
-        console.log(`Settings loaded successfully in ${totalTime}ms total`);
-        return true; // Success
+        console.log(`Settings loaded successfully in ${totalTime}ms total (empty response for new user is normal)`);
+        return true; // Success - even for empty responses
       } catch (error) {
         const totalTime = Date.now() - startTime;
         console.error(`Failed to fetch settings from DB after ${totalTime}ms:`, error);
@@ -268,26 +269,25 @@ function LinguaFlowApp() {
   }, []); 
 
   useEffect(() => {
-    if (!geminiApiKey && isSignedIn) {
+    if (!geminiApiKey && isSignedIn && !isRetryingSettings && !isSettingsModalOpen) {
       console.log('No API key detected, starting retry to fetch settings');
-      // Only start retrying if we're not already fetching settings
-      if (!isRetryingSettings) {
-        startRetryingSettings();
-      }
+      // Only start retrying if we're not already fetching settings and not in settings modal
+      startRetryingSettings();
     } else if (geminiApiKey) {
       console.log('API key detected, stopping any retry attempts');
       // If we have an API key, make sure we're not retrying
       stopRetryingSettings();
     }
-  }, [geminiApiKey, isRetryingSettings, isSignedIn]);
+  }, [geminiApiKey, isRetryingSettings, isSignedIn, isSettingsModalOpen]);
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
     if (window.innerWidth < MOBILE_BREAKPOINT) {
       setIsSidebarOpen(false);
     }
-    // Start retrying settings when modal is opened
-    startRetryingSettings();
+    // Stop any ongoing retries when opening the modal to prevent rapid switching
+    // between loading and default states
+    stopRetryingSettings();
   };
 
   const handleSaveSettings = async (data) => {
