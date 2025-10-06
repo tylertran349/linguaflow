@@ -23,6 +23,7 @@ const userSettingsSchema = new mongoose.Schema({
         temperature: Number,
         minSentenceLength: Number,
         maxSentenceLength: Number,
+        googleSearchEnabled: { type: Boolean, default: false },
     },
     
     // The topic string

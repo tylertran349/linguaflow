@@ -35,6 +35,7 @@ function LinguaFlowApp() {
     temperature: 1,
     minSentenceLength: 6,
     maxSentenceLength: 12,
+    googleSearchEnabled: false,
   });
   const [topic, setTopic] = useState('');
   

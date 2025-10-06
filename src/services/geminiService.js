@@ -90,11 +90,16 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Configure tools for Google Search grounding if enabled
+  const tools = settings.googleSearchEnabled ? [{ googleSearch: {} }] : undefined;
+  
   const model = genAI.getGenerativeModel({
     model: settings.model,
     generationConfig: {
       temperature: typeof settings.temperature === 'number' ? settings.temperature : 1,
-    }
+    },
+    tools: tools
   });
 
   const topicInstruction = (topic && topic.trim() !== '') 
@@ -130,6 +135,19 @@ const _callGeminiModel = async (apiKey, settings, topic, history, specificInstru
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    
+    // Check for Google Search grounding metadata
+    if (settings.googleSearchEnabled && result.response.candidates && result.response.candidates[0]) {
+      const groundingMetadata = result.response.candidates[0].groundingMetadata;
+      if (groundingMetadata) {
+        console.log('🔍 Google Search was used for this request!');
+        console.log('Search queries:', groundingMetadata.webSearchQueries);
+        console.log('Sources found:', groundingMetadata.groundingChunks?.length || 0);
+        console.log('Grounding metadata:', groundingMetadata);
+      } else {
+        console.log('ℹ️ Google Search was enabled but not used for this request');
+      }
+    }
     
     // Clean up the response text and extract JSON
     let jsonString = text.trim();
@@ -491,11 +509,16 @@ export const fetchResponseFeedback = async (apiKey, settings, question, userResp
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Configure tools for Google Search grounding if enabled
+  const tools = settings.googleSearchEnabled ? [{ googleSearch: {} }] : undefined;
+  
   const model = genAI.getGenerativeModel({ 
     model: settings.model,
     generationConfig: {
       temperature: typeof settings.temperature === 'number' ? settings.temperature : 1,
-    }
+    },
+    tools: tools
   });
 
   const prompt = `
@@ -519,6 +542,19 @@ export const fetchResponseFeedback = async (apiKey, settings, question, userResp
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
+    
+    // Check for Google Search grounding metadata
+    if (settings.googleSearchEnabled && result.response.candidates && result.response.candidates[0]) {
+      const groundingMetadata = result.response.candidates[0].groundingMetadata;
+      if (groundingMetadata) {
+        console.log('🔍 Google Search was used for feedback generation!');
+        console.log('Search queries:', groundingMetadata.webSearchQueries);
+        console.log('Sources found:', groundingMetadata.groundingChunks?.length || 0);
+      } else {
+        console.log('ℹ️ Google Search was enabled but not used for feedback');
+      }
+    }
+    
     return response.text();
   } catch (error) {
     console.error("Error fetching feedback from Gemini:", error);

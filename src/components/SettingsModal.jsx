@@ -514,6 +514,33 @@ function SettingsModal({
               {errors.maxSentenceLength && <p className="error-text">{errors.maxSentenceLength}</p>}
             </div>
 
+            <div className="setting-item">
+              <label htmlFor="googleSearchEnabled">
+                <span className="label-text">Enable Google Search</span>
+              </label>
+              <p className="setting-description">
+                When enabled, the AI can search the web for real-time information to generate more accurate and current content.<br/>
+                This may increase response time and costs but provides more factual and up-to-date information.
+              </p>
+              <div className="toggle-container">
+                <input
+                  type="checkbox"
+                  id="googleSearchEnabled"
+                  name="googleSearchEnabled"
+                  checked={isRetrying ? false : tempSettings.googleSearchEnabled || false}
+                  onChange={(e) => setTempSettings(prev => ({ ...prev, googleSearchEnabled: e.target.checked }))}
+                  disabled={isRetrying || isRetryingSave}
+                  className="toggle-input"
+                />
+                <label htmlFor="googleSearchEnabled" className="toggle-label">
+                  <span className="toggle-slider"></span>
+                </label>
+                <span className="toggle-text">
+                  {isRetrying ? `Loading${loadingEllipses}` : (tempSettings.googleSearchEnabled ? 'Enabled' : 'Disabled')}
+                </span>
+              </div>
+            </div>
+
           </div>
 
           {/* Advanced Settings Section */}
@@ -612,6 +639,7 @@ function SettingsModal({
               </div>
               {errors.temperature && <p className="error-text">{errors.temperature}</p>}
             </div>
+
           </div>
 
           <div className="modal-actions">
