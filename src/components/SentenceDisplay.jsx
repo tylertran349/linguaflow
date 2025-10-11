@@ -718,19 +718,50 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
 
   const renderNativeSentence = (fullSentence, colorMap) => {
-    if (!fullSentence || typeof fullSentence !== 'string' || !colorMap || !Array.isArray(colorMap)) return null;
-    const nativeToColorMap = new Map(
-      colorMap.filter(item => item && typeof item === 'object' && item.native && typeof item.native === 'string' && item.native.trim() !== '').map(item => [item.native.trim().toLowerCase(), item.color])
-    );
+    if (!fullSentence || typeof fullSentence !== 'string' || !colorMap || !Array.isArray(colorMap)) {
+      return <span>{fullSentence}</span>;
+    }
+  
+    const nativeToColorMap = new Map();
+    const fullSentenceLower = fullSentence.toLowerCase();
+  
+    // Pass 1: Populate the map with original phrases from the colorMap.
+    colorMap.forEach(item => {
+      if (item && item.native && typeof item.native === 'string' && item.native.trim() !== '') {
+        nativeToColorMap.set(item.native.trim().toLowerCase(), item.color);
+      }
+    });
+  
+    // Pass 2: Identify phrases that don't appear contiguously in the sentence.
+    const phrasesToBreakdown = [];
+    nativeToColorMap.forEach((color, phrase) => {
+      if (phrase.includes(' ') && !fullSentenceLower.includes(phrase)) {
+        phrasesToBreakdown.push(phrase);
+      }
+    });
+  
+    // Pass 3: For non-contiguous phrases, break them down and add individual words to the map.
+    phrasesToBreakdown.forEach(phrase => {
+      const color = nativeToColorMap.get(phrase);
+      nativeToColorMap.delete(phrase); // Remove the original multi-word phrase.
+  
+      const words = phrase.split(/\s+/);
+      words.forEach(word => {
+        if (word && !nativeToColorMap.has(word)) { // Avoid overwriting colors of words that are part of other phrases.
+          nativeToColorMap.set(word, color);
+        }
+      });
+    });
+  
     const phrasesToFind = Array.from(nativeToColorMap.keys()).sort((a, b) => b.length - a.length);
-
+  
     if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
-
+  
     const regex = new RegExp(`(${phrasesToFind.map(escapeRegExp).join('|')})`, 'gi');
     const matches = [...fullSentence.matchAll(regex)];
     const result = [];
     let lastIndex = 0;
-
+  
     for (const match of matches) {
       if (match.index > lastIndex) {
         result.push(fullSentence.substring(lastIndex, match.index));
@@ -741,7 +772,7 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       result.push(<span key={`match-${match.index}`} style={{ color }}>{matchedText}</span>);
       lastIndex = match.index + matchedText.length;
     }
-
+  
     if (lastIndex < fullSentence.length) {
       result.push(fullSentence.substring(lastIndex));
     }
