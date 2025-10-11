@@ -434,6 +434,25 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       setSentences(newSentences);
       
       setCurrentSentenceIndex(0);
+      
+      // Add the first sentence of the new set to history since it's automatically shown
+      if (newSentences.length > 0) {
+        const firstSentence = newSentences[0];
+        const historyEntry = {
+          sentence: firstSentence.targetSentence,
+          targetLanguage: settings.targetLanguage
+        };
+        
+        setSentenceHistory(prev => {
+          // Remove any existing entry with the same sentence and language to prevent duplicates
+          const filtered = prev.filter(entry => 
+            !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+          );
+          
+          // Add new entry and maintain size limit
+          return [...filtered, historyEntry].slice(-settings.sentenceDisplayHistorySize);
+        });
+      }
 
     } catch (err) {
       setError(err.message);
@@ -443,8 +462,6 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
   
   const handleBack = () => {
-    addCurrentSentenceToHistory();
-
     const newIndex = currentSentenceIndex - 1;
     if (newIndex >= 0) {
         setCurrentSentenceIndex(newIndex);
@@ -454,9 +471,28 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   
   const handleNext = () => {
     if (currentSentenceIndex < sentences.length - 1) {
-      addCurrentSentenceToHistory();
+      const nextIndex = currentSentenceIndex + 1;
+      const nextSentence = sentences[nextIndex];
+      
+      // Add the next sentence to history before navigating to it
+      if (nextSentence) {
+        const historyEntry = {
+          sentence: nextSentence.targetSentence,
+          targetLanguage: settings.targetLanguage
+        };
+        
+        setSentenceHistory(prev => {
+          // Remove any existing entry with the same sentence and language to prevent duplicates
+          const filtered = prev.filter(entry => 
+            !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+          );
+          
+          // Add new entry and maintain size limit
+          return [...filtered, historyEntry].slice(-settings.sentenceDisplayHistorySize);
+        });
+      }
 
-      setCurrentSentenceIndex(prev => prev + 1);
+      setCurrentSentenceIndex(nextIndex);
       setShowTranslation(false);
     }
   };
