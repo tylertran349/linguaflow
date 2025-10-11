@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLanguageHistoryCleanup } from '../hooks/useLanguageHistoryCleanup';
 import { fetchPracticeQuestions, fetchResponseFeedback } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -14,6 +15,9 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [questions, setQuestions] = useLocalStorage('practiceQuestions', []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useLocalStorage('practiceQuestionIndex', 0);
   const [questionHistory, setQuestionHistory] = useLocalStorage('practiceQuestionHistory', []);
+  
+  // Automatically clean up history when language changes
+  useLanguageHistoryCleanup(questionHistory, settings?.targetLanguage, setQuestionHistory, 'questionHistory');
   
   const [userResponse, setUserResponse] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -107,7 +111,20 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     if (lastViewedQuestion) {
         // Convert to the format expected by the API (just the text)
         const questionForHistory = typeof lastViewedQuestion === 'string' ? lastViewedQuestion : lastViewedQuestion.text;
-        setQuestionHistory(prev => [...prev, questionForHistory].slice(-settings.writeAResponseHistorySize));
+        const historyEntry = {
+          sentence: questionForHistory,
+          targetLanguage: settings.targetLanguage
+        };
+        
+        setQuestionHistory(prev => {
+          // Remove any existing entry with the same sentence and language to prevent duplicates
+          const filtered = prev.filter(entry => 
+            !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+          );
+          
+          // Add new entry and maintain size limit
+          return [...filtered, historyEntry].slice(-settings.writeAResponseHistorySize);
+        });
     }
 
     setIsLoadingQuestions(true);
@@ -155,7 +172,20 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
       if (questionToAdd) {
         // Convert to the format expected by the API (just the text)
         const questionForHistory = typeof questionToAdd === 'string' ? questionToAdd : questionToAdd.text;
-        setQuestionHistory(prev => [...prev, questionForHistory].slice(-settings.writeAResponseHistorySize));
+        const historyEntry = {
+          sentence: questionForHistory,
+          targetLanguage: settings.targetLanguage
+        };
+        
+        setQuestionHistory(prev => {
+          // Remove any existing entry with the same sentence and language to prevent duplicates
+          const filtered = prev.filter(entry => 
+            !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+          );
+          
+          // Add new entry and maintain size limit
+          return [...filtered, historyEntry].slice(-settings.writeAResponseHistorySize);
+        });
       }
 
       // Now, navigate to the next question

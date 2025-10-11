@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, RotateCcw, Trophy, Target } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLanguageHistoryCleanup } from '../hooks/useLanguageHistoryCleanup';
 import { fetchComprehensionPassages } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -14,6 +15,10 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
   const [currentPassageIndex, setCurrentPassageIndex] = useLocalStorage('comprehensionPassageIndex', 0);
   const [passageHistory, setPassageHistory] = useLocalStorage('comprehensionHistory', []);
   const [score, setScore] = useLocalStorage('comprehensionScore', { correct: 0, total: 0 });
+  
+  // Automatically clean up history when language changes
+  useLanguageHistoryCleanup(passageHistory, settings?.targetLanguage, setPassageHistory, 'passageHistory');
+  
   const [showConfetti, setShowConfetti] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -162,7 +167,20 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
       // Add the passage we are leaving to the history
       const passageToAdd = passages[currentPassageIndex];
       if (passageToAdd?.passage) {
-          setPassageHistory(prev => [...prev, passageToAdd.passage].slice(-settings.readAndRespondHistorySize));
+        const historyEntry = {
+          sentence: passageToAdd.passage,
+          targetLanguage: settings.targetLanguage
+        };
+        
+        setPassageHistory(prev => {
+          // Remove any existing entry with the same sentence and language to prevent duplicates
+          const filtered = prev.filter(entry => 
+            !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+          );
+          
+          // Add new entry and maintain size limit
+          return [...filtered, historyEntry].slice(-settings.readAndRespondHistorySize);
+        });
       }
 
       // Now, navigate to the next passage

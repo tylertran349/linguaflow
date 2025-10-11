@@ -5,6 +5,7 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
+import { useLanguageHistoryCleanup } from '../hooks/useLanguageHistoryCleanup';
 import '../styles/SentenceDisplay.css';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
@@ -67,6 +68,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [sentences, setSentences] = useLocalStorage('sentences', []);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useLocalStorage('currentSentenceIndex', 0);
   const [sentenceHistory, setSentenceHistory] = useLocalStorage('sentenceHistory', []);
+  
+  // Automatically clean up history when language changes
+  useLanguageHistoryCleanup(sentenceHistory, settings?.targetLanguage, setSentenceHistory, 'sentenceHistory');
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -392,11 +396,20 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const addCurrentSentenceToHistory = () => {
     const sentenceToAddToHistory = sentences[currentSentenceIndex];
     if (sentenceToAddToHistory) {
-      setSentenceHistory(prev => 
-        // Prevent duplicates in history
-        [...new Set([...prev, sentenceToAddToHistory.targetSentence])]
-        .slice(-(settings && settings.sentenceDisplayHistorySize ? settings.sentenceDisplayHistorySize : 50))
-      );
+      const historyEntry = {
+        sentence: sentenceToAddToHistory.targetSentence,
+        targetLanguage: settings.targetLanguage
+      };
+      
+      setSentenceHistory(prev => {
+        // Remove any existing entry with the same sentence and language to prevent duplicates
+        const filtered = prev.filter(entry => 
+          !(entry.sentence === historyEntry.sentence && entry.targetLanguage === historyEntry.targetLanguage)
+        );
+        
+        // Add new entry and maintain size limit
+        return [...filtered, historyEntry].slice(-settings.sentenceDisplayHistorySize);
+      });
     }
   };
 
