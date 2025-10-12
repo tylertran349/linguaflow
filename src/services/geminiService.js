@@ -1441,8 +1441,9 @@ export const fetchSentencesFromGemini = async (apiKey, settings, topic, history 
     **MANDATORY GRANULARITY RULE:**
     The "wordMap" must be broken down into the smallest possible meaningful units.
     1.  **SEPARATE NOUNS AND ADJECTIVES:** A noun and the adjective(s) that modify it MUST be in separate objects in the map.
-    2.  **SEPARATE VERBS AND OBJECTS:** A verb and its object must be in separate map objects.
-    3.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes or fixed expressions).
+    2.  **SEPARATE DEMONSTRATIVE PRONOUNS:** A noun and a demonstrative pronoun (e.g., this, that, these, those, and their equivalents in other languages) that modifies it MUST be in separate objects in the map. For example, for "this book", "this" and "book" should be in separate objects.
+    3.  **SEPARATE VERBS AND OBJECTS:** A verb and its object must be in separate map objects.
+    4.  **AVOID GROUPING:** Do not group words into phrases unless absolutely necessary for meaning (e.g., compound lexemes or fixed expressions).
 
     **CRITICAL MAPPING RULE:**
     The "wordMap" MUST be a complete decomposition of the "nativeSentence". EVERY SINGLE WORD that appears in the "nativeSentence" must be present as a "native" value in one of the "wordMap" objects. There can be NO omissions. Grammatical words like "the", "a", "of" must be included.
