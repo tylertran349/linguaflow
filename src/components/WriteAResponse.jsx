@@ -204,9 +204,25 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     const handleWordClick = (word) => {
         if (!word) return;
         const cleanedWord = word.replace(/[.,!?;:"]$/, '');
-        // BEFORE (Incorrect): speakText(cleanedWord, targetLangCode, settings.ttsEngine);
-        // AFTER (Correct):
-        speakText(cleanedWord, targetLangCode, settings);
+        
+        // Check if the word contains spaces (indicating it's a word chunk)
+        if (cleanedWord.includes(' ')) {
+          // Split the word chunk into individual words and speak each one
+          const individualWords = cleanedWord.trim().split(/\s+/);
+          console.log(`TTS: Word chunk "${cleanedWord}" detected, splitting into individual words:`, individualWords);
+          
+          // Speak each individual word with a small delay between them
+          individualWords.forEach((individualWord, index) => {
+            setTimeout(() => {
+              console.log(`TTS: Speaking individual word "${individualWord}" in language ${questionTargetLanguage} (${targetLangCode})`);
+              speakText(individualWord, targetLangCode, settings);
+            }, index * 500); // 500ms delay between words
+          });
+        } else {
+          // Single word, speak normally
+          console.log(`TTS: Speaking word "${cleanedWord}" in language ${questionTargetLanguage} (${targetLangCode})`);
+          speakText(cleanedWord, targetLangCode, settings);
+        }
     };
   
   if (isLoadingQuestions) return <p className="status-message">{loadingMessage}</p>;
@@ -245,9 +261,23 @@ function WriteAResponse({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
         <div className="question-card-write">
           <div className="question-header">
               <h3 className="question-text">
-                {questionText.split(/(\s+)/).map((word, index) => (
-                  word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span> : word
-                ))}
+                {questionText.split(/(\s+)/).map((word, index) => {
+                  if (!word.trim()) return word;
+                  
+                  // Check if the word contains spaces (indicating it's a word chunk)
+                  if (word.includes(' ')) {
+                    // Split the word chunk into individual words and make each clickable
+                    const individualWords = word.split(/(\s+)/);
+                    return individualWords.map((individualWord, wordIndex) => (
+                      individualWord.trim() ? 
+                        <span key={`${index}-${wordIndex}`} onClick={() => handleWordClick(individualWord)} className="question-word">{individualWord}</span> : 
+                        individualWord
+                    ));
+                  } else {
+                    // Single word, render normally
+                    return <span key={index} onClick={() => handleWordClick(word)} className="question-word">{word}</span>;
+                  }
+                })}
                 <button onClick={handleSpeakQuestion} className="speak-button-inline" title="Pronounce question">
                   <Volume2 size={20} color="var(--color-green)" />
                 </button>

@@ -513,8 +513,24 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     
     const langCode = getLanguageCode(targetLanguage);
     if (langCode) {
-      console.log(`TTS: Speaking word "${word}" in language ${targetLanguage} (${langCode})`);
-      speakText(word, langCode, settings);
+      // Check if the word contains spaces (indicating it's a word chunk)
+      if (word.includes(' ')) {
+        // Split the word chunk into individual words and speak each one
+        const individualWords = word.trim().split(/\s+/);
+        console.log(`TTS: Word chunk "${word}" detected, splitting into individual words:`, individualWords);
+        
+        // Speak each individual word with a small delay between them
+        individualWords.forEach((individualWord, index) => {
+          setTimeout(() => {
+            console.log(`TTS: Speaking individual word "${individualWord}" in language ${targetLanguage} (${langCode})`);
+            speakText(individualWord, langCode, settings);
+          }, index * 500); // 500ms delay between words
+        });
+      } else {
+        // Single word, speak normally
+        console.log(`TTS: Speaking word "${word}" in language ${targetLanguage} (${langCode})`);
+        speakText(word, langCode, settings);
+      }
     } else {
       console.error(`Language code not found for ${targetLanguage}`);
     }
@@ -655,16 +671,39 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
       const lookupKey = matchedText.trim().toLowerCase();
       const info = targetToInfoMap.get(lookupKey);
 
-      result.push(
-        <span
-          key={`match-${match.index}`}
-          className="word"
-          onClick={() => handleWordSpeak(info.target, sentence)}
-          style={{ color: info.color }}
-        >
-          {matchedText}
-        </span>
-      );
+      // Check if the matched text contains spaces (word chunk)
+      if (matchedText.includes(' ')) {
+        // Split the word chunk into individual words and make each clickable
+        const individualWords = matchedText.split(/(\s+)/);
+        individualWords.forEach((word, wordIndex) => {
+          if (word.trim()) {
+            result.push(
+              <span
+                key={`match-${match.index}-${wordIndex}`}
+                className="word"
+                onClick={() => handleWordSpeak(word.trim(), sentence)}
+                style={{ color: info.color }}
+              >
+                {word}
+              </span>
+            );
+          } else {
+            result.push(word);
+          }
+        });
+      } else {
+        // Single word, render normally
+        result.push(
+          <span
+            key={`match-${match.index}`}
+            className="word"
+            onClick={() => handleWordSpeak(info.target, sentence)}
+            style={{ color: info.color }}
+          >
+            {matchedText}
+          </span>
+        );
+      }
       lastIndex = match.index + matchedText.length;
     }
 

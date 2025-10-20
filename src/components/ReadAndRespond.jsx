@@ -223,8 +223,24 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
     
     const langCode = supportedLanguages.find(l => l.name === settings.targetLanguage)?.code;
     if (langCode) {
-      console.log(`TTS: Speaking word "${cleanedWord}" in language ${settings.targetLanguage} (${langCode})`);
-      speakText(cleanedWord, langCode, settings);
+      // Check if the word contains spaces (indicating it's a word chunk)
+      if (cleanedWord.includes(' ')) {
+        // Split the word chunk into individual words and speak each one
+        const individualWords = cleanedWord.trim().split(/\s+/);
+        console.log(`TTS: Word chunk "${cleanedWord}" detected, splitting into individual words:`, individualWords);
+        
+        // Speak each individual word with a small delay between them
+        individualWords.forEach((individualWord, index) => {
+          setTimeout(() => {
+            console.log(`TTS: Speaking individual word "${individualWord}" in language ${settings.targetLanguage} (${langCode})`);
+            speakText(individualWord, langCode, settings);
+          }, index * 500); // 500ms delay between words
+        });
+      } else {
+        // Single word, speak normally
+        console.log(`TTS: Speaking word "${cleanedWord}" in language ${settings.targetLanguage} (${langCode})`);
+        speakText(cleanedWord, langCode, settings);
+      }
     } else {
       console.error(`Language code not found for ${settings.targetLanguage}`);
     }
@@ -320,9 +336,23 @@ function ReadAndRespond({ geminiApiKey, settings, topic, onApiKeyMissing, isSavi
             <h3>Read the passage</h3>
         </div>
         <p className="passage-text">
-          {currentPassageData.passage?.split(/(\s+)/).map((word, index) => (
-             word.trim() ? <span key={index} onClick={() => handleWordClick(word)} className="passage-word">{word}</span> : word
-          )) || 'No passage text available.'}
+          {currentPassageData.passage?.split(/(\s+)/).map((word, index) => {
+            if (!word.trim()) return word;
+            
+            // Check if the word contains spaces (indicating it's a word chunk)
+            if (word.includes(' ')) {
+              // Split the word chunk into individual words and make each clickable
+              const individualWords = word.split(/(\s+)/);
+              return individualWords.map((individualWord, wordIndex) => (
+                individualWord.trim() ? 
+                  <span key={`${index}-${wordIndex}`} onClick={() => handleWordClick(individualWord)} className="passage-word">{individualWord}</span> : 
+                  individualWord
+              ));
+            } else {
+              // Single word, render normally
+              return <span key={index} onClick={() => handleWordClick(word)} className="passage-word">{word}</span>;
+            }
+          }) || 'No passage text available.'}
         </p>
       </article>
 
