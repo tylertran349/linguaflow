@@ -620,7 +620,7 @@ function SettingsModal({
                 <span className="label-text">Temperature</span>
               </label>
               <p className="setting-description">
-                Lower values lead to more predictable and focused content, higher values lead to more creative and varied content<br/>
+                Lower values result inmore predictable and focused content, higher values result in more creative and varied content<br/>
                 Range: 0.0 - 2.0 (default is 2.0)<br/>
               </p>
               <div className="input-with-unit">
