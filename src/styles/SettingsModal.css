@@ -239,6 +239,39 @@
   font-family: inherit;
 }
 
+.clear-topic-button {
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  background-color: #fef2f2;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  align-self: flex-start;
+}
+
+.clear-topic-button:hover:not(:disabled) {
+  background-color: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+.clear-topic-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #fef2f2;
+  color: #fca5a5;
+}
+
+.clear-topic-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 .input-with-unit {
   display: flex;
   align-items: center;

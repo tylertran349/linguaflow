@@ -438,6 +438,15 @@ function SettingsModal({
                 className="topic-textarea"
                 style={{ resize: 'none' }}
               />
+              <button
+                type="button"
+                onClick={() => setTempTopic('')}
+                disabled={isRetrying || isRetryingSave || !tempTopic.trim()}
+                className="clear-topic-button"
+                title="Clear topic"
+              >
+                Clear Topic
+              </button>
             </div>
 
             <div className="setting-item">
