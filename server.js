@@ -246,6 +246,32 @@ app.get('/api/sentences/review', ClerkExpressRequireAuth(), async (req, res) => 
     }
 });
 
+// --- FETCH ALL STARRED SENTENCES (for search) ---
+app.get('/api/sentences/starred', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        
+        // Find all starred sentences for the user (not filtered by due date)
+        const allStarredSentences = await Sentence.find({
+            userId: userId,
+            starred: true
+        }).sort({ reviewDueDate: -1 }); // Sort by most recently added first
+
+        // Handle backward compatibility: add targetLanguage if missing
+        const processedSentences = allStarredSentences.map(sentence => {
+            if (!sentence.targetLanguage) {
+                sentence.targetLanguage = null; // This will trigger fallback in frontend
+            }
+            return sentence;
+        });
+
+        res.json(processedSentences);
+    } catch (error) {
+        console.error("Error fetching starred sentences:", error);
+        res.status(500).json({ message: 'Failed to fetch starred sentences.' });
+    }
+});
+
 // --- SAVE A NEW SENTENCE ---
 app.post('/api/sentences/save', ClerkExpressRequireAuth(), async (req, res) => {
     try {

@@ -82,7 +82,23 @@ function LinguaFlowApp() {
   const attemptSaveSettings = async (data) => {
     setIsSavingSettings(true);
     try {
+      // Check if user is signed in before attempting to get token
+      if (!isSignedIn) {
+        console.error('Cannot save settings: User is not signed in');
+        setIsSavingSettings(false);
+        return false;
+      }
+
       const token = await getToken();
+      
+      if (!token) {
+        console.error('Cannot save settings: Failed to get authentication token');
+        setIsSavingSettings(false);
+        return false;
+      }
+
+      console.log('Attempting to save settings with token:', token ? `${token.substring(0, 20)}...` : 'null');
+
       const response = await fetch(`${API_BASE_URL}/api/settings`, {
         method: 'PUT',
         headers: {
@@ -97,6 +113,9 @@ function LinguaFlowApp() {
       });
 
       if (!response.ok) {
+        // Log more details about the error
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -158,6 +177,12 @@ function LinguaFlowApp() {
       try {
         console.log('Fetching user settings...');
         const token = await getToken();
+        
+        if (!token) {
+          console.error('Cannot fetch settings: Failed to get authentication token');
+          return false;
+        }
+        
         const tokenTime = Date.now();
         console.log(`Token obtained in ${tokenTime - startTime}ms`);
         
@@ -168,6 +193,8 @@ function LinguaFlowApp() {
         console.log(`API request completed in ${fetchTime - tokenTime}ms`);
         
         if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
           throw new Error('Could not fetch user settings.');
         }
         const data = await response.json();

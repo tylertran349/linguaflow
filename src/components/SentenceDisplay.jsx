@@ -1,6 +1,6 @@
 // src/components/SentenceDisplay.jsx
 import { useState, useEffect } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, AlertCircle } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, AlertCircle, Search } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
@@ -63,6 +63,10 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   const [initialReviewCount, setInitialReviewCount] = useState(0); // Track initial count for accurate progress
   const [starredSentences, setStarredSentences] = useState(new Set()); // Track starred sentences
   const [isProcessingReview, setIsProcessingReview] = useState(false); // Prevent double-clicks
+  const [searchQuery, setSearchQuery] = useState(''); // Search query for starred sentences
+  const [allStarredSentences, setAllStarredSentences] = useState([]); // All starred sentences for search
+  const [searchLoading, setSearchLoading] = useState(false); // Loading state for search
+  const [showSearchResults, setShowSearchResults] = useState(false); // Whether to show search results
 
   // Existing State
   const [sentences, setSentences] = useLocalStorage('sentences', []);
@@ -245,6 +249,81 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
     
     // Start the first attempt
     attemptFetch();
+  };
+
+  // --- FUNCTION: FETCH ALL STARRED SENTENCES FOR SEARCH ---
+  const handleFetchAllStarredSentences = async () => {
+    setSearchLoading(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE_URL}/api/sentences/starred`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Failed to fetch starred sentences.`);
+      }
+      
+      const data = await response.json();
+      setAllStarredSentences(data);
+      setSearchLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch starred sentences:', err);
+      setReviewError('Error: Failed to fetch starred sentences for search.');
+      setSearchLoading(false);
+    }
+  };
+
+  // --- FUNCTION: HANDLE SEARCH ---
+  useEffect(() => {
+    if (mode === 'review' && searchQuery.trim() !== '') {
+      // Fetch all starred sentences when search query is entered
+      if (allStarredSentences.length === 0 && !searchLoading) {
+        handleFetchAllStarredSentences();
+      }
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, mode]);
+
+  // Filter sentences based on search query
+  const filteredStarredSentences = searchQuery.trim() === '' ? [] : allStarredSentences.filter(sentence => {
+    const query = searchQuery.toLowerCase();
+    const targetLower = sentence.targetSentence?.toLowerCase() || '';
+    const nativeLower = sentence.nativeSentence?.toLowerCase() || '';
+    return targetLower.includes(query) || nativeLower.includes(query);
+  });
+
+  // --- FUNCTION: SELECT SENTENCE FROM SEARCH ---
+  const handleSelectSearchSentence = (sentence) => {
+    // Check if sentence is already in review list
+    setReviewSentences(prev => {
+      const isAlreadyInReview = prev.some(s => s._id === sentence._id);
+      if (!isAlreadyInReview) {
+        // Add to beginning of list and set as current
+        const updated = [sentence, ...prev];
+        setCurrentReviewIndex(0);
+        setTotalReviewSentences(updated.length);
+        if (prev.length === 0) {
+          setInitialReviewCount(1);
+        }
+        return updated;
+      } else {
+        // Find existing index and set as current
+        const sentenceIndex = prev.findIndex(s => s._id === sentence._id);
+        if (sentenceIndex !== -1) {
+          setCurrentReviewIndex(sentenceIndex);
+        }
+        return prev;
+      }
+    });
+    
+    // Clear search and hide results
+    setSearchQuery('');
+    setShowSearchResults(false);
+    setShowTranslation(false);
   };
 
   // --- FUNCTION: STAR/UNSTAR SENTENCE ---
@@ -837,6 +916,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
                     setTotalReviewSentences(0);
                     setInitialReviewCount(0);
                     setCurrentReviewIndex(0);
+                    // Clear search
+                    setSearchQuery('');
+                    setShowSearchResults(false);
                 }}
             >
                 Learn New
@@ -846,6 +928,9 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
               onClick={() => {
                   addCurrentSentenceToHistory();
                   setMode('review');
+                  // Clear search when starting review
+                  setSearchQuery('');
+                  setShowSearchResults(false);
                   handleFetchReviewSentences();
               }}
             >
@@ -856,6 +941,39 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   };
   
   const renderReviewMode = () => {
+    // Show search results if search is active
+    if (showSearchResults && searchQuery.trim() !== '') {
+      return (
+        <div className="search-container">
+          {searchLoading ? (
+            <p className="status-message">Loading starred sentences...</p>
+          ) : filteredStarredSentences.length === 0 ? (
+            <p className="status-message">No starred sentences found matching your search.</p>
+          ) : (
+            <div className="search-results">
+              <p className="search-results-count">{filteredStarredSentences.length} result(s) found</p>
+              <div className="search-results-list">
+                {filteredStarredSentences.map((sentence) => (
+                  <div
+                    key={sentence._id}
+                    className="search-result-item"
+                    onClick={() => handleSelectSearchSentence(sentence)}
+                  >
+                    <div className="search-result-target">
+                      {renderTargetSentence(sentence.targetSentence, sentence.colorMapping, null, null, sentence)}
+                    </div>
+                    <div className="search-result-native">
+                      {renderNativeSentence(sentence.nativeSentence, sentence.colorMapping)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (reviewLoading) return <p className="status-message">{loadingMessage}</p>;
     if (isSavingSettings) return <p className="status-message">{savingMessage}</p>;
     if (isRetryingSave) return <p className="status-message">{loadingSettingsMessage}</p>;
@@ -1064,6 +1182,32 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   return (
     <div className="sentence-display-container">
         {renderModeToggle()}
+        {mode === 'review' && (
+          <div className="search-bar-container">
+            <Search size={20} strokeWidth={2.5} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search starred sentences..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (allStarredSentences.length === 0 && !searchLoading) {
+                  handleFetchAllStarredSentences();
+                }
+              }}
+            />
+            {searchQuery && (
+              <button 
+                className="search-clear-button"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        )}
         {mode === 'learn' ? renderLearnMode() : renderReviewMode()}
     </div>
   );
