@@ -774,6 +774,7 @@
   justify-content: center;
   gap: var(--spacing-3);
   min-height: 100px;
+  overflow-wrap: break-word;
 }
 
 .study-answer {
@@ -794,6 +795,7 @@
   justify-content: center;
   gap: var(--spacing-3);
   min-height: 80px;
+  overflow-wrap: break-word;
 }
 
 .tts-button-large {
@@ -957,25 +959,161 @@
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+    .grade-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-4);
+    }
+}
+
 @media (max-width: 768px) {
-  .sets-grid,
-  .cards-list-view {
-    grid-template-columns: 1fr;
-  }
+    .flashcards-container {
+        padding: var(--spacing-2);
+    }
+
+    .flashcards-sets-list,
+    .flashcards-create-edit,
+    .flashcards-view {
+        width: 100%;
+        padding: var(--spacing-4);
+    }
+
+    .sets-header,
+    .create-header,
+    .cards-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-3);
+    }
+
+    .sets-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cards-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .cards-actions button {
+        width: 100%;
+        justify-content: center;
+    }
   
-  .grade-buttons {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    .card-content {
+        flex-direction: column;
+    }
+
+    .card-item-view {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-3);
+    }
+
+    .card-term {
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+        width: 100%;
+        padding-bottom: var(--spacing-3);
+    }
   
-  .view-header,
-  .study-header {
-    flex-direction: column;
-    gap: var(--spacing-3);
-  }
+    .grade-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
   
-  .view-actions {
-    flex-wrap: wrap;
-  }
+    .view-header,
+    .study-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-4);
+    }
+
+    .view-header > div:first-child {
+        width: 100%;
+    }
+
+    .study-header {
+        width: 100%;
+    }
+  
+    .view-actions {
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .flashcards-study {
+        padding: var(--spacing-2);
+    }
+
+    .study-card {
+        padding: var(--spacing-4);
+        min-height: auto;
+    }
+
+    .question-text {
+        font-size: var(--font-size-xl);
+    }
+
+    .answer-text {
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .sets-header h2,
+    .create-header h2,
+    .view-header h2,
+    .study-header h2 {
+        font-size: var(--font-size-xl);
+    }
+
+    .grade-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .decision-button {
+        padding: var(--spacing-3);
+    }
+
+    .import-options,
+    .radio-group {
+        flex-direction: column;
+    }
+    
+    .radio-group label {
+        width: 100%;
+    }
+
+    .custom-separator-input {
+        width: 100px;
+    }
+
+    .written-answer-form {
+        flex-direction: column;
+    }
+
+    .written-answer-form button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .study-options-modal {
+        width: 95vw;
+        max-height: 85vh;
+    }
+
+    .modal-header {
+        padding: var(--spacing-4);
+    }
+
+    .close-button {
+        top: 1rem;
+        right: 1rem;
+    }
+    
+    .modal-scroll-wrapper {
+        padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
+    }
 }
 
 .modal-backdrop {
@@ -1152,4 +1290,62 @@ input:focus + .slider {
 
 input:checked + .slider:before {
     transform: translateX(22px);
+}
+
+.study-options-modal .form-group .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.range-inputs input[type="number"] {
+    width: 100px;
+    text-align: center;
+    padding: 8px;
+}
+
+.range-inputs span {
+    color: var(--color-text-secondary);
+}
+
+.written-answer-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.written-answer-input {
+    flex-grow: 1;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.written-answer-input.correct {
+    border-color: var(--color-green);
+    background-color: #f0fff4;
+}
+
+.written-answer-input.incorrect {
+    border-color: #c33;
+    background-color: #fee;
+}
+
+.answer-text.correct {
+    color: var(--color-green);
+    font-weight: bold;
+}
+
+.answer-text.incorrect {
+    color: #c33;
+    font-weight: bold;
 }

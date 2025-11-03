@@ -38,7 +38,15 @@ const flashcardSetSchema = new mongoose.Schema({
         questionFormat: { type: String, enum: ['term', 'definition'], default: 'term' }, // Answer with term or definition
         learningOptions: {
             studyStarredOnly: { type: Boolean, default: false },
-            shuffle: { type: Boolean, default: false }
+            shuffle: { type: Boolean, default: false },
+            studyRangeOnly: { 
+                start: { type: String, default: '' },
+                end: { type: String, default: '' }
+            },
+            excludeRange: {
+                start: { type: String, default: '' },
+                end: { type: String, default: '' }
+            }
         }
     },
     

@@ -11,6 +11,7 @@ import Sentence from './src/models/Sentence.js';
 import UserSettings from './src/models/UserSettings.js';
 import FlashcardSet from './src/models/FlashcardSet.js';
 import { FSRS, Grade } from './src/services/fsrsService.js'; 
+import UserFlashcardSetData from './src/models/UserFlashcardSetData.js';
 
 // --- 1. INITIAL SETUP ---
 const app = express();
@@ -457,10 +458,69 @@ app.get('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, re
             return res.status(403).json({ message: 'Access denied.' });
         }
         
-        res.json(set);
+        // Fetch user-specific study data for this set
+        const userSetData = await UserFlashcardSetData.findOne({ userId, setId });
+
+        // Convert set to a plain object to modify it
+        const setObj = set.toObject();
+
+        // If user-specific data exists, override the default study options
+        if (userSetData) {
+            setObj.studyOptions = userSetData.studyOptions;
+        }
+
+        res.json(setObj);
     } catch (error) {
         console.error("Error fetching flashcard set:", error);
         res.status(500).json({ message: 'Failed to fetch flashcard set.' });
+    }
+});
+
+// --- GET USER-SPECIFIC DATA FOR A SET ---
+app.get('/api/flashcards/sets/:setId/user-data', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+
+        const userSetData = await UserFlashcardSetData.findOne({ userId, setId });
+        
+        if (!userSetData) {
+            // It's okay if it doesn't exist, the user just hasn't studied this set yet
+            return res.status(200).json(null); 
+        }
+
+        res.json(userSetData);
+    } catch (error) {
+        console.error("Error fetching user data for set:", error);
+        res.status(500).json({ message: 'Failed to fetch user data for set.' });
+    }
+});
+
+// --- UPDATE/CREATE USER-SPECIFIC STUDY OPTIONS FOR A SET ---
+app.put('/api/flashcards/sets/:setId/user-data', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+        const { studyOptions } = req.body;
+
+        if (!studyOptions) {
+            return res.status(400).json({ message: 'Study options are required.' });
+        }
+
+        const updatedData = await UserFlashcardSetData.findOneAndUpdate(
+            { userId, setId },
+            { 
+                $set: { studyOptions: studyOptions, lastStudied: new Date() },
+                $setOnInsert: { userId, setId }
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json(updatedData);
+
+    } catch (error) {
+        console.error("Error updating user data for set:", error);
+        res.status(500).json({ message: 'Failed to update user data for set.' });
     }
 });
 

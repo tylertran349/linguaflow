@@ -1,5 +1,5 @@
 // src/components/Flashcards.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText } from '../services/ttsService';
@@ -13,6 +13,24 @@ const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 const getLanguageCode = (langName) => {
     const lang = supportedLanguages.find(l => l.name === langName);
     return lang ? lang.code : null;
+};
+
+const defaultStudyOptions = {
+    examDate: null,
+    newCardsPerDay: 10,
+    questionTypes: {
+        flashcards: true,
+        multipleChoice: false,
+        written: false,
+        trueFalse: false
+    },
+    questionFormat: 'term',
+    learningOptions: {
+        studyStarredOnly: false,
+        shuffle: false,
+        studyRangeOnly: { start: '', end: '' },
+        excludeRange: { start: '', end: '' }
+    }
 };
 
 function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
@@ -42,21 +60,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [customRowSeparator, setCustomRowSeparator] = useState('');
     
     // Study state
-    const [studyOptions, setStudyOptions] = useState({
-        examDate: null,
-        newCardsPerDay: 10,
-        questionTypes: {
-            flashcards: true,
-            multipleChoice: false,
-            written: false,
-            trueFalse: false
-        },
-        questionFormat: 'term', // 'term' or 'definition'
-        learningOptions: {
-            studyStarredOnly: false,
-            shuffle: false
-        }
-    });
+    const [studyOptions, setStudyOptions] = useState(defaultStudyOptions);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
     const [cardsToStudy, setCardsToStudy] = useState([]);
@@ -64,6 +68,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [writtenAnswer, setWrittenAnswer] = useState('');
     const [answerFeedback, setAnswerFeedback] = useState(null); // 'correct' or 'incorrect'
     const [currentQuestionType, setCurrentQuestionType] = useState('flashcards');
+    const [studyAction, setStudyAction] = useState(null);
 
     // Study options modal
     const [showStudyOptionsModal, setShowStudyOptionsModal] = useState(false);
@@ -122,7 +127,29 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setSetDescription(data.description || '');
             setIsPublic(data.isPublic);
             setFlashcards(data.flashcards || []);
-            setStudyOptions(data.studyOptions || studyOptions);
+            
+            const loadedOptions = data.studyOptions || {};
+            const mergedOptions = {
+                ...defaultStudyOptions,
+                ...loadedOptions,
+                questionTypes: {
+                    ...defaultStudyOptions.questionTypes,
+                    ...(loadedOptions.questionTypes || {}),
+                },
+                learningOptions: {
+                    ...defaultStudyOptions.learningOptions,
+                    ...(loadedOptions.learningOptions || {}),
+                    studyRangeOnly: {
+                        ...defaultStudyOptions.learningOptions.studyRangeOnly,
+                        ...(loadedOptions.learningOptions?.studyRangeOnly || {}),
+                    },
+                    excludeRange: {
+                        ...defaultStudyOptions.learningOptions.excludeRange,
+                        ...(loadedOptions.learningOptions?.excludeRange || {}),
+                    },
+                },
+            };
+            setStudyOptions(mergedOptions);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -257,6 +284,33 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
+    const saveStudyOptions = async () => {
+        if (!currentSet) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const token = await getToken();
+            const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/user-data`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ studyOptions })
+            });
+            if (!response.ok) {
+                throw new Error('Failed to save study options');
+            }
+            // After saving user-specific options, we need to reload the main set
+            // to see the merged view of the data.
+            await loadSet(currentSet._id);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Delete set
     const handleDeleteSet = async (setId) => {
         if (!confirm('Are you sure you want to delete this set?')) return;
@@ -324,9 +378,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     };
 
     // Start studying
-    const startStudy = () => {
+    const startStudy = useCallback(() => {
         if (!currentSet) return;
         
+        setError(null);
+
         // Determine active question types
         const activeQuestionTypes = Object.entries(studyOptions.questionTypes)
             .filter(([, isActive]) => isActive)
@@ -337,20 +393,44 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             return;
         }
 
-        // Filter for due cards
-        const now = new Date();
-        const dueCards = currentSet.flashcards.filter(card => 
-            !card.nextReviewDate || new Date(card.nextReviewDate) <= now
-        );
+        const { studyRangeOnly, excludeRange } = studyOptions.learningOptions;
+        let cards;
 
-        // Separate new cards from review cards
-        const newCards = dueCards.filter(card => !card.lastReviewed);
-        const reviewCards = dueCards.filter(card => card.lastReviewed);
+        const rangeStart = parseInt(studyRangeOnly?.start, 10);
+        const rangeEnd = parseInt(studyRangeOnly?.end, 10);
 
-        // Apply new cards per day limit
-        const newCardsToday = newCards.slice(0, studyOptions.newCardsPerDay);
+        if (!isNaN(rangeStart) && !isNaN(rangeEnd) && rangeStart > 0 && rangeEnd >= rangeStart) {
+            // "Study only" range is active, so we ignore due dates and other filters on the card pool.
+            cards = currentSet.flashcards.slice(rangeStart - 1, rangeEnd);
+        } else {
+            // No "study only" range, so we start with all cards and filter them down.
+            let cardPool = [...currentSet.flashcards];
 
-        let cards = [...reviewCards, ...newCardsToday];
+            const excludeStart = parseInt(excludeRange?.start, 10);
+            const excludeEnd = parseInt(excludeRange?.end, 10);
+
+            if (!isNaN(excludeStart) && !isNaN(excludeEnd) && excludeStart > 0 && excludeEnd >= excludeStart) {
+                cardPool = cardPool.filter((_, index) => {
+                    const cardNum = index + 1;
+                    return cardNum < excludeStart || cardNum > excludeEnd;
+                });
+            }
+            
+            // Filter for due cards
+            const now = new Date();
+            const dueCards = cardPool.filter(card => 
+                !card.nextReviewDate || new Date(card.nextReviewDate) <= now
+            );
+
+            // Separate new cards from review cards
+            const newCards = dueCards.filter(card => !card.lastReviewed);
+            const reviewCards = dueCards.filter(card => card.lastReviewed);
+
+            // Apply new cards per day limit
+            const newCardsToday = newCards.slice(0, studyOptions.newCardsPerDay);
+
+            cards = [...reviewCards, ...newCardsToday];
+        }
         
         // Filter by starred only if option is enabled
         if (studyOptions.learningOptions.studyStarredOnly) {
@@ -362,6 +442,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             cards = [...cards].sort(() => Math.random() - 0.5);
         }
         
+        if (cards.length === 0) {
+            setError("No cards to study with the current settings. Try adjusting the study options or wait for cards to become due.");
+            return;
+        }
+
         // Assign a random question type to each card for this session
         const cardsWithQuestionTypes = cards.map(card => ({
             ...card,
@@ -377,7 +462,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
         setViewMode('study');
-    };
+    }, [currentSet, studyOptions]);
+
+    useEffect(() => {
+        if (studyAction) {
+            setStudyAction(null);
+            startStudy();
+        }
+    }, [studyAction, startStudy]);
 
     // Handle review decision
     const handleReviewDecision = async (grade) => {
@@ -388,12 +480,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         try {
             const token = await getToken();
             const card = cardsToStudy[currentCardIndex];
-            const cardIndexInSet = currentSet.flashcards.findIndex(c => 
-                c.term === card.term && c.definition === card.definition
-            );
+            let cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === card._id);
             
             if (cardIndexInSet === -1) {
-                throw new Error('Card not found in set');
+                // Fallback for safety, though this shouldn't happen with cards from the DB
+                const fallbackIndex = currentSet.flashcards.findIndex(c => 
+                    c.term === card.term && c.definition === card.definition
+                );
+                if (fallbackIndex === -1) {
+                    throw new Error('Card not found in set');
+                }
+                 cardIndexInSet = fallbackIndex;
             }
             
             const response = await fetch(
@@ -447,13 +544,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setCurrentSet(null);
         setImportText('');
         setShowImport(false);
-        setStudyOptions({
-            examDate: null,
-            newCardsPerDay: 10,
-            questionTypes: { flashcards: true, multipleChoice: false, written: false, trueFalse: false },
-            questionFormat: 'term',
-            learningOptions: { studyStarredOnly: false, shuffle: false }
-        });
+        setStudyOptions(defaultStudyOptions);
     };
 
     // Render sets list
@@ -515,19 +606,35 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Render study options modal
     const renderStudyOptionsModal = () => {
         const handleSave = async () => {
-            await saveSet({ fromStudyModal: true });
+            await saveStudyOptions();
             setShowStudyOptionsModal(false);
+            setStudyAction('restart');
         };
 
         const handleCancel = () => {
             if (currentSet) {
-                setStudyOptions(currentSet.studyOptions || {
-                    examDate: null,
-                    newCardsPerDay: 10,
-                    questionTypes: { flashcards: true, multipleChoice: false, written: false, trueFalse: false },
-                    questionFormat: 'term',
-                    learningOptions: { studyStarredOnly: false, shuffle: false }
-                });
+                const loadedOptions = currentSet.studyOptions || {};
+                const mergedOptions = {
+                    ...defaultStudyOptions,
+                    ...loadedOptions,
+                    questionTypes: {
+                        ...defaultStudyOptions.questionTypes,
+                        ...(loadedOptions.questionTypes || {}),
+                    },
+                    learningOptions: {
+                        ...defaultStudyOptions.learningOptions,
+                        ...(loadedOptions.learningOptions || {}),
+                        studyRangeOnly: {
+                            ...defaultStudyOptions.learningOptions.studyRangeOnly,
+                            ...(loadedOptions.learningOptions?.studyRangeOnly || {}),
+                        },
+                        excludeRange: {
+                            ...defaultStudyOptions.learningOptions.excludeRange,
+                            ...(loadedOptions.learningOptions?.excludeRange || {}),
+                        },
+                    },
+                };
+                setStudyOptions(mergedOptions);
             }
             setShowStudyOptionsModal(false);
         };
@@ -663,6 +770,46 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <span className="slider"></span>
                         </label>
                     </div>
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Study only cards in range</label>
+                <div className="range-inputs">
+                    <input
+                        type="number"
+                        min="1"
+                        placeholder="Start"
+                        value={studyOptions.learningOptions.studyRangeOnly?.start || ''}
+                        onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, studyRangeOnly: { ...prev.learningOptions.studyRangeOnly, start: e.target.value } } }))}
+                    />
+                    <span>-</span>
+                    <input
+                        type="number"
+                        min="1"
+                        placeholder="End"
+                        value={studyOptions.learningOptions.studyRangeOnly?.end || ''}
+                        onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, studyRangeOnly: { ...prev.learningOptions.studyRangeOnly, end: e.target.value } } }))}
+                    />
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Do not study cards in range</label>
+                <div className="range-inputs">
+                    <input
+                        type="number"
+                        min="1"
+                        placeholder="Start"
+                        value={studyOptions.learningOptions.excludeRange?.start || ''}
+                        onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, excludeRange: { ...prev.learningOptions.excludeRange, start: e.target.value } } }))}
+                    />
+                    <span>-</span>
+                    <input
+                        type="number"
+                        min="1"
+                        placeholder="End"
+                        value={studyOptions.learningOptions.excludeRange?.end || ''}
+                        onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, excludeRange: { ...prev.learningOptions.excludeRange, end: e.target.value } } }))}
+                    />
                 </div>
             </div>
         </div>
@@ -943,10 +1090,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <p className="set-meta">{currentSet.flashcards.length} cards</p>
                     </div>
                     <div className="view-actions">
-                        <button onClick={() => { loadSet(currentSet._id); setViewMode('edit'); }}>
+                        <button onClick={async () => { await loadSet(currentSet._id); setViewMode('edit'); }}>
                             <Edit2 size={18} /> Edit
                         </button>
-                        <button onClick={() => { loadSet(currentSet._id); setViewMode('study'); startStudy(); }}>
+                        <button onClick={async () => { await loadSet(currentSet._id); setStudyAction('start'); }}>
                             <Play size={18} /> Study
                         </button>
                         <button onClick={() => setViewMode('sets')}>
