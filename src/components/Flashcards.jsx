@@ -59,6 +59,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [rowSeparator, setRowSeparator] = useState('newline'); // 'newline', 'semicolon', 'custom'
     const [customRowSeparator, setCustomRowSeparator] = useState('');
     
+    // Create/Edit pagination
+    const [createEditCurrentPage, setCreateEditCurrentPage] = useState(1);
+    const CARDS_PER_PAGE = 50;
+    
     // Study state
     const [studyOptions, setStudyOptions] = useState(defaultStudyOptions);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -246,32 +250,73 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setLoading(true);
         setError(null);
+        
+        const CHUNK_SIZE = 100; // Send 100 cards per request
+        const isNewSet = !currentSet;
+
         try {
             const token = await getToken();
-            const url = currentSet 
-                ? `${API_BASE_URL}/api/flashcards/sets/${currentSet._id}`
-                : `${API_BASE_URL}/api/flashcards/sets`;
+            let setId = currentSet?._id;
             
-            const method = currentSet ? 'PUT' : 'POST';
-            const body = currentSet 
-                ? { title: setTitle, description: setDescription, isPublic, flashcards, studyOptions }
-                : { title: setTitle, description: setDescription, isPublic, flashcards, studyOptions };
-            
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(body)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to save flashcard set');
+            // Step 1: Create the set or update its metadata and first chunk
+            if (isNewSet) {
+                const firstChunk = flashcards.slice(0, CHUNK_SIZE);
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: setTitle,
+                        description: setDescription,
+                        isPublic,
+                        flashcards: firstChunk,
+                        studyOptions
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to create flashcard set');
+                const newSet = await response.json();
+                setId = newSet._id;
+
+            } else { // It's an existing set
+                const firstChunk = flashcards.slice(0, CHUNK_SIZE);
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: setTitle,
+                        description: setDescription,
+                        isPublic,
+                        flashcards: firstChunk, // This will replace existing cards
+                        studyOptions
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to update flashcard set');
+            }
+
+            // Step 2: Upload remaining chunks
+            if (flashcards.length > CHUNK_SIZE) {
+                for (let i = CHUNK_SIZE; i < flashcards.length; i += CHUNK_SIZE) {
+                    const chunk = flashcards.slice(i, i + CHUNK_SIZE);
+                    const importResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}/import`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ flashcards: chunk })
+                    });
+                    if (!importResponse.ok) throw new Error(`Failed to import chunk starting at index ${i}`);
+                }
             }
             
             if (fromStudyModal) {
-                await loadSet(currentSet._id);
+                await loadSet(setId);
             } else {
                 await fetchSets();
                 resetCreateState();
@@ -342,13 +387,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Add card
     const addCard = () => {
-        setFlashcards(prev => [...prev, {
+        const newCard = {
             term: '',
             definition: '',
             termLanguage: settings?.targetLanguage ? getLanguageCode(settings.targetLanguage) : null,
             definitionLanguage: settings?.nativeLanguage ? getLanguageCode(settings.nativeLanguage) : null,
             starred: false
-        }]);
+        };
+        
+        setFlashcards(prev => [...prev, newCard]);
+        
+        // Go to the page where the new card is
+        const newTotalCards = flashcards.length + 1;
+        const newTotalPages = Math.ceil(newTotalCards / CARDS_PER_PAGE);
+        setCreateEditCurrentPage(newTotalPages);
+        
         setEditingCardIndex(flashcards.length);
     };
 
@@ -819,6 +872,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderCreateEdit = () => {
         const isEdit = !!currentSet;
         
+        // Pagination logic
+        const totalPages = Math.ceil(flashcards.length / CARDS_PER_PAGE);
+        const startIndex = (createEditCurrentPage - 1) * CARDS_PER_PAGE;
+        const endIndex = startIndex + CARDS_PER_PAGE;
+        const paginatedFlashcards = flashcards.slice(startIndex, endIndex);
+
         return (
             <div className="flashcards-create-edit">
                 <div className="create-header">
@@ -850,14 +909,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     </div>
                     
                     <div className="form-group">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={isPublic}
-                                onChange={(e) => setIsPublic(e.target.checked)}
-                            />
-                            Make this set public (default: public)
-                        </label>
+                        <div className="toggle-switch-container">
+                            <span>Make this set public (default: public)</span>
+                            <label className="toggle-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={isPublic}
+                                    onChange={(e) => setIsPublic(e.target.checked)}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
                     </div>
                     
                     <div className="cards-section">
@@ -987,14 +1049,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <p className="status-message">No flashcards yet. Add or import some cards.</p>
                         ) : (
                             <div className="cards-list">
-                                {flashcards.map((card, index) => (
-                                    <div key={index} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
+                                {paginatedFlashcards.map((card, index) => {
+                                    const originalIndex = startIndex + index;
+                                    return (
+                                    <div key={originalIndex} className={`card-item ${editingCardIndex === originalIndex ? 'editing' : ''}`}>
                                         <div className="card-header">
-                                            <button onClick={() => toggleStar(index)} className={`star-button ${card.starred ? 'starred' : ''}`}>
+                                            <button onClick={() => toggleStar(originalIndex)} className={`star-button ${card.starred ? 'starred' : ''}`}>
                                                 <Star size={24} color="#ffdc62" fill={card.starred ? '#ffdc62' : 'none'} />
                                             </button>
-                                            <span>Card {index + 1}</span>
-                                            <button onClick={() => deleteCard(index)} className="delete-card">
+                                            <span>Card {originalIndex + 1}</span>
+                                            <button onClick={() => deleteCard(originalIndex)} className="delete-card">
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -1004,7 +1068,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <div className="field-with-tts">
                                                     <textarea
                                                         value={card.term}
-                                                        onChange={(e) => updateCard(index, 'term', e.target.value)}
+                                                        onChange={(e) => updateCard(originalIndex, 'term', e.target.value)}
                                                         onInput={(e) => {
                                                             e.target.style.height = 'auto';
                                                             e.target.style.height = `${e.target.scrollHeight}px`;
@@ -1020,7 +1084,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 </div>
                                                 <select
                                                     value={card.termLanguage || ''}
-                                                    onChange={(e) => updateCard(index, 'termLanguage', e.target.value || null)}
+                                                    onChange={(e) => updateCard(originalIndex, 'termLanguage', e.target.value || null)}
                                                 >
                                                     <option value="">Select language</option>
                                                     {supportedLanguages.map(lang => (
@@ -1033,7 +1097,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <div className="field-with-tts">
                                                     <textarea
                                                         value={card.definition}
-                                                        onChange={(e) => updateCard(index, 'definition', e.target.value)}
+                                                        onChange={(e) => updateCard(originalIndex, 'definition', e.target.value)}
                                                         onInput={(e) => {
                                                             e.target.style.height = 'auto';
                                                             e.target.style.height = `${e.target.scrollHeight}px`;
@@ -1049,7 +1113,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 </div>
                                                 <select
                                                     value={card.definitionLanguage || ''}
-                                                    onChange={(e) => updateCard(index, 'definitionLanguage', e.target.value || null)}
+                                                    onChange={(e) => updateCard(originalIndex, 'definitionLanguage', e.target.value || null)}
                                                 >
                                                     <option value="">Select language</option>
                                                     {supportedLanguages.map(lang => (
@@ -1059,7 +1123,27 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                )})}
+                            </div>
+                        )}
+                        
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    onClick={() => setCreateEditCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={createEditCurrentPage === 1}
+                                >
+                                    Previous
+                                </button>
+                                <span>
+                                    Page {createEditCurrentPage} of {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setCreateEditCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={createEditCurrentPage === totalPages}
+                                >
+                                    Next
+                                </button>
                             </div>
                         )}
                     </div>
