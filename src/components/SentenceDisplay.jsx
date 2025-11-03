@@ -875,20 +875,57 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
   
     if (phrasesToFind.length === 0) return <span>{fullSentence}</span>;
   
-    const regex = new RegExp(`(${phrasesToFind.map(escapeRegExp).join('|')})`, 'gi');
+    // Build regex with word boundaries for proper whole-word matching
+    // Multi-word phrases need boundaries only at start and end
+    // Single words need boundaries on both sides
+    const regexPattern = phrasesToFind.map(phrase => {
+      const escaped = escapeRegExp(phrase);
+      if (phrase.includes(' ')) {
+        // Multi-word phrase: word boundary at start and end only
+        return `\\b${escaped}\\b`;
+      } else {
+        // Single word: word boundaries on both sides to prevent substring matches
+        return `\\b${escaped}\\b`;
+      }
+    }).join('|');
+    
+    const regex = new RegExp(`(${regexPattern})`, 'gi');
     const matches = [...fullSentence.matchAll(regex)];
+    
+    // Sort matches by index to process in order
+    matches.sort((a, b) => a.index - b.index);
+    
     const result = [];
     let lastIndex = 0;
+    const processedIndices = new Set(); // Track processed positions to avoid double-processing
   
     for (const match of matches) {
-      if (match.index > lastIndex) {
-        result.push(fullSentence.substring(lastIndex, match.index));
+      const matchStart = match.index;
+      const matchEnd = matchStart + match[0].length;
+      
+      // Skip if this match overlaps with already processed content
+      if (matchStart < lastIndex) {
+        continue;
       }
+      
+      // Add text before this match
+      if (matchStart > lastIndex) {
+        result.push(fullSentence.substring(lastIndex, matchStart));
+      }
+      
       const matchedText = match[0];
       const lookupKey = matchedText.trim().toLowerCase();
       const color = nativeToColorMap.get(lookupKey);
-      result.push(<span key={`match-${match.index}`} style={{ color }}>{matchedText}</span>);
-      lastIndex = match.index + matchedText.length;
+      
+      if (color) {
+        result.push(<span key={`match-${matchStart}`} style={{ color }}>{matchedText}</span>);
+        lastIndex = matchEnd;
+        processedIndices.add(matchStart);
+      } else {
+        // If no color found, just add the text as-is
+        result.push(matchedText);
+        lastIndex = matchEnd;
+      }
     }
   
     if (lastIndex < fullSentence.length) {
