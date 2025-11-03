@@ -565,32 +565,26 @@
     gap: 0.5rem;
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
-    border: 1px solid transparent;
+    border: none;
     transition: all 0.2s ease;
     text-transform: none;
     letter-spacing: 0;
+    color: var(--color-green);
+    background-color: transparent;
 }
 
 .view-actions button:first-of-type { /* Edit */
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-    border-color: var(--color-border);
 }
 
 .view-actions button:first-of-type:hover {
 }
 
 .view-actions button:nth-of-type(2) { /* Study */
-    background-color: var(--color-surface);
-    color: var(--color-primary);
-    border-color: var(--color-primary);
 }
 .view-actions button:nth-of-type(2):hover {
 }
 
 .view-actions button:last-of-type { /* Close */
-    background-color: transparent;
-    color: var(--color-text-secondary);
 }
 
 .view-actions button:last-of-type:hover {
