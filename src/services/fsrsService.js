@@ -45,7 +45,7 @@ export function s_0(g) {
 
 function s_success(d, s, r, g) {
   const t_d = 11.0 - d;
-  const t_s = Math.pow(s, -W[9]);
+  const t_s = Math.pow(Math.max(s, 0.1), -W[9]);
   const t_r = Math.exp(W[10] * (1.0 - r)) - 1.0;
   const h = g === Grade.Hard ? W[15] : 1.0;
   const b = g === Grade.Easy ? W[16] : 1.0;
@@ -100,8 +100,14 @@ export class FSRS {
 
     schedule(card, grade) {
         const now = new Date();
-        if (!card.stability || !card.difficulty) {
-            // First review
+
+        const isNewCard = !card.stability || 
+                          !card.difficulty || 
+                          !card.lastReviewed || 
+                          isNaN(new Date(card.lastReviewed).getTime());
+
+        if (isNewCard) {
+            // First review or invalid data
             const s = s_0(grade);
             const d = d_0(grade);
             const i = Math.max(Math.round(interval(this.r_d, s)), 1);
@@ -113,13 +119,14 @@ export class FSRS {
                 difficulty: d,
                 reviewDate: nextReview,
                 lastReviewed: now,
-                lapses: grade === Grade.Forgot ? 1 : 0,
+                lapses: 0,
                 reps: 1,
             };
         }
 
-        // t is days since last review. card.lastReviewed should be a Date object.
-        const t = (now.getTime() - new Date(card.lastReviewed).getTime()) / (24 * 60 * 60 * 1000);
+        // t is days since last review.
+        const elapsedDays = (now.getTime() - new Date(card.lastReviewed).getTime()) / (1000 * 60 * 60 * 24);
+        const t = Math.max(0, elapsedDays);
         const r = retrievability(t, card.stability);
         const s = updateStability(card.difficulty, card.stability, r, grade);
         const d = updateDifficulty(card.difficulty, grade);

@@ -90,7 +90,6 @@
 }
 
 .set-card-actions button:hover {
-  background-color: var(--color-light-grey);
 }
 
 .set-description {
@@ -148,7 +147,6 @@
 }
 
 .back-button:hover {
-  background-color: #ddd;
 }
 
 .create-form {
@@ -223,7 +221,6 @@
 }
 
 .cards-actions button:hover {
-  background-color: var(--color-green);;
 }
 
 /* Import Section */
@@ -323,7 +320,6 @@
 }
 
 .import-actions button:first-child:hover {
-  background-color: var(--color-green);;
 }
 
 .import-actions button:last-child {
@@ -332,7 +328,6 @@
 }
 
 .import-actions button:last-child:hover {
-  background-color: #ddd;
 }
 
 /* Cards List */
@@ -389,8 +384,6 @@
 }
 
 .card-header .delete-card:hover {
-  background-color: #fee;
-  border-radius: var(--radius-sm);
 }
 
 .card-content {
@@ -442,7 +435,6 @@
 }
 
 .tts-button:hover {
-  transform: scale(1.1);
 }
 
 .tts-button:active {
@@ -528,8 +520,6 @@
 }
 
 .generate-button:hover:not(:disabled) {
-  background-color: var(--color-green);;
-  transform: translateY(-2px);
 }
 
 .generate-button:disabled {
@@ -588,8 +578,6 @@
 }
 
 .view-actions button:first-of-type:hover {
-    background-color: var(--color-background);
-    border-color: var(--color-text-secondary);
 }
 
 .view-actions button:nth-of-type(2) { /* Study */
@@ -598,8 +586,6 @@
     border-color: var(--color-primary);
 }
 .view-actions button:nth-of-type(2):hover {
-    color: var(--color-primary-variant);
-    border-color: var(--color-primary-variant);
 }
 
 .view-actions button:last-of-type { /* Close */
@@ -608,7 +594,6 @@
 }
 
 .view-actions button:last-of-type:hover {
-    background-color: var(--color-background);
 }
 
 
@@ -655,9 +640,9 @@
 }
 
 .card-side span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word; /* Added for better cross-browser compatibility */
 }
 
 .tts-button-small {
@@ -687,7 +672,6 @@
 }
 
 .show-more-button:hover {
-    background-color: var(--color-background);
 }
 
 /* Study Mode */
@@ -729,7 +713,6 @@
 }
 
 .study-header button:hover {
-  background-color: #ddd;
 }
 
 .study-header-actions {
@@ -811,7 +794,6 @@
 }
 
 .tts-button-large:hover {
-  transform: scale(1.1);
 }
 
 .tts-button-large:active {
@@ -832,14 +814,13 @@
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    background-color: var(--color-blue);
-    color: white;
+    background-color: var(--color-green) !important;
+    color: white !important;
     border: none;
     transition: background-color 0.2s;
 }
 
 .show-answer-button:hover {
-    background-color: var(--color-blue-dark);
 }
 
 .grade-buttons {
@@ -864,9 +845,6 @@
 }
 
 .decision-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-color: var(--color-blue);
 }
 
 .decision-button:disabled {
@@ -916,9 +894,6 @@
 }
 
 .pagination-controls button:hover:not(:disabled) {
-    background-color: var(--color-blue);
-    color: white;
-    border-color: var(--color-blue);
 }
 
 .pagination-controls button:disabled {
@@ -1204,8 +1179,6 @@
 }
 
 .close-button:hover {
-    background-color: var(--color-light-grey);
-    color: var(--color-dark-grey);
 }
 
 /* Toggle Switch styles */

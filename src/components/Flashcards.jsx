@@ -492,7 +492,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         // Shuffle if option is enabled
         if (studyOptions.learningOptions.shuffle) {
-            cards = [...cards].sort(() => Math.random() - 0.5);
+            // Re-separate into review and new cards to shuffle them independently
+            const reviewCardsInSession = cards.filter(card => card.lastReviewed);
+            const newCardsInSession = cards.filter(card => !card.lastReviewed);
+            
+            const shuffledReview = [...reviewCardsInSession].sort(() => Math.random() - 0.5);
+            const shuffledNew = [...newCardsInSession].sort(() => Math.random() - 0.5);
+
+            cards = [...shuffledReview, ...shuffledNew];
         }
         
         if (cards.length === 0) {
