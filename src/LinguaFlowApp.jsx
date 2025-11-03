@@ -8,6 +8,7 @@ import { useAuth, useUser } from '@clerk/clerk-react';
 import Sidebar from './components/Sidebar';
 import SettingsModal from './components/SettingsModal';
 import SentenceDisplay from './components/SentenceDisplay';
+import Flashcards from './components/Flashcards';
 import UnscrambleWords from './components/UnscrambleWords';
 import ReadAndRespond from './components/ReadAndRespond';
 import WriteAResponse from './components/WriteAResponse';
@@ -340,6 +341,8 @@ function LinguaFlowApp() {
     switch (activeModule) {
       case 'sentence-generator':
         return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
+      case 'flashcards':
+        return <Flashcards settings={settings} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'unscramble-words':
         return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'read-and-respond':

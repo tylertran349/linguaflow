@@ -7,6 +7,7 @@ import { UserButton } from '@clerk/clerk-react';
 // The list of modules is unchanged.
 const modules = [
   { id: 'sentence-generator', name: 'Sentence Generator' },
+  { id: 'flashcards', name: 'Flashcards' },
   { id: 'unscramble-words', name: 'Unscramble Words' },
   { id: 'read-and-respond', name: 'Read & Respond' },
   { id: 'write-a-response', name: 'Write a Response' }

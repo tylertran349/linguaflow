@@ -13,21 +13,21 @@
   z-index: 2000;
   padding: var(--spacing-4);
   backdrop-filter: blur(8px);
+  overflow-y: auto; /* Allow backdrop to scroll on small screens */
 }
 
 .modal-content {
   background-color: var(--color-white);
   padding: 0;
   border-radius: var(--radius-xl);
-  width: 50%;
-  max-width: 700px;
-  min-width: 350px;
+  width: clamp(350px, 90vw, 800px); /* Responsive width */
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--color-light-grey);
   animation: modalSlideIn var(--transition-normal) ease-out;
   overflow: hidden;
+  margin: auto; /* Center the modal vertically and horizontally */
 }
 
 @keyframes modalSlideIn {
@@ -48,6 +48,8 @@
   padding: var(--spacing-6);
   text-align: center;
   position: relative;
+  border-bottom: 1px solid var(--color-light-grey); /* Added separator */
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .modal-header h2 {
@@ -73,47 +75,59 @@
   font-size: 0.8em;
   font-weight: 500;
   margin-left: var(--spacing-2);
+  animation: saving-pulse 1.5s infinite ease-in-out; /* Added animation */
+}
+
+@keyframes saving-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .modal-scroll-wrapper {
-  padding: var(--spacing-6);
+  padding: var(--spacing-2) var(--spacing-6) var(--spacing-6); /* Adjusted padding */
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
-  max-height: 70vh;
+  gap: var(--spacing-4); /* Adjusted gap */
   overflow-y: auto;
 }
 
 .modal-scroll-wrapper::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* Slightly wider scrollbar */
 }
 
 .modal-scroll-wrapper::-webkit-scrollbar-track {
   background: var(--color-light-grey);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .modal-scroll-wrapper::-webkit-scrollbar-thumb {
-  background: var(--color-light-grey);
-  border-radius: 3px;
+  background: #bdc3c7; /* More visible scrollbar thumb */
+  border-radius: 4px;
 }
 
 .modal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--color-light-grey);
+  background: #95a5a6; /* Darker on hover */
 }
 
 /* Settings Sections */
 .settings-section {
   padding-top: var(--spacing-6);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: 0; /* Removed margin */
+  border-top: 1px solid var(--color-light-grey); /* Added separator */
 }
 
 .settings-section.essential {
-  padding-top: 0;
+  padding-top: var(--spacing-4);
+  border-top: none; /* No separator for the first section */
 }
 
 .section-header {
   margin-bottom: var(--spacing-4);
+  padding: 0 var(--spacing-2); /* Added padding for alignment */
 }
 
 .section-header h3 {
@@ -124,6 +138,11 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  transition: color var(--transition-fast); /* Added transition */
+}
+
+.section-header:hover h3 {
+  color: #059669; /* Darken on hover */
 }
 
 .section-header p {
@@ -139,6 +158,7 @@
   flex-direction: column;
   gap: var(--spacing-2);
   margin-bottom: var(--spacing-5);
+  padding: 0 var(--spacing-2); /* Added padding for alignment */
 }
 
 .setting-item label {
@@ -168,7 +188,7 @@
   font-size: var(--font-size-sm);
   color: #6b7280;
   line-height: 1.5;
-  margin: 0 0 var(--spacing-3) 0;
+  margin: 0 0 var(--spacing-2) 0; /* Adjusted margin */
 }
 
 .help-link {
@@ -195,6 +215,17 @@
   transition: all var(--transition-fast);
 }
 
+.setting-item select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem top 50%;
+  background-size: 0.9em auto;
+  padding-right: 2.5rem;
+}
+
 .api-key-input {
   font-family: 'Courier New', monospace;
 }
@@ -203,6 +234,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .api-key-container .api-key-input {
@@ -304,8 +336,8 @@
 .toggle-label {
   position: relative;
   display: inline-block;
-  width: 50px;
-  height: 24px;
+  width: 60px;   /* Increased size */
+  height: 30px;  /* Increased size */
   cursor: pointer;
 }
 
@@ -316,15 +348,15 @@
   right: 0;
   bottom: 0;
   background-color: #d1d5db;
-  border-radius: 24px;
+  border-radius: 30px; /* Adjusted for new size */
   transition: all var(--transition-fast);
 }
 
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
+  height: 24px; /* Increased size */
+  width: 24px;  /* Increased size */
   left: 3px;
   bottom: 3px;
   background-color: white;
@@ -338,7 +370,7 @@
 }
 
 .toggle-input:checked + .toggle-label .toggle-slider:before {
-  transform: translateX(26px);
+  transform: translateX(30px); /* Adjusted for new size */
 }
 
 .toggle-input:disabled + .toggle-label {
@@ -357,13 +389,13 @@
 .setting-item select:focus,
 .topic-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-green); /* Use app's green color */
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); /* Use app's green color */
 }
 
-.setting-item input:hover,
-.setting-item select:hover,
-.topic-textarea:hover {
+.setting-item input:hover:not(:disabled),
+.setting-item select:hover:not(:disabled),
+.topic-textarea:hover:not(:disabled) {
   border-color: #9ca3af;
 }
 
@@ -386,7 +418,10 @@
   justify-content: center;
   gap: var(--spacing-3);
   margin-top: var(--spacing-6);
-  padding-top: var(--spacing-6);
+  padding: var(--spacing-6) var(--spacing-6) 0; /* Add padding */
+  border-top: 1px solid var(--color-light-grey); /* Add separator */
+  background-color: var(--color-white);
+  flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
 .save-button {
@@ -466,7 +501,7 @@
 
   .modal-scroll-wrapper {
     padding: var(--spacing-3);
-    max-height: calc(90vh - 2rem);
+    max-height: calc(90vh - 150px); /* Adjusted for header and footer */
   }
 
   .modal-header {
