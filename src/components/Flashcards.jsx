@@ -73,6 +73,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [answerFeedback, setAnswerFeedback] = useState(null); // 'correct' or 'incorrect'
     const [currentQuestionType, setCurrentQuestionType] = useState('flashcards');
     const [studyAction, setStudyAction] = useState(null);
+    const [mcqOptions, setMcqOptions] = useState([]);
 
     // Study options modal
     const [showStudyOptionsModal, setShowStudyOptionsModal] = useState(false);
@@ -530,6 +531,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             startStudy();
         }
     }, [studyAction, startStudy]);
+
+    useEffect(() => {
+        if (viewMode === 'study' && currentQuestionType === 'multipleChoice' && cardsToStudy.length > 0 && currentSet) {
+            const currentCard = cardsToStudy[currentCardIndex];
+            const isAnswerWithTerm = studyOptions.questionFormat === 'term';
+            const answerProperty = isAnswerWithTerm ? 'term' : 'definition';
+
+            const correctAnswer = currentCard[answerProperty];
+
+            let wrongAnswers = currentSet.flashcards
+                .map(card => card[answerProperty])
+                .filter(ans => ans.trim() !== correctAnswer.trim());
+
+            const uniqueWrongAnswers = [...new Set(wrongAnswers)];
+            const shuffledWrongAnswers = uniqueWrongAnswers.sort(() => 0.5 - Math.random());
+            const options = [correctAnswer, ...shuffledWrongAnswers.slice(0, 3)];
+            
+            setMcqOptions(options.sort(() => 0.5 - Math.random()));
+        }
+    }, [viewMode, currentQuestionType, currentCardIndex, cardsToStudy, currentSet, studyOptions.questionFormat]);
 
     // Handle review decision
     const handleReviewDecision = async (grade) => {
@@ -1253,13 +1274,20 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         const currentCard = cardsToStudy[currentCardIndex];
         const showTerm = studyOptions.questionFormat === 'term';
-        const question = showTerm ? currentCard.term : currentCard.definition;
-        const answer = showTerm ? currentCard.definition : currentCard.term;
-        const questionLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
+        const question = showTerm ? currentCard.definition : currentCard.term;
+        const answer = showTerm ? currentCard.term : currentCard.definition;
+        const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
         
         const handleWrittenAnswerSubmit = (e) => {
             e.preventDefault();
-            const isCorrect = writtenAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+            const isCorrect = writtenAnswer.trim() === answer.trim();
+            setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
+            setShowAnswer(true);
+        };
+
+        const handleMcqAnswer = (selectedOption) => {
+            setWrittenAnswer(selectedOption); // Re-use writtenAnswer state for the selected option
+            const isCorrect = selectedOption.trim() === answer.trim();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
         };
@@ -1312,6 +1340,32 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 />
                                 <button type="submit" className="generate-button">Check</button>
                             </form>
+                        )}
+
+                        {currentQuestionType === 'multipleChoice' && (
+                            <div className="mcq-options">
+                                {mcqOptions.map((option, index) => {
+                                    const isCorrect = option === answer;
+                                    let buttonClass = 'mcq-option';
+                                    if (showAnswer) {
+                                        if (isCorrect) {
+                                            buttonClass += ' correct';
+                                        } else if (option === writtenAnswer) {
+                                            buttonClass += ' incorrect';
+                                        }
+                                    }
+                                    return (
+                                        <button
+                                            key={index}
+                                            className={buttonClass}
+                                            onClick={() => !showAnswer && handleMcqAnswer(option)}
+                                            disabled={showAnswer}
+                                        >
+                                            {option}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         )}
                         
                         {showAnswer && (
