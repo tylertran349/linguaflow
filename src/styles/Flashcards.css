@@ -23,6 +23,8 @@
 .flashcards-sets-list {
   width: 90%;
   max-width: 1200px;
+  max-height: calc(100vh - 140px); /* Handles smaller screen heights */
+  overflow-y: auto; /* Allows scrolling on smaller screens */
 }
 
 .sets-header {
@@ -114,6 +116,8 @@
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-8);
   border: 1px solid var(--color-light-grey);
+  max-height: calc(100vh - 140px); /* Handles smaller screen heights */
+  overflow-y: auto; /* Allows scrolling on smaller screens */
 }
 
 .flashcards-create-edit textarea {
@@ -536,6 +540,8 @@
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.05);
     animation: fadeIn 0.3s ease-in-out;
+    max-height: calc(100vh - 140px); /* Handles smaller screen heights */
+    overflow-y: auto; /* Allows scrolling on smaller screens */
 }
 
 .view-header {
@@ -680,6 +686,8 @@
     width: 100%;
     max-width: 950px;
     margin: 0 auto;
+    max-height: calc(100vh - 140px); /* Handles smaller screen heights */
+    overflow-y: auto; /* Allows scrolling on smaller screens */
 }
 
 .study-header {
