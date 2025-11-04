@@ -1300,3 +1300,125 @@ input:checked + .slider:before {
     color: #c33;
     font-weight: bold;
 }
+
+/* MCQ Styles */
+.mcq-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 800px;
+}
+
+.mcq-option {
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-light-grey);
+    background-color: var(--color-white);
+    color: var(--color-dark-grey);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    min-height: 60px;
+    line-height: 1.4;
+}
+
+.mcq-option:hover:not(:disabled) {
+    border-color: var(--color-green);
+    background-color: #f0fff4;
+    transform: translateY(-2px);
+}
+
+.mcq-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+.mcq-option.correct {
+    border-color: var(--color-green);
+    background-color: #e6f7f0;
+    color: var(--color-green);
+    font-weight: 700;
+}
+
+.mcq-option.incorrect {
+    border-color: #c33;
+    background-color: #fee;
+    color: #c33;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .mcq-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+.true-false-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.true-false-proposed-answer {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: var(--color-background-light);
+    border-radius: 8px;
+}
+
+.true-false-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.tf-button {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: white;
+}
+
+.tf-button.true, .tf-button.false {
+    background-color: var(--color-green);
+}
+
+.tf-button.true:hover, .tf-button.false:hover {
+    background-color: #38a169;
+}
+
+.answer-feedback {
+    text-align: center;
+}
+
+.answer-feedback.correct {
+    color: var(--color-green);
+}
+
+.answer-feedback.incorrect {
+    color: var(--color-red);
+}
+
+.correct-pair {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--color-background-light);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.correct-pair .separator {
+    font-weight: bold;
+}

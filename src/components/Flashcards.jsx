@@ -509,10 +509,31 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
 
         // Assign a random question type to each card for this session
-        const cardsWithQuestionTypes = cards.map(card => ({
-            ...card,
-            questionType: activeQuestionTypes[Math.floor(Math.random() * activeQuestionTypes.length)]
-        }));
+        const cardsWithQuestionTypes = cards.map(card => {
+            const questionType = activeQuestionTypes[Math.floor(Math.random() * activeQuestionTypes.length)];
+            const newCardData = {
+                ...card,
+                questionType,
+            };
+
+            if (questionType === 'trueFalse') {
+                // 50% chance of being a correct pair
+                const isCorrectPairing = Math.random() < 0.5;
+                newCardData.isTrueFalseCorrect = isCorrectPairing;
+
+                if (!isCorrectPairing) {
+                    const otherCards = currentSet.flashcards.filter(c => c._id !== card._id);
+                    if (otherCards.length > 0) {
+                        const randomCard = otherCards[Math.floor(Math.random() * otherCards.length)];
+                        newCardData.falsePair = randomCard;
+                    } else {
+                        // Not enough cards to make a false pair, so force it to be true.
+                        newCardData.isTrueFalseCorrect = true;
+                    }
+                }
+            }
+            return newCardData;
+        });
 
         setCardsToStudy(cardsWithQuestionTypes);
         setCurrentCardIndex(0);
@@ -1292,6 +1313,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setShowAnswer(true);
         };
 
+        const handleTrueFalseAnswer = (userAnswer) => {
+            const currentCard = cardsToStudy[currentCardIndex];
+            const isCorrect = userAnswer === currentCard.isTrueFalseCorrect;
+            setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
+            setShowAnswer(true);
+        };
+
         const gradeIcons = {
             [Grade.Forgot]: <X size={24} />,
             [Grade.Hard]: <AlertTriangle size={24} />,
@@ -1368,23 +1396,49 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             </div>
                         )}
                         
+                        {currentQuestionType === 'trueFalse' && !showAnswer && (
+                            <div className="true-false-container">
+                                <div className="true-false-proposed-answer">
+                                    { currentCard.isTrueFalseCorrect 
+                                        ? answer 
+                                        : (showTerm ? currentCard.falsePair.term : currentCard.falsePair.definition)
+                                    }
+                                </div>
+                                <div className="true-false-actions">
+                                    <button onClick={() => handleTrueFalseAnswer(true)} className="tf-button true">True</button>
+                                    <button onClick={() => handleTrueFalseAnswer(false)} className="tf-button false">False</button>
+                                </div>
+                            </div>
+                        )}
+                        
                         {showAnswer && (
                             <div className="study-answer">
                                 <hr />
-                                <div className={`answer-text ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}>
-                                    {answer}
-                                    {answer && (showTerm ? currentCard.definitionLanguage : currentCard.termLanguage) && (
-                                        <button onClick={() => playTTS(answer, showTerm ? currentCard.definitionLanguage : currentCard.termLanguage)} className="tts-button-large">
-                                            <Volume2 size={24} color="var(--color-green)" />
-                                        </button>
-                                    )}
-                                </div>
+                                {currentQuestionType === 'trueFalse' ? (
+                                    <div className={`answer-feedback ${answerFeedback}`}>
+                                        <p>{answerFeedback === 'correct' ? 'Correct!' : 'Incorrect.'} The statement was <strong>{currentCard.isTrueFalseCorrect ? 'True' : 'False'}</strong>.</p>
+                                        <div className="correct-pair">
+                                            <span>{showTerm ? currentCard.definition : currentCard.term}</span>
+                                            <span className="separator">is</span>
+                                            <span>{showTerm ? currentCard.term : currentCard.definition}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className={`answer-text ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}>
+                                        {answer}
+                                        {answer && (showTerm ? currentCard.termLanguage : currentCard.definitionLanguage) && (
+                                            <button onClick={() => playTTS(answer, showTerm ? currentCard.termLanguage : currentCard.definitionLanguage)} className="tts-button-large">
+                                                <Volume2 size={24} color="var(--color-green)" />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
                     
                     <div className="study-actions">
-                        {!showAnswer && currentQuestionType !== 'written' ? (
+                        {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' ? (
                             <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
                                 Show Answer
                             </button>
