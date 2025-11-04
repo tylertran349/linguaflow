@@ -61,6 +61,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
+    const [renderedCardCount, setRenderedCardCount] = useState(10);
     
     // Study state
     const [studyOptions, setStudyOptions] = useState(defaultStudyOptions);
@@ -79,6 +80,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     
     // View state
     const [showAllCards, setShowAllCards] = useState(false);
+    const [renderedViewCardCount, setRenderedViewCardCount] = useState(10);
 
     // Fetch all sets
     const fetchSets = async () => {
@@ -572,6 +574,60 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [viewMode, currentQuestionType, currentCardIndex, cardsToStudy, currentSet, studyOptions.questionFormat]);
 
+    useEffect(() => {
+        if (showAllCreateEdit) {
+            let mounted = true;
+            let count = 10;
+            const increment = 20; // Render in chunks of 20 to avoid freezing
+
+            const renderMore = () => {
+                if (!mounted) return;
+                
+                count = Math.min(count + increment, flashcards.length);
+                setRenderedCardCount(count);
+
+                if (count < flashcards.length) {
+                    requestAnimationFrame(renderMore);
+                }
+            };
+            
+            requestAnimationFrame(renderMore);
+
+            return () => {
+                mounted = false;
+            };
+        } else {
+            setRenderedCardCount(10);
+        }
+    }, [showAllCreateEdit, flashcards.length]);
+
+    useEffect(() => {
+        if (showAllCards && currentSet && currentSet.flashcards.length > 50) {
+            let mounted = true;
+            let count = 10;
+            const increment = 20; // Render in chunks of 20
+
+            const renderMore = () => {
+                if (!mounted) return;
+
+                count = Math.min(count + increment, currentSet.flashcards.length);
+                setRenderedViewCardCount(count);
+
+                if (count < currentSet.flashcards.length) {
+                    requestAnimationFrame(renderMore);
+                }
+            };
+
+            requestAnimationFrame(renderMore);
+
+            return () => {
+                mounted = false;
+            };
+        } else {
+            setRenderedViewCardCount(10);
+        }
+    }, [showAllCards, currentSet]);
+
     // Handle review decision
     const handleReviewDecision = async (grade) => {
         if (isProcessingReview) return;
@@ -647,6 +703,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setShowImport(false);
         setStudyOptions(defaultStudyOptions);
         setShowAllCreateEdit(false);
+        setRenderedCardCount(10);
     };
 
     // Render sets list
@@ -921,7 +978,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderCreateEdit = () => {
         const isEdit = !!currentSet;
         
-        const cardsToShow = showAllCreateEdit ? flashcards : flashcards.slice(0, 10);
+        const cardsToShow = flashcards.slice(0, renderedCardCount);
 
         return (
             <div className="flashcards-create-edit">
@@ -1197,8 +1254,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderView = () => {
         if (!currentSet) return null;
         
-        const cardsToShow = currentSet.flashcards.length > 50 && !showAllCards 
-            ? currentSet.flashcards.slice(0, 10)
+        const cardsToShow = currentSet.flashcards.length > 50
+            ? currentSet.flashcards.slice(0, showAllCards ? renderedViewCardCount : 10)
             : currentSet.flashcards;
         
         return (
@@ -1257,7 +1314,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 Show All {currentSet.flashcards.length} Cards <ChevronDown size={18} />
                             </button>
                         )}
-                        {showAllCards && (
+                        {showAllCards && renderedViewCardCount < currentSet.flashcards.length && (
+                             <button className="show-more-button" disabled>
+                                Loading...
+                            </button>
+                        )}
+                        {showAllCards && renderedViewCardCount === currentSet.flashcards.length && (
                             <button className="show-more-button" onClick={() => setShowAllCards(false)}>
                                 Show Less <ChevronUp size={18} />
                             </button>
