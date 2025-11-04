@@ -75,6 +75,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [studyAction, setStudyAction] = useState(null);
     const [mcqOptions, setMcqOptions] = useState([]);
 
+    const getCardStatus = (card) => {
+        if (!card.lastReviewed) {
+            return { label: 'New Card', className: 'status-new' };
+        }
+
+        if (card.lastGrade) {
+            const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
+            if (gradeInfo) {
+                return { label: `Studied: ${gradeInfo.label}`, className: `status-${gradeInfo.label.toLowerCase()}` };
+            }
+        }
+
+        return { label: 'Studied', className: 'status-studied' }; // Fallback
+    };
+
     // Study options modal
     const [showStudyOptionsModal, setShowStudyOptionsModal] = useState(false);
     
@@ -1342,6 +1357,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
         
         const currentCard = cardsToStudy[currentCardIndex];
+        const cardStatus = getCardStatus(currentCard);
         const showTerm = studyOptions.questionFormat === 'term';
         const question = showTerm ? currentCard.definition : currentCard.term;
         const answer = showTerm ? currentCard.term : currentCard.definition;
@@ -1394,6 +1410,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 </div>
                 
                 <div className="study-card">
+                    <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
                     <div className="study-question">
                         <div className="question-text">
                             {question}

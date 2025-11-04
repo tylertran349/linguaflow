@@ -725,6 +725,7 @@ app.put('/api/flashcards/cards/:setId/:cardIndex/review', ClerkExpressRequireAut
         card.nextReviewDate = fsrsUpdate.reviewDate;
         card.lapses = fsrsUpdate.lapses;
         card.reps = fsrsUpdate.reps;
+        card.lastGrade = grade;
         
         set.updatedAt = Date.now();
         await set.save();

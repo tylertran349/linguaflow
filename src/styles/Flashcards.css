@@ -733,6 +733,7 @@
 }
 
 .study-card {
+    position: relative;
     background-color: var(--color-background-light);
     border-radius: 10px;
     padding: 3rem;
@@ -744,6 +745,46 @@
     text-align: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s;
+}
+
+.card-status-label {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    white-space: nowrap;
+}
+
+.status-new {
+    background-color: #3498db; /* Blue */
+}
+
+.status-again {
+    background-color: #e74c3c; /* Red */
+}
+
+.status-hard {
+    background-color: #f39c12; /* Orange */
+    color: var(--color-dark-grey);
+}
+
+.status-good {
+    background-color: #2ecc71; /* Green */
+}
+
+.status-easy {
+    background-color: #9b59b6; /* Purple */
+}
+
+.status-studied {
+    background-color: #95a5a6; /* Grey */
 }
 
 .study-question {

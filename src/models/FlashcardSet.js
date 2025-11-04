@@ -16,6 +16,7 @@ const flashcardSchema = new mongoose.Schema({
     lastReviewed: { type: Date, default: null },
     nextReviewDate: { type: Date, default: null },
     interval: { type: Number, default: null },
+    lastGrade: { type: Number, default: null },
 });
 
 const flashcardSetSchema = new mongoose.Schema({
