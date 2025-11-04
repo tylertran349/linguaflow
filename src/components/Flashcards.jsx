@@ -60,8 +60,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [customRowSeparator, setCustomRowSeparator] = useState('');
     
     // Create/Edit pagination
-    const [createEditCurrentPage, setCreateEditCurrentPage] = useState(1);
-    const CARDS_PER_PAGE = 50;
+    const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
     
     // Study state
     const [studyOptions, setStudyOptions] = useState(defaultStudyOptions);
@@ -398,10 +397,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setFlashcards(prev => [...prev, newCard]);
         
-        // Go to the page where the new card is
-        const newTotalCards = flashcards.length + 1;
-        const newTotalPages = Math.ceil(newTotalCards / CARDS_PER_PAGE);
-        setCreateEditCurrentPage(newTotalPages);
+        // When adding a new card, expand the list if it's collapsed
+        if (!showAllCreateEdit) {
+            setShowAllCreateEdit(true);
+        }
         
         setEditingCardIndex(flashcards.length);
     };
@@ -647,6 +646,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setImportText('');
         setShowImport(false);
         setStudyOptions(defaultStudyOptions);
+        setShowAllCreateEdit(false);
     };
 
     // Render sets list
@@ -921,11 +921,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderCreateEdit = () => {
         const isEdit = !!currentSet;
         
-        // Pagination logic
-        const totalPages = Math.ceil(flashcards.length / CARDS_PER_PAGE);
-        const startIndex = (createEditCurrentPage - 1) * CARDS_PER_PAGE;
-        const endIndex = startIndex + CARDS_PER_PAGE;
-        const paginatedFlashcards = flashcards.slice(startIndex, endIndex);
+        const cardsToShow = showAllCreateEdit ? flashcards : flashcards.slice(0, 10);
 
         return (
             <div className="flashcards-create-edit">
@@ -1098,16 +1094,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <p className="status-message">No flashcards yet. Add or import some cards.</p>
                         ) : (
                             <div className="cards-list">
-                                {paginatedFlashcards.map((card, index) => {
-                                    const originalIndex = startIndex + index;
+                                {cardsToShow.map((card, index) => {
                                     return (
-                                    <div key={originalIndex} className={`card-item ${editingCardIndex === originalIndex ? 'editing' : ''}`}>
+                                    <div key={index} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
                                         <div className="card-header">
-                                            <button onClick={() => toggleStar(originalIndex)} className={`star-button ${card.starred ? 'starred' : ''}`}>
+                                            <button onClick={() => toggleStar(index)} className={`star-button ${card.starred ? 'starred' : ''}`}>
                                                 <Star size={24} color="#ffdc62" fill={card.starred ? '#ffdc62' : 'none'} />
                                             </button>
-                                            <span>Card {originalIndex + 1}</span>
-                                            <button onClick={() => deleteCard(originalIndex)} className="delete-card">
+                                            <span>Card {index + 1}</span>
+                                            <button onClick={() => deleteCard(index)} className="delete-card">
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -1117,7 +1112,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <div className="field-with-tts">
                                                     <textarea
                                                         value={card.term}
-                                                        onChange={(e) => updateCard(originalIndex, 'term', e.target.value)}
+                                                        onChange={(e) => updateCard(index, 'term', e.target.value)}
                                                         onInput={(e) => {
                                                             e.target.style.height = 'auto';
                                                             e.target.style.height = `${e.target.scrollHeight}px`;
@@ -1133,7 +1128,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 </div>
                                                 <select
                                                     value={card.termLanguage || ''}
-                                                    onChange={(e) => updateCard(originalIndex, 'termLanguage', e.target.value || null)}
+                                                    onChange={(e) => updateCard(index, 'termLanguage', e.target.value || null)}
                                                 >
                                                     <option value="">Select language</option>
                                                     {supportedLanguages.map(lang => (
@@ -1146,7 +1141,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <div className="field-with-tts">
                                                     <textarea
                                                         value={card.definition}
-                                                        onChange={(e) => updateCard(originalIndex, 'definition', e.target.value)}
+                                                        onChange={(e) => updateCard(index, 'definition', e.target.value)}
                                                         onInput={(e) => {
                                                             e.target.style.height = 'auto';
                                                             e.target.style.height = `${e.target.scrollHeight}px`;
@@ -1162,7 +1157,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 </div>
                                                 <select
                                                     value={card.definitionLanguage || ''}
-                                                    onChange={(e) => updateCard(originalIndex, 'definitionLanguage', e.target.value || null)}
+                                                    onChange={(e) => updateCard(index, 'definitionLanguage', e.target.value || null)}
                                                 >
                                                     <option value="">Select language</option>
                                                     {supportedLanguages.map(lang => (
@@ -1176,24 +1171,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             </div>
                         )}
                         
-                        {totalPages > 1 && (
-                            <div className="pagination-controls">
-                                <button
-                                    onClick={() => setCreateEditCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={createEditCurrentPage === 1}
-                                >
-                                    Previous
-                                </button>
-                                <span>
-                                    Page {createEditCurrentPage} of {totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setCreateEditCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={createEditCurrentPage === totalPages}
-                                >
-                                    Next
-                                </button>
-                            </div>
+                        {flashcards.length > 10 && !showAllCreateEdit && (
+                            <button className="show-more-button" onClick={() => setShowAllCreateEdit(true)}>
+                                Show All {flashcards.length} Cards <ChevronDown size={18} />
+                            </button>
+                        )}
+                        {flashcards.length > 10 && showAllCreateEdit && (
+                            <button className="show-more-button" onClick={() => setShowAllCreateEdit(false)}>
+                                Show Less <ChevronUp size={18} />
+                            </button>
                         )}
                     </div>
                     
