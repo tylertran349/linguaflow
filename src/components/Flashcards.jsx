@@ -681,8 +681,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 throw new Error('Failed to update review');
             }
             
-            // Remove current card and move to next
-            const newCards = cardsToStudy.filter((_, i) => i !== currentCardIndex);
+            // If the grade is "Forgot" or "Hard", move the card to the end of the queue.
+            // Otherwise, remove it from the session.
+            let newCards = [...cardsToStudy];
+            if (grade === Grade.Forgot || grade === Grade.Hard) {
+                // Move the current card to the end of the array
+                const reviewedCard = newCards.splice(currentCardIndex, 1)[0];
+                newCards.push(reviewedCard);
+            } else {
+                // Remove the card completely for "Good" and "Easy" grades
+                newCards.splice(currentCardIndex, 1);
+            }
+
             setCardsToStudy(newCards);
             
             if (newCards.length === 0) {

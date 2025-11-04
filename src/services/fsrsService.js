@@ -105,41 +105,39 @@ export class FSRS {
                           !card.difficulty || 
                           !card.lastReviewed || 
                           isNaN(new Date(card.lastReviewed).getTime());
-
+        
+        let s, d;
         if (isNewCard) {
-            // First review or invalid data
-            const s = s_0(grade);
-            const d = d_0(grade);
-            const i = Math.max(Math.round(interval(this.r_d, s)), 1);
-            
-            const nextReview = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
-
-            return {
-                stability: s,
-                difficulty: d,
-                reviewDate: nextReview,
-                lastReviewed: now,
-                lapses: 0,
-                reps: 1,
-            };
+            s = s_0(grade);
+            d = d_0(grade);
+        } else {
+            const elapsedDays = (now.getTime() - new Date(card.lastReviewed).getTime()) / (1000 * 60 * 60 * 24);
+            const t = Math.max(0, elapsedDays);
+            const r = retrievability(t, card.stability);
+            s = updateStability(card.difficulty, card.stability, r, grade);
+            d = updateDifficulty(card.difficulty, grade);
         }
 
-        // t is days since last review.
-        const elapsedDays = (now.getTime() - new Date(card.lastReviewed).getTime()) / (1000 * 60 * 60 * 24);
-        const t = Math.max(0, elapsedDays);
-        const r = retrievability(t, card.stability);
-        const s = updateStability(card.difficulty, card.stability, r, grade);
-        const d = updateDifficulty(card.difficulty, grade);
-        const i = Math.max(Math.round(interval(this.r_d, s)), 1);
-        const nextReview = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+        let nextReview;
+        if (grade === Grade.Forgot) {
+            nextReview = new Date(now.getTime() + 1 * 60 * 1000); // 1 minute
+        } else if (grade === Grade.Hard) {
+            nextReview = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
+        } else { // Good, Easy
+            const i = Math.max(Math.round(interval(this.r_d, s)), 1);
+            nextReview = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+        }
+        
+        const lapses = (card.lapses || 0) + (grade === Grade.Forgot ? 1 : 0);
+        const reps = (isNewCard ? 0 : card.reps || 0) + 1;
 
         return {
             stability: s,
             difficulty: d,
             reviewDate: nextReview,
             lastReviewed: now,
-            lapses: (card.lapses || 0) + (grade === Grade.Forgot ? 1 : 0),
-            reps: (card.reps || 0) + 1,
+            lapses: lapses,
+            reps: reps,
         }
     }
 }

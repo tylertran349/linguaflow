@@ -6,6 +6,7 @@ import { fetchSentencesFromGemini } from '../services/geminiService';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import { useLanguageHistoryCleanup } from '../hooks/useLanguageHistoryCleanup';
+import { Grade } from '../services/fsrsService';
 import '../styles/SentenceDisplay.css';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
@@ -448,19 +449,26 @@ function SentenceDisplay({ settings, geminiApiKey, topic, onApiKeyMissing, isSav
         // Increment the position counter
         setCurrentReviewPosition(prev => prev + 1);
 
-        // After successfully updating in the DB, remove the sentence from the current session's review list
-        // This provides immediate feedback and moves to the next card.
-        setReviewSentences(prevSentences => {
-            const filtered = prevSentences.filter(s => s._id !== sentenceId);
-            // Update total count to reflect the actual number of sentences remaining
-            setTotalReviewSentences(filtered.length);
-            // Reset currentReviewIndex if it's now out of bounds
-            if (currentReviewIndex >= filtered.length && filtered.length > 0) {
-                setCurrentReviewIndex(0);
-            }
-            return filtered;
-        });
+        const sentenceIndex = reviewSentences.findIndex(s => s._id === sentenceId);
+        if (sentenceIndex === -1) {
+            setIsProcessingReview(false);
+            return;
+        }
 
+        let newSentences = [...reviewSentences];
+        if (grade === Grade.Forgot || grade === Grade.Hard) {
+            const reviewedSentence = newSentences.splice(sentenceIndex, 1)[0];
+            newSentences.push(reviewedSentence);
+        } else {
+            newSentences.splice(sentenceIndex, 1);
+        }
+
+        setReviewSentences(newSentences);
+        setTotalReviewSentences(newSentences.length);
+
+        if (newSentences.length > 0 && currentReviewIndex >= newSentences.length) {
+            setCurrentReviewIndex(0);
+        }
     } catch (err) {
         console.error("Failed to update review:", err);
         // Show error to user
