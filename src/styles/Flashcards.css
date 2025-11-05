@@ -688,13 +688,14 @@
     margin: 0 auto;
     max-height: calc(100vh - 140px); /* Handles smaller screen heights */
     overflow-y: auto; /* Allows scrolling on smaller screens */
+    gap: var(--spacing-6);
 }
 
 .study-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-6);
+  width: 100%;
 }
 
 .study-header h2 {
@@ -729,7 +730,6 @@
   text-align: center;
   color: var(--color-grey);
   font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-6);
 }
 
 .study-card {
@@ -922,7 +922,17 @@
 
 .decision-button.forgot .grade-icon { color: var(--color-red); }
 .decision-button.hard .grade-icon { color: var(--color-yellow); }
-.decision-button.good .grade-icon { color: var(--color-green); }
+
+.decision-button.good {
+    background-color: var(--color-green);
+    border-color: var(--color-green);
+}
+
+.decision-button.good .grade-icon,
+.decision-button.good .grade-label {
+    color: white;
+}
+
 .decision-button.easy .grade-icon { color: var(--color-blue); }
 
 .grade-label {

@@ -1587,30 +1587,32 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     </div>
                     
                     <div className="study-actions">
-                        {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' ? (
+                        {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
                             <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
                                 Show Answer
                             </button>
-                        ) : showAnswer ? (
-                            <div className="grade-buttons">
-                                {FSRS_GRADES.map(item => {
-                                    const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                    return (
-                                        <button
-                                            key={item.grade}
-                                            className={`decision-button ${gradeName}`}
-                                            onClick={() => handleReviewDecision(item.grade)}
-                                            disabled={isProcessingReview}
-                                        >
-                                            <div className="grade-icon">{gradeIcons[item.grade]}</div>
-                                            <div className="grade-label">{item.label}</div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        ) : null}
+                        )}
                     </div>
                 </div>
+
+                {showAnswer && (
+                    <div className="grade-buttons">
+                        {FSRS_GRADES.map(item => {
+                            const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                            return (
+                                <button
+                                    key={item.grade}
+                                    className={`decision-button ${gradeName}`}
+                                    onClick={() => handleReviewDecision(item.grade)}
+                                    disabled={isProcessingReview}
+                                >
+                                    <div className="grade-icon">{gradeIcons[item.grade]}</div>
+                                    <div className="grade-label">{item.label}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         );
     };
