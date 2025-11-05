@@ -1587,10 +1587,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     </div>
                     
                     <div className="study-actions">
-                        {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
-                            <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
-                                Show Answer
+                        {currentQuestionType === 'flashcards' ? (
+                            <button
+                                className="show-answer-button"
+                                onClick={() => setShowAnswer(prev => !prev)}
+                            >
+                                {showAnswer ? 'Hide Answer' : 'Show Answer'}
                             </button>
+                        ) : (
+                            !showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
+                                <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
+                                    Show Answer
+                                </button>
+                            )
                         )}
                     </div>
                 </div>
