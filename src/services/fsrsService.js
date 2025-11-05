@@ -12,9 +12,9 @@ export const Grade = {
 
 export const FSRS_GRADES = [
     { grade: Grade.Forgot, label: 'Again', description: 'Completely forgot' },
-    { grade: Grade.Hard, label: 'Hard', description: 'Recalled with difficulty' },
-    { grade: Grade.Good, label: 'Good', description: 'Recalled with effort' },
-    { grade: Grade.Easy, label: 'Easy', description: 'Recalled with ease' }
+    { grade: Grade.Hard, label: 'Hard', description: 'Took a long time to recall' },
+    { grade: Grade.Good, label: 'Good', description: 'Recalled correctly' },
+    { grade: Grade.Easy, label: 'Easy', description: 'Mastered' }
 ];
 
 const F = 19.0 / 81.0;

@@ -83,7 +83,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         if (card.lastGrade) {
             const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
             if (gradeInfo) {
-                return { label: `Studied: ${gradeInfo.label}`, className: `status-${gradeInfo.label.toLowerCase()}` };
+                return { 
+                    label: `Studied: ${gradeInfo.label} (${gradeInfo.description})`, 
+                    className: `status-${gradeInfo.label.toLowerCase()}` 
+                };
             }
         }
 
@@ -1419,7 +1422,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     {cardsToStudy.length} cards remaining
                 </div>
                 
-                <div className="study-card">
+                <div className={`study-card ${!showAnswer && currentQuestionType === 'flashcards' ? 'flashcard-answer-hidden' : ''}`}>
                     <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
                     <div className="study-question">
                         <div className="question-text">
@@ -1530,7 +1533,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         >
                                             <div className="grade-icon">{gradeIcons[item.grade]}</div>
                                             <div className="grade-label">{item.label}</div>
-                                            <div className="grade-description">{item.description}</div>
                                         </button>
                                     );
                                 })}

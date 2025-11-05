@@ -734,8 +734,8 @@
 
 .study-card {
     position: relative;
-    background-color: var(--color-background-light);
-    border-radius: 10px;
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
     padding: 3rem;
     width: 100%;
     min-height: 450px;
@@ -743,8 +743,14 @@
     flex-direction: column;
     justify-content: space-between;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-lg);
     transition: transform 0.2s;
+    border: 1px solid var(--color-light-grey);
+}
+
+.study-card.flashcard-answer-hidden {
+    justify-content: center;
+    gap: 2rem;
 }
 
 .card-status-label {
@@ -789,8 +795,6 @@
 
 .study-question {
   text-align: center;
-  padding: var(--spacing-6);
-  background-color: var(--color-light-grey);
   border-radius: var(--radius-lg);
 }
 
@@ -909,12 +913,6 @@
     font-weight: 700;
     font-size: 1rem;
     color: var(--text-color);
-}
-
-.grade-description {
-    font-size: 0.8rem;
-    color: var(--text-color-secondary);
-    margin-top: 4px;
 }
 
 /* Pagination Controls */
@@ -1036,7 +1034,7 @@
     }
 
     .flashcards-study {
-        padding: var(--spacing-2);
+        padding: var(--spacing-2) var(--spacing-2) 2rem;
     }
 
     .study-card {
@@ -1107,6 +1105,13 @@
     
     .modal-scroll-wrapper {
         padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
+    }
+}
+
+/* Add extra padding at the bottom for short viewports */
+@media (max-height: 800px) {
+    .flashcards-study {
+        padding-bottom: 2rem;
     }
 }
 
