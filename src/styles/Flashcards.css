@@ -748,6 +748,22 @@
     border: 1px solid var(--color-light-grey);
 }
 
+.edit-card-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    cursor: pointer;
+    color: var(--color-green);
+    padding: var(--spacing-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .study-card.flashcard-answer-hidden {
     justify-content: center;
     gap: 2rem;

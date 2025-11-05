@@ -6,6 +6,7 @@ import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/Flashcards.css';
 import { FSRS, Grade, FSRS_GRADES } from '../services/fsrsService';
+import EditCardModal from './EditCardModal';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
@@ -74,6 +75,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [currentQuestionType, setCurrentQuestionType] = useState('flashcards');
     const [studyAction, setStudyAction] = useState(null);
     const [mcqOptions, setMcqOptions] = useState([]);
+
+    // Edit card modal state
+    const [isEditCardModalOpen, setIsEditCardModalOpen] = useState(false);
+    const [cardToEdit, setCardToEdit] = useState(null);
 
     const getCardStatus = (card) => {
         if (!card.lastReviewed) {
@@ -716,6 +721,62 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setError(err.message);
         } finally {
             setIsProcessingReview(false);
+        }
+    };
+
+    const handleSaveCardEdit = async (editedCard) => {
+        if (!currentSet || !editedCard) return;
+    
+        setLoading(true);
+        setError(null);
+    
+        try {
+            const token = await getToken();
+            const cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === editedCard._id);
+    
+            if (cardIndexInSet === -1) {
+                throw new Error("Card not found in the current set.");
+            }
+    
+            const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${cardIndexInSet}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    term: editedCard.term,
+                    definition: editedCard.definition,
+                    starred: editedCard.starred,
+                    termLanguage: editedCard.termLanguage,
+                    definitionLanguage: editedCard.definitionLanguage
+                })
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update flashcard.');
+            }
+    
+            // Update local state to reflect the change
+            const updatedFlashcards = currentSet.flashcards.map(card =>
+                card._id === editedCard._id ? { ...card, ...editedCard } : card
+            );
+            const updatedSet = { ...currentSet, flashcards: updatedFlashcards };
+            setCurrentSet(updatedSet);
+    
+            const updatedCardsToStudy = cardsToStudy.map(card =>
+                card._id === editedCard._id ? { ...card, ...editedCard } : card
+            );
+            setCardsToStudy(updatedCardsToStudy);
+    
+            setIsEditCardModalOpen(false);
+            setCardToEdit(null);
+    
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -1424,6 +1485,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 
                 <div className={`study-card ${!showAnswer && currentQuestionType === 'flashcards' ? 'flashcard-answer-hidden' : ''}`}>
                     <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                    <button 
+                        className="edit-card-button" 
+                        onClick={() => {
+                            setCardToEdit(currentCard);
+                            setIsEditCardModalOpen(true);
+                        }}
+                        title="Edit this card"
+                    >
+                        <Edit2 size={18} />
+                    </button>
                     <div className="study-question">
                         <div className="question-text">
                             {question}
@@ -1557,6 +1628,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {error && <div className="error-banner">{error}</div>}
             
             {viewMode === 'study' && showStudyOptionsModal && renderStudyOptionsModal()}
+            <EditCardModal 
+                isOpen={isEditCardModalOpen}
+                onClose={() => {
+                    setIsEditCardModalOpen(false);
+                    setCardToEdit(null);
+                }}
+                onSave={handleSaveCardEdit}
+                card={cardToEdit}
+                loading={loading}
+            />
             
             {viewMode === 'sets' && renderSetsList()}
             {(viewMode === 'create' || viewMode === 'edit') && renderCreateEdit()}

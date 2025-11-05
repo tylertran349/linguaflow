@@ -1,0 +1,23 @@
+/* src/styles/EditCardModal.css */
+.edit-card-modal-content {
+    width: clamp(350px, 90vw, 1400px);
+}
+
+.edit-card-form {
+    display: flex;
+    gap: var(--spacing-4);
+}
+
+.edit-card-form .form-group {
+    flex: 1;
+}
+
+.edit-card-form textarea {
+    resize: none;
+}
+
+@media (max-width: 768px) {
+    .edit-card-form {
+        flex-direction: column;
+    }
+}

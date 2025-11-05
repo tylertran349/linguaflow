@@ -662,6 +662,54 @@ app.post('/api/flashcards/sets/:setId/import', ClerkExpressRequireAuth(), async 
     }
 });
 
+// --- UPDATE A SINGLE FLASHCARD ---
+app.put('/api/flashcards/sets/:setId/cards/:cardIndex', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId, cardIndex } = req.params;
+        const cardUpdates = req.body;
+        
+        if (cardUpdates.term !== undefined && !cardUpdates.term.trim()) {
+            return res.status(400).json({ message: 'Term cannot be empty.' });
+        }
+        if (cardUpdates.definition !== undefined && !cardUpdates.definition.trim()) {
+            return res.status(400).json({ message: 'Definition cannot be empty.' });
+        }
+
+        const set = await FlashcardSet.findById(setId);
+        if (!set) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
+        if (set.userId !== userId) {
+            return res.status(403).json({ message: 'You can only update cards in your own sets.' });
+        }
+        
+        const cardIndexNum = parseInt(cardIndex);
+        if (isNaN(cardIndexNum) || cardIndexNum < 0 || cardIndexNum >= set.flashcards.length) {
+            return res.status(400).json({ message: 'Invalid card index.' });
+        }
+
+        const cardToUpdate = set.flashcards[cardIndexNum];
+
+        // Update only the fields that are sent in the request
+        if (cardUpdates.term !== undefined) cardToUpdate.term = cardUpdates.term;
+        if (cardUpdates.definition !== undefined) cardToUpdate.definition = cardUpdates.definition;
+        if (cardUpdates.starred !== undefined) cardToUpdate.starred = cardUpdates.starred;
+        if (cardUpdates.termLanguage !== undefined) cardToUpdate.termLanguage = cardUpdates.termLanguage;
+        if (cardUpdates.definitionLanguage !== undefined) cardToUpdate.definitionLanguage = cardUpdates.definitionLanguage;
+        
+        set.updatedAt = Date.now();
+        await set.save();
+        
+        res.json(set.flashcards[cardIndexNum]);
+
+    } catch (error) {
+        console.error("Error updating flashcard:", error);
+        res.status(500).json({ message: 'Failed to update flashcard.' });
+    }
+});
+
 // --- UPDATE STUDY OPTIONS FOR A SET ---
 app.put('/api/flashcards/sets/:setId/study-options', ClerkExpressRequireAuth(), async (req, res) => {
     try {
