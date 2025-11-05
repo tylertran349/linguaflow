@@ -10,6 +10,24 @@ import EditCardModal from './EditCardModal';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
+// Retry helper for DB write operations
+const RETRY_DELAY_MS = 3000;
+const retryUntilSuccess = async (operation, { onError } = {}) => {
+    // Retries forever until the operation resolves successfully
+    // Caller controls UI state (e.g., loading spinners)
+    // Token fetching and request creation should be done inside the operation so each retry is fresh
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        try {
+            const result = await operation();
+            return result;
+        } catch (err) {
+            if (onError) onError(err);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+    }
+};
+
 // Helper to find language code from language name
 const getLanguageCode = (langName) => {
     const lang = supportedLanguages.find(l => l.name === langName);
@@ -44,6 +62,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [viewMode, setViewMode] = useState('sets'); // 'sets', 'create', 'edit', 'study', 'view'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
     
     // Create/Edit state
     const [setTitle, setSetTitle] = useState('');
@@ -123,18 +142,67 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             
             const data = await response.json();
             setSets(data);
+            setHasLoadedOnce(true);
+            return true;
         } catch (err) {
             setError(err.message);
+            return false;
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (isSignedIn) {
+        if (isSignedIn && hasLoadedOnce) {
+            // If the user signs in and we've previously loaded, refresh sets.
             fetchSets();
         }
-    }, [isSignedIn]);
+        // Initial load is handled by the retry effect below when hasLoadedOnce is false.
+    }, [isSignedIn, hasLoadedOnce]);
+
+    // Initial load with retry for up to ~20 seconds
+    useEffect(() => {
+        if (!isSignedIn || hasLoadedOnce) return;
+
+        let isActive = true;
+        const maxDurationMs = 20000;
+        const retryDelayMs = 3000;
+        const startTime = Date.now();
+
+        const attempt = async () => {
+            const success = await fetchSets();
+            if (!isActive) return;
+            if (success) {
+                return; // hasLoadedOnce will be set in fetchSets
+            }
+        };
+
+        // First attempt immediately
+        attempt();
+
+        const id = setInterval(() => {
+            if (!isActive) return;
+            const elapsed = Date.now() - startTime;
+            if (hasLoadedOnce) {
+                clearInterval(id);
+                return;
+            }
+            if (elapsed >= maxDurationMs) {
+                clearInterval(id);
+                if (!hasLoadedOnce) {
+                    setError('Unable to load flashcard sets. Please refresh the page.');
+                    setLoading(false);
+                }
+                return;
+            }
+            attempt();
+        }, retryDelayMs);
+
+        return () => {
+            isActive = false;
+            clearInterval(id);
+        };
+    }, [isSignedIn, hasLoadedOnce]);
 
     // Load set for viewing/editing
     const loadSet = async (setId) => {
@@ -280,63 +348,69 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const isNewSet = !currentSet;
 
         try {
-            const token = await getToken();
             let setId = currentSet?._id;
-            
-            // Step 1: Create the set or update its metadata and first chunk
+
+            // Step 1: Create the set or update its metadata and first chunk (with retry)
             if (isNewSet) {
                 const firstChunk = flashcards.slice(0, CHUNK_SIZE);
-                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        title: setTitle,
-                        description: setDescription,
-                        isPublic,
-                        flashcards: firstChunk,
-                        studyOptions
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Failed to create flashcard set');
-                const newSet = await response.json();
-                setId = newSet._id;
-
-            } else { // It's an existing set
-                const firstChunk = flashcards.slice(0, CHUNK_SIZE);
-                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        title: setTitle,
-                        description: setDescription,
-                        isPublic,
-                        flashcards: firstChunk, // This will replace existing cards
-                        studyOptions
-                    })
-                });
-                if (!response.ok) throw new Error('Failed to update flashcard set');
-            }
-
-            // Step 2: Upload remaining chunks
-            if (flashcards.length > CHUNK_SIZE) {
-                for (let i = CHUNK_SIZE; i < flashcards.length; i += CHUNK_SIZE) {
-                    const chunk = flashcards.slice(i, i + CHUNK_SIZE);
-                    const importResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}/import`, {
+                const newSet = await retryUntilSuccess(async () => {
+                    const token = await getToken();
+                    const response = await fetch(`${API_BASE_URL}/api/flashcards/sets`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ flashcards: chunk })
+                        body: JSON.stringify({
+                            title: setTitle,
+                            description: setDescription,
+                            isPublic,
+                            flashcards: firstChunk,
+                            studyOptions
+                        })
                     });
-                    if (!importResponse.ok) throw new Error(`Failed to import chunk starting at index ${i}`);
+                    if (!response.ok) throw new Error('Failed to create flashcard set');
+                    return response.json();
+                }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+                setId = newSet._id;
+            } else { // It's an existing set
+                const firstChunk = flashcards.slice(0, CHUNK_SIZE);
+                await retryUntilSuccess(async () => {
+                    const token = await getToken();
+                    const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            title: setTitle,
+                            description: setDescription,
+                            isPublic,
+                            flashcards: firstChunk, // This will replace existing cards
+                            studyOptions
+                        })
+                    });
+                    if (!response.ok) throw new Error('Failed to update flashcard set');
+                }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+            }
+
+            // Step 2: Upload remaining chunks (each chunk with retry)
+            if (flashcards.length > CHUNK_SIZE) {
+                for (let i = CHUNK_SIZE; i < flashcards.length; i += CHUNK_SIZE) {
+                    const chunk = flashcards.slice(i, i + CHUNK_SIZE);
+                    await retryUntilSuccess(async () => {
+                        const token = await getToken();
+                        const importResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}/import`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ flashcards: chunk })
+                        });
+                        if (!importResponse.ok) throw new Error(`Failed to import chunk starting at index ${i}`);
+                    }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
                 }
             }
             
@@ -359,18 +433,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setLoading(true);
         setError(null);
         try {
-            const token = await getToken();
-            const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/user-data`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ studyOptions })
-            });
-            if (!response.ok) {
-                throw new Error('Failed to save study options');
-            }
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/user-data`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ studyOptions })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to save study options');
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
             // After saving user-specific options, we need to reload the main set
             // to see the merged view of the data.
             await loadSet(currentSet._id);
@@ -388,16 +465,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setLoading(true);
         setError(null);
         try {
-            const token = await getToken();
-            const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete flashcard set');
-            }
-            
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to delete flashcard set');
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
             await fetchSets();
             if (currentSet && currentSet._id === setId) {
                 setViewMode('sets');
@@ -658,7 +736,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setIsProcessingReview(true);
         try {
-            const token = await getToken();
             const card = cardsToStudy[currentCardIndex];
             let cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === card._id);
             
@@ -672,23 +749,25 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 }
                  cardIndexInSet = fallbackIndex;
             }
-            
-            const response = await fetch(
-                `${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ grade })
+
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(
+                    `${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ grade })
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error('Failed to update review');
                 }
-            );
-            
-            if (!response.ok) {
-                throw new Error('Failed to update review');
-            }
-            
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
             // If the grade is "Forgot" or "Hard", move the card to the end of the queue.
             // Otherwise, remove it from the session.
             let newCards = [...cardsToStudy];
@@ -731,32 +810,37 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setError(null);
     
         try {
-            const token = await getToken();
             const cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === editedCard._id);
     
             if (cardIndexInSet === -1) {
                 throw new Error("Card not found in the current set.");
             }
-    
-            const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${cardIndexInSet}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    term: editedCard.term,
-                    definition: editedCard.definition,
-                    starred: editedCard.starred,
-                    termLanguage: editedCard.termLanguage,
-                    definitionLanguage: editedCard.definitionLanguage
-                })
-            });
-    
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update flashcard.');
-            }
+
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${cardIndexInSet}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        term: editedCard.term,
+                        definition: editedCard.definition,
+                        starred: editedCard.starred,
+                        termLanguage: editedCard.termLanguage,
+                        definitionLanguage: editedCard.definitionLanguage
+                    })
+                });
+                if (!response.ok) {
+                    let message = 'Failed to update flashcard.';
+                    try {
+                        const errorData = await response.json();
+                        message = errorData.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
     
             // Update local state to reflect the change
             const updatedFlashcards = currentSet.flashcards.map(card =>
