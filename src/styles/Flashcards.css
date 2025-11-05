@@ -738,10 +738,10 @@
     border-radius: var(--radius-xl);
     padding: 3rem;
     width: 100%;
-    min-height: 450px;
+    min-height: 200px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: space-evenly;
     text-align: center;
     box-shadow: var(--shadow-lg);
     transition: transform 0.2s;
