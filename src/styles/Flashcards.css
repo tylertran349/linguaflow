@@ -686,9 +686,14 @@
     width: 100%;
     max-width: 950px;
     margin: 0 auto;
-    max-height: calc(100vh - 140px); /* Handles smaller screen heights */
+    height: calc(100vh - 140px); /* Use height instead of max-height to force scrolling */
+    max-height: calc(100vh - 140px);
     overflow-y: auto; /* Allows scrolling on smaller screens */
+    overflow-x: hidden;
     gap: var(--spacing-6);
+    padding-bottom: 4rem; /* Extra padding to ensure grade buttons are accessible */
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .study-header {
@@ -893,6 +898,9 @@
     display: flex;
     gap: 15px;
     width: 100%;
+    margin-top: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 
 .decision-button {
@@ -1060,7 +1068,9 @@
     }
 
     .flashcards-study {
-        padding: var(--spacing-2) var(--spacing-2) 2rem;
+        padding: var(--spacing-2) var(--spacing-2) 4rem; /* Increased bottom padding for mobile */
+        height: calc(100vh - 100px); /* Adjust for mobile header/nav */
+        max-height: calc(100vh - 100px);
     }
 
     .study-card {
@@ -1134,10 +1144,170 @@
     }
 }
 
-/* Add extra padding at the bottom for short viewports */
-@media (max-height: 800px) {
+/* Responsive adjustments for limited height screens */
+@media (max-height: 850px) {
+    .flashcards-container {
+        padding-top: var(--spacing-2);
+        padding-bottom: var(--spacing-2);
+        gap: var(--spacing-4);
+    }
+
+    .flashcards-create-edit, .flashcards-view {
+        padding: var(--spacing-6);
+    }
+
+    .create-header, .view-header {
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .create-form {
+        gap: var(--spacing-4);
+    }
+
+    .set-card {
+        padding: var(--spacing-4);
+        gap: var(--spacing-2);
+    }
+
+    .study-card {
+        padding: 2rem;
+        min-height: 180px;
+    }
+
+    .question-text {
+        font-size: var(--font-size-xl);
+    }
+
+    .grade-buttons {
+        gap: 10px;
+        margin-top: var(--spacing-2);
+    }
+    
+    .decision-button {
+        padding: 12px 8px;
+    }
+}
+
+/* More aggressive adjustments for very short screens */
+@media (max-height: 750px) {
+    .flashcards-container {
+        padding-top: var(--spacing-1);
+        padding-bottom: var(--spacing-1);
+    }
+    
+    .flashcards-create-edit, .flashcards-view {
+        padding: var(--spacing-4);
+        max-height: calc(100vh - 100px);
+    }
+
+    .flashcards-sets-list {
+        max-height: calc(100vh - 100px);
+    }
+
+    .create-header, .view-header {
+        margin-bottom: var(--spacing-3);
+        padding-bottom: var(--spacing-3);
+    }
+    
+    .create-form {
+        gap: var(--spacing-3);
+    }
+
+    .form-group {
+        gap: var(--spacing-1);
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group textarea,
+    .form-group select {
+        padding: var(--spacing-2);
+    }
+
+    .card-item {
+        padding: var(--spacing-3);
+    }
+    
+    .card-content {
+        gap: var(--spacing-3);
+    }
+    
+    .view-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .card-item-view {
+        padding: 1rem 1.25rem;
+    }
+    
     .flashcards-study {
-        padding-bottom: 2rem;
+        padding: var(--spacing-2);
+        padding-bottom: 5rem;
+        gap: var(--spacing-2);
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
+    }
+    
+    .study-header {
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .study-header h2 {
+        font-size: var(--font-size-lg);
+    }
+    
+    .study-card {
+        padding: 1.5rem;
+        gap: var(--spacing-2);
+    }
+    
+    .question-text {
+        font-size: var(--font-size-lg);
+        min-height: 60px;
+    }
+    
+    .answer-text {
+        font-size: var(--font-size-base);
+        min-height: 50px;
+    }
+    
+    .study-answer hr {
+        margin: var(--spacing-2) 0;
+    }
+
+    .grade-buttons {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        gap: 10px;
+    }
+    
+    .decision-button {
+        padding: 10px 5px;
+    }
+    
+    .grade-label {
+        font-size: 0.8rem;
+    }
+    
+    .mcq-options {
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .mcq-option {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        min-height: 50px;
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+    .modal-header, .modal-actions {
+        padding: var(--spacing-4);
+    }
+    .modal-scroll-wrapper {
+        padding: var(--spacing-2) var(--spacing-4);
     }
 }
 

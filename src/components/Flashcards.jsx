@@ -108,7 +108,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
             if (gradeInfo) {
                 return { 
-                    label: `Studied: ${gradeInfo.label} (${gradeInfo.description})`, 
+                    label: `Studied: ${gradeInfo.label}`, 
                     className: `status-${gradeInfo.label.toLowerCase()}` 
                 };
             }
