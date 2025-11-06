@@ -807,6 +807,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
+    const handleSkip = () => {
+        if (cardsToStudy.length <= 1) return;
+
+        const newCards = [...cardsToStudy];
+        const skippedCard = newCards.splice(currentCardIndex, 1)[0];
+        newCards.push(skippedCard);
+
+        setCardsToStudy(newCards);
+        
+        const nextIndex = currentCardIndex >= newCards.length ? 0 : currentCardIndex;
+        setCurrentCardIndex(nextIndex);
+        setShowAnswer(false);
+        setWrittenAnswer('');
+        setAnswerFeedback(null);
+        setHasFlippedOnce(false);
+        setCurrentQuestionType(newCards[nextIndex].questionType);
+    };
+
     const handleSaveCardEdit = async (editedCard) => {
         if (!currentSet || !editedCard) return;
     
@@ -1672,7 +1690,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         className={`written-answer-input ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}
                                         autoFocus
                                     />
-                                    <button type="submit" className="generate-button">Check</button>
+                                    <div className="written-answer-actions">
+                                        <button type="button" className="skip-button" onClick={handleSkip}>Skip</button>
+                                        <button type="submit" className="generate-button">Answer</button>
+                                    </div>
                                 </form>
                             )}
     
@@ -1729,6 +1750,37 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <span>{showTerm ? currentCard.term : currentCard.definition}</span>
                                             </div>
                                         </div>
+                                    ) : currentQuestionType === 'written' ? (
+                                        <div className="written-answer-feedback">
+                                            {answerFeedback === 'correct' ? (
+                                                <>
+                                                    <p className="feedback-message correct">You got it right!</p>
+                                                    <div className="answer-container correct">
+                                                        {writtenAnswer}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="feedback-group">
+                                                        <p className="feedback-label incorrect">Incorrect answer</p>
+                                                        <div className="answer-container incorrect">
+                                                            {writtenAnswer}
+                                                        </div>
+                                                    </div>
+                                                    <div className="feedback-group">
+                                                        <p className="feedback-label correct">Correct answer</p>
+                                                        <div className="answer-container correct">
+                                                            {answer}
+                                                            {answer && answerLang && (
+                                                                <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                                    <Volume2 size={24} color="var(--color-green)" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     ) : (
                                         <div className={`answer-text ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}>
                                             {answer}
@@ -1753,24 +1805,32 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     </div>
                 )}
 
-                {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) && (
-                    <div className="grade-buttons">
-                        {FSRS_GRADES.map(item => {
-                            const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                            return (
-                                <button
-                                    key={item.grade}
-                                    className={`decision-button ${gradeName}`}
-                                    onClick={() => handleReviewDecision(item.grade)}
-                                    disabled={isProcessingReview}
-                                >
-                                    <div className="grade-icon">{gradeIcons[item.grade]}</div>
-                                    <div className="grade-label">{item.label}</div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
+                <div className="study-bottom-actions">
+                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) ? (
+                        <div className="grade-buttons">
+                            {FSRS_GRADES.map(item => {
+                                const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                                return (
+                                    <button
+                                        key={item.grade}
+                                        className={`decision-button ${gradeName}`}
+                                        onClick={() => handleReviewDecision(item.grade)}
+                                        disabled={isProcessingReview}
+                                    >
+                                        <div className="grade-icon">{gradeIcons[item.grade]}</div>
+                                        <div className="grade-label">{item.label}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        currentQuestionType !== 'written' && (
+                            <button className="skip-button" onClick={handleSkip}>
+                                Skip
+                            </button>
+                        )
+                    )}
+                </div>
             </div>
         );
     };
