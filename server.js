@@ -543,16 +543,16 @@ app.post('/api/flashcards/sets', ClerkExpressRequireAuth(), async (req, res) => 
             studyOptions: studyOptions || {
                 examDate: null,
                 newCardsPerDay: 10,
-                intervals: {
-                    again: 1,
-                    hard: 15,
-                    good: 1,
-                    easy: 4
-                },
-                questionTypes: {
+                newCardQuestionTypes: {
                     flashcards: true,
                     multipleChoice: false,
                     written: false,
+                    trueFalse: false
+                },
+                seenCardQuestionTypes: {
+                    flashcards: false,
+                    multipleChoice: false,
+                    written: true,
                     trueFalse: false
                 },
                 questionFormat: 'term',

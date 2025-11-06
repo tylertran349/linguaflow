@@ -1,5 +1,5 @@
 // src/components/Flashcards.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText } from '../services/ttsService';
@@ -37,10 +37,16 @@ const getLanguageCode = (langName) => {
 const defaultStudyOptions = {
     examDate: null,
     newCardsPerDay: 10,
-    questionTypes: {
+    newCardQuestionTypes: {
         flashcards: true,
         multipleChoice: false,
         written: false,
+        trueFalse: false
+    },
+    seenCardQuestionTypes: {
+        flashcards: false,
+        multipleChoice: false,
+        written: true,
         trueFalse: false
     },
     questionFormat: 'term',
@@ -98,6 +104,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [hasFlippedOnce, setHasFlippedOnce] = useState(false);
     const [retypeInputValue, setRetypeInputValue] = useState('');
     const [isRetypeCorrect, setIsRetypeCorrect] = useState(false);
+
+    // Synchronous guard against race conditions from fast clicks
+    const isProcessingReviewRef = useRef(false);
+
+    // State for the new study round logic
+    const [reviewAgainQueue, setReviewAgainQueue] = useState([]);
+    const [isRoundComplete, setIsRoundComplete] = useState(false);
 
     // Edit card modal state
     const [isEditCardModalOpen, setIsEditCardModalOpen] = useState(false);
@@ -233,9 +246,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const mergedOptions = {
                 ...defaultStudyOptions,
                 ...loadedOptions,
-                questionTypes: {
-                    ...defaultStudyOptions.questionTypes,
-                    ...(loadedOptions.questionTypes || {}),
+                newCardQuestionTypes: {
+                    ...defaultStudyOptions.newCardQuestionTypes,
+                    ...(loadedOptions.newCardQuestionTypes || {}),
+                },
+                seenCardQuestionTypes: {
+                    ...defaultStudyOptions.seenCardQuestionTypes,
+                    ...(loadedOptions.seenCardQuestionTypes || {}),
                 },
                 learningOptions: {
                     ...defaultStudyOptions.learningOptions,
@@ -543,16 +560,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setError(null);
 
-        // Determine active question types
-        const activeQuestionTypes = Object.entries(studyOptions.questionTypes)
-            .filter(([, isActive]) => isActive)
-            .map(([type]) => type);
-
-        if (activeQuestionTypes.length === 0) {
-            setError("Please select at least one question type in the study options.");
-            return;
-        }
-
         const { studyRangeOnly, excludeRange } = studyOptions.learningOptions;
         let cards;
 
@@ -614,9 +621,33 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             return;
         }
 
+        const hasNewCards = cards.some(c => !c.lastReviewed);
+        const hasSeenCards = cards.some(c => c.lastReviewed);
+
+        const activeNewCardTypes = Object.entries(studyOptions.newCardQuestionTypes)
+            .filter(([, isActive]) => isActive)
+            .map(([type]) => type);
+
+        const activeSeenCardTypes = Object.entries(studyOptions.seenCardQuestionTypes)
+            .filter(([, isActive]) => isActive)
+            .map(([type]) => type);
+
+        if (hasNewCards && activeNewCardTypes.length === 0) {
+            setError("Your study session includes new cards, but you have no question types selected for them. Please adjust your study options.");
+            return;
+        }
+
+        if (hasSeenCards && activeSeenCardTypes.length === 0) {
+            setError("Your study session includes review cards, but you have no question types selected for them. Please adjust your study options.");
+            return;
+        }
+
         // Assign a random question type to each card for this session
         const cardsWithQuestionTypes = cards.map(card => {
-            const questionType = activeQuestionTypes[Math.floor(Math.random() * activeQuestionTypes.length)];
+            const isNew = !card.lastReviewed;
+            const questionTypes = isNew ? activeNewCardTypes : activeSeenCardTypes;
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+
             const newCardData = {
                 ...card,
                 questionType,
@@ -650,6 +681,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
+        setIsRoundComplete(false);
+        setReviewAgainQueue([]);
         setViewMode('study');
     }, [currentSet, studyOptions]);
 
@@ -734,10 +767,39 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [showAllCards, currentSet]);
 
+    const handleStopStudying = () => {
+        setViewMode('view');
+        setIsRoundComplete(false);
+        setReviewAgainQueue([]);
+        setCardsToStudy([]);
+    };
+
+    const handleKeepStudying = () => {
+        if (reviewAgainQueue.length === 0) return;
+
+        let nextRoundCards = [...reviewAgainQueue];
+        if (studyOptions.learningOptions.shuffle) {
+            nextRoundCards.sort(() => Math.random() - 0.5);
+        }
+
+        setCardsToStudy(nextRoundCards);
+        setReviewAgainQueue([]);
+        setIsRoundComplete(false);
+        
+        setCurrentCardIndex(0);
+        setShowAnswer(false);
+        setWrittenAnswer('');
+        setAnswerFeedback(null);
+        setHasFlippedOnce(false);
+        setRetypeInputValue('');
+        setIsRetypeCorrect(false);
+        setCurrentQuestionType(nextRoundCards[0].questionType);
+    };
+
     // Handle review decision
     const handleReviewDecision = async (grade) => {
-        if (isProcessingReview) return;
-        if (!currentSet || cardsToStudy.length === 0) return;
+        if (isProcessingReviewRef.current) return;
+        isProcessingReviewRef.current = true;
         
         setIsProcessingReview(true);
         try {
@@ -745,52 +807,31 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             let cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === card._id);
             
             if (cardIndexInSet === -1) {
-                // Fallback for safety, though this shouldn't happen with cards from the DB
-                const fallbackIndex = currentSet.flashcards.findIndex(c => 
-                    c.term === card.term && c.definition === card.definition
-                );
-                if (fallbackIndex === -1) {
-                    throw new Error('Card not found in set');
-                }
-                 cardIndexInSet = fallbackIndex;
+                const fallbackIndex = currentSet.flashcards.findIndex(c => c.term === card.term && c.definition === card.definition);
+                if (fallbackIndex === -1) throw new Error('Card not found in set');
+                cardIndexInSet = fallbackIndex;
             }
 
             await retryUntilSuccess(async () => {
                 const token = await getToken();
-                const response = await fetch(
-                    `${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`,
-                    {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ grade })
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to update review');
-                }
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ grade })
+                });
+                if (!response.ok) throw new Error('Failed to update review');
             }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
 
-            // If the grade is "Forgot" or "Hard", move the card to the end of the queue.
-            // Otherwise, remove it from the session.
-            let newCards = [...cardsToStudy];
+            const reviewedCard = cardsToStudy[currentCardIndex];
             if (grade === Grade.Forgot || grade === Grade.Hard) {
-                // Move the current card to the end of the array
-                const reviewedCard = newCards.splice(currentCardIndex, 1)[0];
-                newCards.push(reviewedCard);
-            } else {
-                // Remove the card completely for "Good" and "Easy" grades
-                newCards.splice(currentCardIndex, 1);
+                setReviewAgainQueue(prev => [...prev, reviewedCard]);
             }
 
+            const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
             setCardsToStudy(newCards);
             
             if (newCards.length === 0) {
-                setViewMode('view');
-                setShowAnswer(false);
-                setHasFlippedOnce(false);
+                setIsRoundComplete(true);
             } else {
                 const nextIndex = currentCardIndex >= newCards.length ? 0 : currentCardIndex;
                 setCurrentCardIndex(nextIndex);
@@ -803,33 +844,37 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
-            // Reload set to get updated FSRS data
             await loadSet(currentSet._id);
         } catch (err) {
             setError(err.message);
         } finally {
+            isProcessingReviewRef.current = false;
             setIsProcessingReview(false);
         }
     };
 
     const handleSkip = () => {
-        if (cardsToStudy.length <= 1) return;
+        if (cardsToStudy.length === 0) return;
 
-        const newCards = [...cardsToStudy];
-        const skippedCard = newCards.splice(currentCardIndex, 1)[0];
-        newCards.push(skippedCard);
+        const skippedCard = cardsToStudy[currentCardIndex];
+        setReviewAgainQueue(prev => [...prev, skippedCard]);
 
+        const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
         setCardsToStudy(newCards);
-        
-        const nextIndex = currentCardIndex >= newCards.length ? 0 : currentCardIndex;
-        setCurrentCardIndex(nextIndex);
-        setShowAnswer(false);
-        setWrittenAnswer('');
-        setAnswerFeedback(null);
-        setHasFlippedOnce(false);
-        setRetypeInputValue('');
-        setIsRetypeCorrect(false);
-        setCurrentQuestionType(newCards[nextIndex].questionType);
+
+        if (newCards.length === 0) {
+            setIsRoundComplete(true);
+        } else {
+            const nextIndex = currentCardIndex >= newCards.length ? 0 : currentCardIndex;
+            setCurrentCardIndex(nextIndex);
+            setShowAnswer(false);
+            setWrittenAnswer('');
+            setAnswerFeedback(null);
+            setHasFlippedOnce(false);
+            setRetypeInputValue('');
+            setIsRetypeCorrect(false);
+            setCurrentQuestionType(newCards[nextIndex].questionType);
+        }
     };
 
     const handleSaveCardEdit = async (editedCard) => {
@@ -978,9 +1023,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 const mergedOptions = {
                     ...defaultStudyOptions,
                     ...loadedOptions,
-                    questionTypes: {
-                        ...defaultStudyOptions.questionTypes,
-                        ...(loadedOptions.questionTypes || {}),
+                    newCardQuestionTypes: {
+                        ...defaultStudyOptions.newCardQuestionTypes,
+                        ...(loadedOptions.newCardQuestionTypes || {}),
+                    },
+                    seenCardQuestionTypes: {
+                        ...defaultStudyOptions.seenCardQuestionTypes,
+                        ...(loadedOptions.seenCardQuestionTypes || {}),
                     },
                     learningOptions: {
                         ...defaultStudyOptions.learningOptions,
@@ -1048,15 +1097,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 />
             </div>
             <div className="form-group">
-                <label>Question Types</label>
+                <label>Question Types for New Cards</label>
                 <div className="checkbox-group">
                     <div className="toggle-switch-container">
                         <span>Flashcards</span>
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={studyOptions.questionTypes.flashcards}
-                                onChange={(e) => setStudyOptions(prev => ({ ...prev, questionTypes: { ...prev.questionTypes, flashcards: e.target.checked } }))}
+                                checked={studyOptions.newCardQuestionTypes.flashcards}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, newCardQuestionTypes: { ...prev.newCardQuestionTypes, flashcards: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1066,8 +1115,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={studyOptions.questionTypes.multipleChoice}
-                                onChange={(e) => setStudyOptions(prev => ({ ...prev, questionTypes: { ...prev.questionTypes, multipleChoice: e.target.checked } }))}
+                                checked={studyOptions.newCardQuestionTypes.multipleChoice}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, newCardQuestionTypes: { ...prev.newCardQuestionTypes, multipleChoice: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1077,8 +1126,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={studyOptions.questionTypes.written}
-                                onChange={(e) => setStudyOptions(prev => ({ ...prev, questionTypes: { ...prev.questionTypes, written: e.target.checked } }))}
+                                checked={studyOptions.newCardQuestionTypes.written}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, newCardQuestionTypes: { ...prev.newCardQuestionTypes, written: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1088,8 +1137,57 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={studyOptions.questionTypes.trueFalse}
-                                onChange={(e) => setStudyOptions(prev => ({ ...prev, questionTypes: { ...prev.questionTypes, trueFalse: e.target.checked } }))}
+                                checked={studyOptions.newCardQuestionTypes.trueFalse}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, newCardQuestionTypes: { ...prev.newCardQuestionTypes, trueFalse: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Question Types for Seen Cards</label>
+                <div className="checkbox-group">
+                    <div className="toggle-switch-container">
+                        <span>Flashcards</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.seenCardQuestionTypes.flashcards}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, seenCardQuestionTypes: { ...prev.seenCardQuestionTypes, flashcards: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Multiple Choice</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.seenCardQuestionTypes.multipleChoice}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, seenCardQuestionTypes: { ...prev.seenCardQuestionTypes, multipleChoice: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Written</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.seenCardQuestionTypes.written}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, seenCardQuestionTypes: { ...prev.seenCardQuestionTypes, written: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>True & False</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.seenCardQuestionTypes.trueFalse}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, seenCardQuestionTypes: { ...prev.seenCardQuestionTypes, trueFalse: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1545,11 +1643,39 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Render study mode
     const renderStudy = () => {
-        if (!currentSet || cardsToStudy.length === 0) {
+        if (!currentSet || (cardsToStudy.length === 0 && !isRoundComplete)) {
             return (
                 <div className="initial-state-container">
                     <p className="status-message">No cards to study. Going back to set view.</p>
                     <button onClick={() => setViewMode('view')}>Back</button>
+                </div>
+            );
+        }
+
+        if (isRoundComplete) {
+            return (
+                <div className="round-complete-container">
+                    <h2>Round Complete!</h2>
+                    {reviewAgainQueue.length > 0 ? (
+                        <>
+                            <p>You have {reviewAgainQueue.length} card(s) to review again.</p>
+                            <div className="round-complete-actions">
+                                <button onClick={handleStopStudying}>Stop Studying</button>
+                                <button className="generate-button" onClick={handleKeepStudying}>
+                                    Keep Studying
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <p>Congratulations! You've reviewed all cards correctly.</p>
+                            <div className="round-complete-actions">
+                                <button className="generate-button" onClick={handleStopStudying}>
+                                    Back to Set
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             );
         }

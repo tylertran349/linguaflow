@@ -6,10 +6,16 @@ const userFlashcardSetDataSchema = new mongoose.Schema({
     studyOptions: {
         examDate: { type: Date, default: null },
         newCardsPerDay: { type: Number, default: 10 },
-        questionTypes: {
+        newCardQuestionTypes: {
             flashcards: { type: Boolean, default: true },
             multipleChoice: { type: Boolean, default: false },
             written: { type: Boolean, default: false },
+            trueFalse: { type: Boolean, default: false }
+        },
+        seenCardQuestionTypes: {
+            flashcards: { type: Boolean, default: false },
+            multipleChoice: { type: Boolean, default: false },
+            written: { type: Boolean, default: true },
             trueFalse: { type: Boolean, default: false }
         },
         questionFormat: { type: String, enum: ['term', 'definition'], default: 'term' },
