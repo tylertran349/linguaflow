@@ -789,14 +789,12 @@ app.put('/api/flashcards/cards/:setId/:cardIndex/review', ClerkExpressRequireAut
 });
 
 // --- 7. FRONTEND CATCH-ALL ROUTE ---
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
-  // only handle non-API routes
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-  });
-}
+// only handle non-API routes
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 // --- 8. START THE SERVER ---
 app.listen(PORT, () => {
