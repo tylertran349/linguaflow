@@ -94,6 +94,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [currentQuestionType, setCurrentQuestionType] = useState('flashcards');
     const [studyAction, setStudyAction] = useState(null);
     const [mcqOptions, setMcqOptions] = useState([]);
+    const [hasFlippedOnce, setHasFlippedOnce] = useState(false);
 
     // Edit card modal state
     const [isEditCardModalOpen, setIsEditCardModalOpen] = useState(false);
@@ -642,6 +643,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setShowAnswer(false);
         setWrittenAnswer('');
         setAnswerFeedback(null);
+        setHasFlippedOnce(false);
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
@@ -785,12 +787,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             if (newCards.length === 0) {
                 setViewMode('view');
                 setShowAnswer(false);
+                setHasFlippedOnce(false);
             } else {
                 const nextIndex = currentCardIndex >= newCards.length ? 0 : currentCardIndex;
                 setCurrentCardIndex(nextIndex);
                 setShowAnswer(false);
                 setWrittenAnswer('');
                 setAnswerFeedback(null);
+                setHasFlippedOnce(false);
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
@@ -1520,6 +1524,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const question = showTerm ? currentCard.definition : currentCard.term;
         const answer = showTerm ? currentCard.term : currentCard.definition;
         const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
+        const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
         
         const handleWrittenAnswerSubmit = (e) => {
             e.preventDefault();
@@ -1566,129 +1571,189 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 <div className="study-progress">
                     {cardsToStudy.length} cards remaining
                 </div>
-                
-                <div className={`study-card ${!showAnswer && currentQuestionType === 'flashcards' ? 'flashcard-answer-hidden' : ''}`}>
-                    <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
-                    <button 
-                        className="edit-card-button" 
-                        onClick={() => {
-                            setCardToEdit(currentCard);
-                            setIsEditCardModalOpen(true);
-                        }}
-                        title="Edit this card"
-                    >
-                        <Edit2 size={18} />
-                    </button>
-                    <div className="study-question">
-                        <div className="question-text">
-                            {question}
-                            {question && questionLang && (
-                                <button onClick={() => playTTS(question, questionLang)} className="tts-button-large">
-                                    <Volume2 size={24} color="var(--color-green)" />
+
+                {currentQuestionType === 'flashcards' ? (
+                    <div className="study-card-container">
+                        <div 
+                            className={`study-card-flipper ${showAnswer ? 'is-flipped' : ''}`}
+                            onClick={() => {
+                                if (!showAnswer) {
+                                    setHasFlippedOnce(true);
+                                }
+                                setShowAnswer(prev => !prev);
+                            }}
+                        >
+                            <div className="study-card study-card-front">
+                                <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                <button
+                                    className="edit-card-button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCardToEdit(currentCard);
+                                        setIsEditCardModalOpen(true);
+                                    }}
+                                    title="Edit this card"
+                                >
+                                    <Edit2 size={18} />
                                 </button>
-                            )}
-                        </div>
-
-                        {currentQuestionType === 'written' && !showAnswer && (
-                            <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
-                                <input
-                                    type="text"
-                                    value={writtenAnswer}
-                                    onChange={(e) => setWrittenAnswer(e.target.value)}
-                                    placeholder="Type your answer..."
-                                    className={`written-answer-input ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}
-                                    autoFocus
-                                />
-                                <button type="submit" className="generate-button">Check</button>
-                            </form>
-                        )}
-
-                        {currentQuestionType === 'multipleChoice' && (
-                            <div className="mcq-options">
-                                {mcqOptions.map((option, index) => {
-                                    const isCorrect = option === answer;
-                                    let buttonClass = 'mcq-option';
-                                    if (showAnswer) {
-                                        if (isCorrect) {
-                                            buttonClass += ' correct';
-                                        } else if (option === writtenAnswer) {
-                                            buttonClass += ' incorrect';
-                                        }
-                                    }
-                                    return (
-                                        <button
-                                            key={index}
-                                            className={buttonClass}
-                                            onClick={() => !showAnswer && handleMcqAnswer(option)}
-                                            disabled={showAnswer}
-                                        >
-                                            {option}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        
-                        {currentQuestionType === 'trueFalse' && !showAnswer && (
-                            <div className="true-false-container">
-                                <div className="true-false-proposed-answer">
-                                    { currentCard.isTrueFalseCorrect 
-                                        ? answer 
-                                        : (showTerm ? currentCard.falsePair.term : currentCard.falsePair.definition)
-                                    }
-                                </div>
-                                <div className="true-false-actions">
-                                    <button onClick={() => handleTrueFalseAnswer(true)} className="tf-button true">True</button>
-                                    <button onClick={() => handleTrueFalseAnswer(false)} className="tf-button false">False</button>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {showAnswer && (
-                            <div className="study-answer">
-                                <hr />
-                                {currentQuestionType === 'trueFalse' ? (
-                                    <div className={`answer-feedback ${answerFeedback}`}>
-                                        <p>{answerFeedback === 'correct' ? 'Correct!' : 'Incorrect.'} The statement was <strong>{currentCard.isTrueFalseCorrect ? 'True' : 'False'}</strong>.</p>
-                                        <div className="correct-pair">
-                                            <span>{showTerm ? currentCard.definition : currentCard.term}</span>
-                                            <span className="separator">is</span>
-                                            <span>{showTerm ? currentCard.term : currentCard.definition}</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className={`answer-text ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}>
-                                        {answer}
-                                        {answer && (showTerm ? currentCard.termLanguage : currentCard.definitionLanguage) && (
-                                            <button onClick={() => playTTS(answer, showTerm ? currentCard.termLanguage : currentCard.definitionLanguage)} className="tts-button-large">
+                                <div className="study-question">
+                                    <div className="question-text">
+                                        {question}
+                                        {question && questionLang && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); playTTS(question, questionLang); }} 
+                                                className="tts-button-large"
+                                            >
                                                 <Volume2 size={24} color="var(--color-green)" />
                                             </button>
                                         )}
                                     </div>
+                                </div>
+                            </div>
+                            <div className="study-card study-card-back">
+                                <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                <button
+                                    className="edit-card-button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCardToEdit(currentCard);
+                                        setIsEditCardModalOpen(true);
+                                    }}
+                                    title="Edit this card"
+                                >
+                                    <Edit2 size={18} />
+                                </button>
+                                <div className="study-answer">
+                                    <div className={`answer-text`}>
+                                        {answer}
+                                        {answer && answerLang && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); playTTS(answer, answerLang); }} 
+                                                className="tts-button-large"
+                                            >
+                                                <Volume2 size={24} color="var(--color-green)" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="study-card">
+                        <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                        <button 
+                            className="edit-card-button" 
+                            onClick={() => {
+                                setCardToEdit(currentCard);
+                                setIsEditCardModalOpen(true);
+                            }}
+                            title="Edit this card"
+                        >
+                            <Edit2 size={18} />
+                        </button>
+                        <div className="study-question">
+                            <div className="question-text">
+                                {question}
+                                {question && questionLang && (
+                                    <button onClick={() => playTTS(question, questionLang)} className="tts-button-large">
+                                        <Volume2 size={24} color="var(--color-green)" />
+                                    </button>
                                 )}
                             </div>
-                        )}
-                    </div>
-                    
-                    <div className="study-actions">
-                        {currentQuestionType === 'flashcards' ? (
-                            <button
-                                className="show-answer-button"
-                                onClick={() => setShowAnswer(prev => !prev)}
-                            >
-                                {showAnswer ? 'Hide Answer' : 'Show Answer'}
-                            </button>
-                        ) : (
-                            !showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
+    
+                            {currentQuestionType === 'written' && !showAnswer && (
+                                <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
+                                    <input
+                                        type="text"
+                                        value={writtenAnswer}
+                                        onChange={(e) => setWrittenAnswer(e.target.value)}
+                                        placeholder="Type your answer..."
+                                        className={`written-answer-input ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}
+                                        autoFocus
+                                    />
+                                    <button type="submit" className="generate-button">Check</button>
+                                </form>
+                            )}
+    
+                            {currentQuestionType === 'multipleChoice' && (
+                                <div className="mcq-options">
+                                    {mcqOptions.map((option, index) => {
+                                        const isCorrect = option === answer;
+                                        let buttonClass = 'mcq-option';
+                                        if (showAnswer) {
+                                            if (isCorrect) {
+                                                buttonClass += ' correct';
+                                            } else if (option === writtenAnswer) {
+                                                buttonClass += ' incorrect';
+                                            }
+                                        }
+                                        return (
+                                            <button
+                                                key={index}
+                                                className={buttonClass}
+                                                onClick={() => !showAnswer && handleMcqAnswer(option)}
+                                                disabled={showAnswer}
+                                            >
+                                                {option}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            
+                            {currentQuestionType === 'trueFalse' && !showAnswer && (
+                                <div className="true-false-container">
+                                    <div className="true-false-proposed-answer">
+                                        { currentCard.isTrueFalseCorrect 
+                                            ? answer 
+                                            : (showTerm ? currentCard.falsePair.term : currentCard.falsePair.definition)
+                                        }
+                                    </div>
+                                    <div className="true-false-actions">
+                                        <button onClick={() => handleTrueFalseAnswer(true)} className="tf-button true">True</button>
+                                        <button onClick={() => handleTrueFalseAnswer(false)} className="tf-button false">False</button>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {showAnswer && (
+                                <div className="study-answer">
+                                    <hr />
+                                    {currentQuestionType === 'trueFalse' ? (
+                                        <div className={`answer-feedback ${answerFeedback}`}>
+                                            <p>{answerFeedback === 'correct' ? 'Correct!' : 'Incorrect.'} The statement was <strong>{currentCard.isTrueFalseCorrect ? 'True' : 'False'}</strong>.</p>
+                                            <div className="correct-pair">
+                                                <span>{showTerm ? currentCard.definition : currentCard.term}</span>
+                                                <span className="separator">is</span>
+                                                <span>{showTerm ? currentCard.term : currentCard.definition}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={`answer-text ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}>
+                                            {answer}
+                                            {answer && (showTerm ? currentCard.termLanguage : currentCard.definitionLanguage) && (
+                                                <button onClick={() => playTTS(answer, showTerm ? currentCard.termLanguage : currentCard.definitionLanguage)} className="tts-button-large">
+                                                    <Volume2 size={24} color="var(--color-green)" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="study-actions">
+                            {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
                                 <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
                                     Show Answer
                                 </button>
-                            )
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {showAnswer && (
+                {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) && (
                     <div className="grade-buttons">
                         {FSRS_GRADES.map(item => {
                             const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
