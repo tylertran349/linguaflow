@@ -24,6 +24,7 @@ const userSettingsSchema = new mongoose.Schema({
         minSentenceLength: Number,
         maxSentenceLength: Number,
         googleSearchEnabled: { type: Boolean, default: false },
+        retypeAnswer: { type: Boolean, default: true },
     },
     
     // The topic string

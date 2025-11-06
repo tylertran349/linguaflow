@@ -48,7 +48,8 @@ const defaultStudyOptions = {
         studyStarredOnly: false,
         shuffle: false,
         studyRangeOnly: { start: '', end: '' },
-        excludeRange: { start: '', end: '' }
+        excludeRange: { start: '', end: '' },
+        retypeAnswer: true
     }
 };
 
@@ -95,6 +96,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [studyAction, setStudyAction] = useState(null);
     const [mcqOptions, setMcqOptions] = useState([]);
     const [hasFlippedOnce, setHasFlippedOnce] = useState(false);
+    const [retypeInputValue, setRetypeInputValue] = useState('');
+    const [isRetypeCorrect, setIsRetypeCorrect] = useState(false);
 
     // Edit card modal state
     const [isEditCardModalOpen, setIsEditCardModalOpen] = useState(false);
@@ -795,6 +798,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setWrittenAnswer('');
                 setAnswerFeedback(null);
                 setHasFlippedOnce(false);
+                setRetypeInputValue('');
+                setIsRetypeCorrect(false);
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
@@ -822,6 +827,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setWrittenAnswer('');
         setAnswerFeedback(null);
         setHasFlippedOnce(false);
+        setRetypeInputValue('');
+        setIsRetypeCorrect(false);
         setCurrentQuestionType(newCards[nextIndex].questionType);
     };
 
@@ -1120,6 +1127,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 type="checkbox"
                                 checked={studyOptions.learningOptions.shuffle}
                                 onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, shuffle: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Retype answer if incorrect (for written questions)</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.learningOptions.retypeAnswer}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, retypeAnswer: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1549,6 +1567,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const isCorrect = writtenAnswer.trim() === answer.trim();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
+            if (!isCorrect) {
+                setIsRetypeCorrect(false);
+            }
         };
 
         const handleMcqAnswer = (selectedOption) => {
@@ -1778,6 +1799,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                             )}
                                                         </div>
                                                     </div>
+                                                    {studyOptions.learningOptions.retypeAnswer && (
+                                                        <div className="retype-answer-form">
+                                                            <p>Type the correct answer to continue:</p>
+                                                            <input
+                                                                type="text"
+                                                                value={retypeInputValue}
+                                                                onChange={(e) => {
+                                                                    setRetypeInputValue(e.target.value);
+                                                                    if (e.target.value === answer) {
+                                                                        setIsRetypeCorrect(true);
+                                                                    } else {
+                                                                        setIsRetypeCorrect(false);
+                                                                    }
+                                                                }}
+                                                                placeholder="Retype the correct answer..."
+                                                                className={`retype-answer-input ${isRetypeCorrect ? 'correct' : ''}`}
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -1810,12 +1851,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <div className="grade-buttons">
                             {FSRS_GRADES.map(item => {
                                 const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                                const isRetypeRequired = currentQuestionType === 'written' && 
+                                                         answerFeedback === 'incorrect' && 
+                                                         studyOptions.learningOptions.retypeAnswer && 
+                                                         !isRetypeCorrect;
                                 return (
                                     <button
                                         key={item.grade}
                                         className={`decision-button ${gradeName}`}
                                         onClick={() => handleReviewDecision(item.grade)}
-                                        disabled={isProcessingReview}
+                                        disabled={isProcessingReview || isRetypeRequired}
+                                        title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
                                     >
                                         <div className="grade-icon">{gradeIcons[item.grade]}</div>
                                         <div className="grade-label">{item.label}</div>

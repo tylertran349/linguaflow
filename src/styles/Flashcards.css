@@ -649,18 +649,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
+    padding: 1rem;
     width: 100%;
     max-width: 950px;
     margin: 0 auto;
-    height: calc(100vh - 140px); /* Use height instead of max-height to force scrolling */
-    max-height: calc(100vh - 140px);
-    overflow-y: auto; /* Allows scrolling on smaller screens */
+    height: 100%; /* Let it take full height of its container */
     overflow-x: hidden;
-    gap: var(--spacing-6);
-    padding-bottom: 4rem; /* Extra padding to ensure grade buttons are accessible */
+    gap: var(--spacing-4);
     box-sizing: border-box;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .study-header {
@@ -705,16 +701,16 @@
     position: relative;
     background-color: var(--color-white);
     border-radius: var(--radius-xl);
-    padding: 3rem;
+    padding: 2rem;
     width: 100%;
-    min-height: 200px;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: center; /* Center content vertically */
     text-align: center;
     box-shadow: var(--shadow-lg);
     transition: transform 0.2s;
     border: 1px solid var(--color-light-grey);
+    flex-shrink: 0; /* Prevent card from shrinking */
 }
 
 .edit-card-button {
@@ -1288,6 +1284,49 @@
     }
 }
 
+/* iPhone SE specific adjustments */
+@media (max-height: 670px) {
+    .flashcards-study {
+        padding: 0.5rem;
+        gap: var(--spacing-2);
+    }
+    .study-card {
+        padding: 1rem;
+        justify-content: flex-start; /* Align to top to prevent overflow */
+    }
+    .question-text {
+        font-size: var(--font-size-lg);
+        min-height: 60px;
+    }
+    .answer-text {
+        font-size: var(--font-size-base);
+        min-height: 50px;
+    }
+    .study-answer {
+        margin-top: var(--spacing-2);
+    }
+    .retype-answer-form {
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+    .retype-answer-form p {
+        margin-bottom: 0.5rem;
+    }
+    .retype-answer-input {
+        padding: 10px;
+        font-size: 1em;
+    }
+    .grade-buttons {
+        gap: 5px;
+    }
+    .decision-button {
+        padding: 10px 5px;
+    }
+    .grade-label {
+        font-size: 0.8rem;
+    }
+}
+
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -1768,4 +1807,43 @@ input:checked + .slider:before {
     flex-direction: column;
     justify-content: center;
     text-align: center;
+}
+
+.written-answer-feedback .answer-container.incorrect {
+    border-color: var(--color-red);
+    background-color: #ffebee; /* Light red background */
+}
+
+.retype-answer-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 700px;
+}
+
+.retype-answer-form p {
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: var(--text-color-secondary);
+}
+
+.retype-answer-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1.1em;
+    transition: all 0.2s;
+}
+
+.retype-answer-input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(21, 156, 228, 0.2);
+}
+
+.retype-answer-input.correct {
+    border-color: var(--color-green);
+    background-color: #e8f5e9; /* Light green background */
 }
