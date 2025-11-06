@@ -1289,6 +1289,7 @@
     .flashcards-study {
         padding: 0.5rem;
         gap: var(--spacing-2);
+        padding-bottom: 5rem; /* Ensure space for grade buttons */
     }
     .study-card {
         padding: 1rem;
