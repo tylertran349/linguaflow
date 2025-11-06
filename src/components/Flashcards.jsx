@@ -1690,7 +1690,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         const handleWrittenAnswerSubmit = (e) => {
             e.preventDefault();
-            const isCorrect = writtenAnswer.trim() === answer.trim();
+            const isCorrect = writtenAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
             if (!isCorrect) {
@@ -1932,7 +1932,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                 value={retypeInputValue}
                                                                 onChange={(e) => {
                                                                     setRetypeInputValue(e.target.value);
-                                                                    if (e.target.value === answer) {
+                                                                    if (e.target.value.toLowerCase() === answer.toLowerCase()) {
                                                                         setIsRetypeCorrect(true);
                                                                     } else {
                                                                         setIsRetypeCorrect(false);
