@@ -1695,7 +1695,7 @@ input:checked + .slider:before {
 
 /* The .study-card properties like padding, border, etc., are now on the front/back faces */
 .study-card-front, .study-card-back {
-    background-color: var(--color-background-light);
+    background-color: var(--color-white);
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 2rem;
