@@ -1802,8 +1802,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                     {studyOptions.learningOptions.retypeAnswer && (
                                                         <div className="retype-answer-form">
                                                             <p>Type the correct answer to continue:</p>
-                                                            <input
-                                                                type="text"
+                                                            <textarea
                                                                 value={retypeInputValue}
                                                                 onChange={(e) => {
                                                                     setRetypeInputValue(e.target.value);
@@ -1813,9 +1812,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                         setIsRetypeCorrect(false);
                                                                     }
                                                                 }}
+                                                                onInput={(e) => {
+                                                                    e.target.style.height = 'auto';
+                                                                    e.target.style.height = `${e.target.scrollHeight}px`;
+                                                                }}
                                                                 placeholder="Retype the correct answer..."
                                                                 className={`retype-answer-input ${isRetypeCorrect ? 'correct' : ''}`}
                                                                 autoFocus
+                                                                rows={1}
                                                             />
                                                         </div>
                                                     )}
