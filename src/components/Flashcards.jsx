@@ -1900,12 +1900,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     ) : currentQuestionType === 'written' ? (
                                         <div className="written-answer-feedback">
                                             {answerFeedback === 'correct' ? (
-                                                <>
-                                                    <p className="feedback-message correct">You got it right!</p>
+                                                <div className="feedback-group">
+                                                    <p className="feedback-label correct">You got it right!</p>
                                                     <div className="answer-container correct">
                                                         {writtenAnswer}
                                                     </div>
-                                                </>
+                                                </div>
                                             ) : (
                                                 <>
                                                     <div className="feedback-group">
