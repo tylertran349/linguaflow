@@ -41,8 +41,8 @@ git s/* Flashcards Component Styles */
 }
 
 .sets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-4);
 }
 
@@ -56,6 +56,7 @@ git s/* Flashcards Component Styles */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+  flex: 1 1 300px;
 }
 
 .set-card:hover {
@@ -446,8 +447,8 @@ git s/* Flashcards Component Styles */
 }
 
 .intervals-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-4);
 }
 
@@ -986,7 +987,6 @@ git s/* Flashcards Component Styles */
     }
 
     .sets-grid {
-      grid-template-columns: 1fr;
     }
 
     .cards-actions {
