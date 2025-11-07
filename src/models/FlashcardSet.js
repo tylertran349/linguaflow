@@ -30,6 +30,7 @@ const flashcardSetSchema = new mongoose.Schema({
     studyOptions: {
         examDate: { type: Date, default: null },
         newCardsPerDay: { type: Number, default: 10 },
+        cardsPerRound: { type: Number, default: 10 },
         newCardQuestionTypes: {
             flashcards: { type: Boolean, default: true },
             multipleChoice: { type: Boolean, default: false },

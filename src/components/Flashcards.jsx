@@ -37,6 +37,7 @@ const getLanguageCode = (langName) => {
 const defaultStudyOptions = {
     examDate: null,
     newCardsPerDay: 10,
+    cardsPerRound: 10,
     newCardQuestionTypes: {
         flashcards: true,
         multipleChoice: false,
@@ -112,7 +113,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const isProcessingReviewRef = useRef(false);
 
     // State for the new study round logic
-    const [reviewAgainQueue, setReviewAgainQueue] = useState([]);
     const [isRoundComplete, setIsRoundComplete] = useState(false);
 
     // Edit card modal state
@@ -249,6 +249,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const mergedOptions = {
                 ...defaultStudyOptions,
                 ...loadedOptions,
+                cardsPerRound: loadedOptions.cardsPerRound || defaultStudyOptions.cardsPerRound,
                 newCardQuestionTypes: {
                     ...defaultStudyOptions.newCardQuestionTypes,
                     ...(loadedOptions.newCardQuestionTypes || {}),
@@ -593,13 +594,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             );
 
             // Separate new cards from review cards
-            const newCards = dueCards.filter(card => !card.lastReviewed);
-            const reviewCards = dueCards.filter(card => card.lastReviewed);
+            let reviewCards = dueCards.filter(card => card.lastReviewed);
+            let newCards = dueCards.filter(card => !card.lastReviewed);
 
-            // Apply new cards per day limit
-            const newCardsToday = newCards.slice(0, studyOptions.newCardsPerDay);
+            // Shuffle before picking if the option is enabled
+            if (studyOptions.learningOptions.shuffle) {
+                reviewCards.sort(() => Math.random() - 0.5);
+                newCards.sort(() => Math.random() - 0.5);
+            }
 
-            cards = [...reviewCards, ...newCardsToday];
+            // Prioritize review cards, then fill the round with new cards
+            const cardsForRound = reviewCards.slice(0, studyOptions.cardsPerRound);
+            const remainingSlots = studyOptions.cardsPerRound - cardsForRound.length;
+
+            if (remainingSlots > 0) {
+                cardsForRound.push(...newCards.slice(0, remainingSlots));
+            }
+
+            cards = cardsForRound;
         }
         
         // Filter by starred only if option is enabled
@@ -607,7 +619,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             cards = cards.filter(card => card.starred);
         }
         
-        // Shuffle if option is enabled
         if (studyOptions.learningOptions.shuffle) {
             // Re-separate into review and new cards to shuffle them independently
             const reviewCardsInSession = cards.filter(card => card.lastReviewed);
@@ -685,7 +696,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
         setIsRoundComplete(false);
-        setReviewAgainQueue([]);
         setViewMode('study');
     }, [currentSet, studyOptions]);
 
@@ -773,30 +783,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const handleStopStudying = () => {
         setViewMode('view');
         setIsRoundComplete(false);
-        setReviewAgainQueue([]);
         setCardsToStudy([]);
     };
 
     const handleKeepStudying = () => {
-        if (reviewAgainQueue.length === 0) return;
-
-        let nextRoundCards = [...reviewAgainQueue];
-        if (studyOptions.learningOptions.shuffle) {
-            nextRoundCards.sort(() => Math.random() - 0.5);
-        }
-
-        setCardsToStudy(nextRoundCards);
-        setReviewAgainQueue([]);
-        setIsRoundComplete(false);
-        
-        setCurrentCardIndex(0);
-        setShowAnswer(false);
-        setWrittenAnswer('');
-        setAnswerFeedback(null);
-        setHasFlippedOnce(false);
-        setRetypeInputValue('');
-        setIsRetypeCorrect(false);
-        setCurrentQuestionType(nextRoundCards[0].questionType);
+        startStudy();
     };
 
     // Handle review decision
@@ -827,7 +818,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
             const reviewedCard = cardsToStudy[currentCardIndex];
             if (grade === Grade.Forgot || grade === Grade.Hard) {
-                setReviewAgainQueue(prev => [...prev, reviewedCard]);
+                setCardsToStudy(prev => [...prev, reviewedCard]);
             }
 
             const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
@@ -866,9 +857,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
 
         if (cardsToStudy.length === 0) return;
-
-        const skippedCard = cardsToStudy[currentCardIndex];
-        setReviewAgainQueue(prev => [...prev, skippedCard]);
 
         const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
         setCardsToStudy(newCards);
@@ -1097,6 +1085,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Render study options form
     const renderStudyOptionsForm = () => (
         <div className="study-options-section">
+            <div className="form-group">
+                <label>Cards Per Round</label>
+                <input
+                    type="number"
+                    min="1"
+                    value={studyOptions.cardsPerRound || 10}
+                    onChange={(e) => setStudyOptions(prev => ({ ...prev, cardsPerRound: parseInt(e.target.value) || 10 }))}
+                />
+            </div>
             <div className="form-group">
                 <label>Exam Date (optional)</label>
                 <input
@@ -1674,26 +1671,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             return (
                 <div className="round-complete-container">
                     <h2>Round Complete!</h2>
-                    {reviewAgainQueue.length > 0 ? (
-                        <>
-                            <p>You have {reviewAgainQueue.length} card(s) to review again.</p>
-                            <div className="round-complete-actions">
-                                <button onClick={handleStopStudying}>Stop Studying</button>
-                                <button className="generate-button" onClick={handleKeepStudying}>
-                                    Keep Studying
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <p>Congratulations! You've reviewed all cards correctly.</p>
-                            <div className="round-complete-actions">
-                                <button className="generate-button" onClick={handleStopStudying}>
-                                    Back to Set
-                                </button>
-                            </div>
-                        </>
-                    )}
+                    <p>You've finished this round.</p>
+                    <div className="round-complete-actions">
+                        <button onClick={handleStopStudying}>Stop Studying</button>
+                        <button className="generate-button" onClick={handleKeepStudying}>
+                            Keep Studying
+                        </button>
+                    </div>
                 </div>
             );
         }
