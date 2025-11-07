@@ -1328,6 +1328,10 @@ git s/* Flashcards Component Styles */
         font-size: var(--font-size-lg);
         min-height: 60px;
     }
+    .study-question,
+    .study-answer {
+        padding-top: 2rem;
+    }
     .answer-text {
         font-size: var(--font-size-base);
         min-height: 50px;
