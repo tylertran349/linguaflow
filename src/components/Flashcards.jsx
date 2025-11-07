@@ -1897,24 +1897,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         autoFocus
                                         rows={1}
                                     />
-                                    <div className="grade-buttons dont-know-retype">
-                                        {FSRS_GRADES.map(item => {
-                                            const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                            const isRetypeRequired = !isDontKnowRetypeCorrect;
-                                            return (
-                                                <button
-                                                    key={item.grade}
-                                                    className={`decision-button ${gradeName}`}
-                                                    onClick={() => handleReviewDecision(item.grade)}
-                                                    disabled={isProcessingReview || isRetypeRequired}
-                                                    title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
-                                                >
-                                                    <div className="grade-icon">{gradeIcons[item.grade]}</div>
-                                                    <div className="grade-label">{item.label}</div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
                                 </div>
                             )}
     
@@ -2051,14 +2033,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 )}
 
                 <div className="study-bottom-actions">
-                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) && !showDontKnowAnswer ? (
+                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer ? (
                         <div className="grade-buttons">
                             {FSRS_GRADES.map(item => {
                                 const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                const isRetypeRequired = currentQuestionType === 'written' && 
-                                                         answerFeedback === 'incorrect' && 
-                                                         studyOptions.learningOptions.retypeAnswer && 
-                                                         !isRetypeCorrect;
+                                const isRetypeRequired = showDontKnowAnswer
+                                    ? !isDontKnowRetypeCorrect
+                                    : (currentQuestionType === 'written' && 
+                                        answerFeedback === 'incorrect' && 
+                                        studyOptions.learningOptions.retypeAnswer && 
+                                        !isRetypeCorrect);
                                 return (
                                     <button
                                         key={item.grade}
@@ -2074,7 +2058,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             })}
                         </div>
                     ) : (
-                        currentQuestionType !== 'written' && (
+                        currentQuestionType !== 'written' && !showDontKnowAnswer && (
                             <button className="skip-button" onClick={handleSkip}>
                                 Skip
                             </button>
