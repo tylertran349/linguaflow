@@ -2034,28 +2034,35 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
                 <div className="study-bottom-actions">
                     {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer ? (
-                        <div className="grade-buttons">
-                            {FSRS_GRADES.map(item => {
-                                const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                const isRetypeRequired = showDontKnowAnswer
-                                    ? !isDontKnowRetypeCorrect
-                                    : (currentQuestionType === 'written' && 
-                                        answerFeedback === 'incorrect' && 
-                                        studyOptions.learningOptions.retypeAnswer && 
-                                        !isRetypeCorrect);
-                                return (
-                                    <button
-                                        key={item.grade}
-                                        className={`decision-button ${gradeName}`}
-                                        onClick={() => handleReviewDecision(item.grade)}
-                                        disabled={isProcessingReview || isRetypeRequired}
-                                        title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
-                                    >
-                                        <div className="grade-icon">{gradeIcons[item.grade]}</div>
-                                        <div className="grade-label">{item.label}</div>
-                                    </button>
-                                );
-                            })}
+                        <div className="grading-container">
+                            <div className="grade-buttons">
+                                {FSRS_GRADES.map(item => {
+                                    const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                                    const isRetypeRequired = showDontKnowAnswer
+                                        ? !isDontKnowRetypeCorrect
+                                        : (currentQuestionType === 'written' && 
+                                            answerFeedback === 'incorrect' && 
+                                            studyOptions.learningOptions.retypeAnswer && 
+                                            !isRetypeCorrect);
+                                    return (
+                                        <button
+                                            key={item.grade}
+                                            className={`decision-button ${gradeName}`}
+                                            onClick={() => handleReviewDecision(item.grade)}
+                                            disabled={isProcessingReview || isRetypeRequired}
+                                            title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
+                                        >
+                                            <div className="grade-icon">{gradeIcons[item.grade]}</div>
+                                            <div className="grade-label">{item.label}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {showDontKnowAnswer && (
+                                <button className="generate-button" onClick={handleRealSkip} disabled={isProcessingReview}>
+                                    Skip
+                                </button>
+                            )}
                         </div>
                     ) : (
                         currentQuestionType !== 'written' && !showDontKnowAnswer && (
