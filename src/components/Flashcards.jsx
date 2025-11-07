@@ -104,6 +104,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [hasFlippedOnce, setHasFlippedOnce] = useState(false);
     const [retypeInputValue, setRetypeInputValue] = useState('');
     const [isRetypeCorrect, setIsRetypeCorrect] = useState(false);
+    const [showDontKnowAnswer, setShowDontKnowAnswer] = useState(false);
+    const [dontKnowInputValue, setDontKnowInputValue] = useState('');
+    const [isDontKnowRetypeCorrect, setIsDontKnowRetypeCorrect] = useState(false);
 
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
@@ -841,10 +844,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setHasFlippedOnce(false);
                 setRetypeInputValue('');
                 setIsRetypeCorrect(false);
+                setShowDontKnowAnswer(false);
+                setDontKnowInputValue('');
+                setIsDontKnowRetypeCorrect(false);
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
-            await loadSet(currentSet._id);
+            loadSet(currentSet._id);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -854,6 +860,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     };
 
     const handleSkip = () => {
+        if (currentQuestionType === 'written') {
+            setShowDontKnowAnswer(true);
+            return;
+        }
+
         if (cardsToStudy.length === 0) return;
 
         const skippedCard = cardsToStudy[currentCardIndex];
@@ -873,8 +884,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setHasFlippedOnce(false);
             setRetypeInputValue('');
             setIsRetypeCorrect(false);
+            setShowDontKnowAnswer(false);
+            setDontKnowInputValue('');
+            setIsDontKnowRetypeCorrect(false);
             setCurrentQuestionType(newCards[nextIndex].questionType);
         }
+    };
+
+    const handleRealSkip = () => {
+        handleReviewDecision(Grade.Forgot);
     };
 
     const handleSaveCardEdit = async (editedCard) => {
@@ -1719,6 +1737,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             [Grade.Easy]: <Crown size={24} />,
         };
 
+        const handleAnswer = () => {
+            handleReviewDecision(Grade.Forgot);
+        };
+
         return (
             <div className="flashcards-study">
                 <div className="study-header">
@@ -1827,7 +1849,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 )}
                             </div>
     
-                            {currentQuestionType === 'written' && !showAnswer && (
+                            {currentQuestionType === 'written' && !showAnswer && !showDontKnowAnswer && (
                                 <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
                                     <input
                                         type="text"
@@ -1838,10 +1860,62 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         autoFocus
                                     />
                                     <div className="written-answer-actions">
-                                        <button type="button" className="skip-button" onClick={handleSkip}>Skip</button>
+                                        <button type="button" className="skip-button" onClick={handleSkip}>Don't know</button>
                                         <button type="submit" className="generate-button">Answer</button>
                                     </div>
                                 </form>
+                            )}
+
+                            {currentQuestionType === 'written' && showDontKnowAnswer && (
+                                <div className="retype-answer-form">
+                                    <p>Correct answer:</p>
+                                    <div className="answer-container correct">
+                                        {answer}
+                                        {answer && answerLang && (
+                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                <Volume2 size={24} color="var(--color-green)" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p>Type the correct answer to continue:</p>
+                                    <textarea
+                                        value={dontKnowInputValue}
+                                        onChange={(e) => {
+                                            setDontKnowInputValue(e.target.value);
+                                            if (e.target.value.toLowerCase() === answer.toLowerCase()) {
+                                                setIsDontKnowRetypeCorrect(true);
+                                            } else {
+                                                setIsDontKnowRetypeCorrect(false);
+                                            }
+                                        }}
+                                        onInput={(e) => {
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = `${e.target.scrollHeight}px`;
+                                        }}
+                                        placeholder="Retype the correct answer..."
+                                        className={`retype-answer-input ${isDontKnowRetypeCorrect ? 'correct' : ''}`}
+                                        autoFocus
+                                        rows={1}
+                                    />
+                                    <div className="grade-buttons dont-know-retype">
+                                        {FSRS_GRADES.map(item => {
+                                            const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                                            const isRetypeRequired = !isDontKnowRetypeCorrect;
+                                            return (
+                                                <button
+                                                    key={item.grade}
+                                                    className={`decision-button ${gradeName}`}
+                                                    onClick={() => handleReviewDecision(item.grade)}
+                                                    disabled={isProcessingReview || isRetypeRequired}
+                                                    title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
+                                                >
+                                                    <div className="grade-icon">{gradeIcons[item.grade]}</div>
+                                                    <div className="grade-label">{item.label}</div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             )}
     
                             {currentQuestionType === 'multipleChoice' && (
@@ -1977,7 +2051,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 )}
 
                 <div className="study-bottom-actions">
-                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) ? (
+                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) && !showDontKnowAnswer ? (
                         <div className="grade-buttons">
                             {FSRS_GRADES.map(item => {
                                 const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
