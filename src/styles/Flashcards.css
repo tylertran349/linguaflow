@@ -577,8 +577,13 @@ git s/* Flashcards Component Styles */
     padding-right: 0.5rem;
 }
 
+.grouped-cards-container {
+    margin-top: 1.5rem;
+}
+
 .card-item-view {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     background-color: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: 8px;

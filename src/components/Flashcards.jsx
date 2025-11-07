@@ -7,6 +7,7 @@ import { supportedLanguages } from '../utils/languages';
 import '../styles/Flashcards.css';
 import { FSRS, Grade, FSRS_GRADES } from '../services/fsrsService';
 import EditCardModal from './EditCardModal';
+import CollapsibleSection from './CollapsibleSection';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
@@ -1579,11 +1580,36 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Render view mode
     const renderView = () => {
         if (!currentSet) return null;
+
+        const groupedCards = { 'New': [] };
+        FSRS_GRADES.forEach(g => {
+            groupedCards[g.label] = [];
+        });
+        const fallbackGroup = 'Studied';
+        groupedCards[fallbackGroup] = [];
+
+        currentSet.flashcards.forEach(card => {
+            if (!card.lastReviewed) {
+                groupedCards['New'].push(card);
+                return;
+            }
+            
+            if (card.lastGrade) {
+                const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
+                if (gradeInfo) {
+                    groupedCards[gradeInfo.label].push(card);
+                    return;
+                }
+            }
+            
+            groupedCards[fallbackGroup].push(card);
+        });
+
+        const groupOrder = [...FSRS_GRADES.map(g => g.label), fallbackGroup, 'New'];
         
-        const cardsToShow = currentSet.flashcards.length > 50
-            ? currentSet.flashcards.slice(0, showAllCards ? renderedViewCardCount : 10)
-            : currentSet.flashcards;
-        
+        // Find the first group with cards to expand it by default
+        const firstGroupWithCards = groupOrder.find(groupName => groupedCards[groupName].length > 0);
+
         return (
             <div className="flashcards-view">
                 <div className="view-header">
@@ -1611,46 +1637,45 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 {currentSet.flashcards.length === 0 ? (
                     <p className="status-message">No flashcards in this set.</p>
                 ) : (
-                    <>
-                        <div className="cards-list-view">
-                            {cardsToShow.map((card, index) => (
-                                <div key={index} className="card-item-view">
-                                    <div className="card-side card-term">
-                                        {card.starred && <Star size={16} color="#ffdc62" fill="#ffdc62" />}
-                                        <span>{card.term}</span>
-                                        {card.term && card.termLanguage && (
-                                            <button onClick={() => playTTS(card.term, card.termLanguage)} className="tts-button-small">
-                                                <Volume2 size={16} color="var(--color-green)" />
-                                            </button>
-                                        )}
+                    <div className="grouped-cards-container">
+                        {groupOrder.map(groupName => {
+                            const cardsInGroup = groupedCards[groupName];
+                            if (cardsInGroup.length === 0) {
+                                return null;
+                            }
+                            return (
+                                <CollapsibleSection 
+                                    key={groupName} 
+                                    title={`${groupName} (${cardsInGroup.length})`} 
+                                    initialCollapsed={groupName !== firstGroupWithCards}
+                                >
+                                    <div className="cards-list-view">
+                                        {cardsInGroup.map((card, index) => (
+                                            <div key={index} className="card-item-view">
+                                                <div className="card-side card-term">
+                                                    {card.starred && <Star size={16} color="#ffdc62" fill="#ffdc62" />}
+                                                    <span>{card.term}</span>
+                                                    {card.term && card.termLanguage && (
+                                                        <button onClick={() => playTTS(card.term, card.termLanguage)} className="tts-button-small">
+                                                            <Volume2 size={16} color="var(--color-green)" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="card-side card-definition">
+                                                    <span>{card.definition}</span>
+                                                    {card.definition && card.definitionLanguage && (
+                                                        <button onClick={() => playTTS(card.definition, card.definitionLanguage)} className="tts-button-small">
+                                                            <Volume2 size={16} color="var(--color-green)" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="card-side card-definition">
-                                        <span>{card.definition}</span>
-                                        {card.definition && card.definitionLanguage && (
-                                            <button onClick={() => playTTS(card.definition, card.definitionLanguage)} className="tts-button-small">
-                                                <Volume2 size={16} color="var(--color-green)" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {currentSet.flashcards.length > 50 && !showAllCards && (
-                            <button className="show-more-button" onClick={() => setShowAllCards(true)}>
-                                Show All {currentSet.flashcards.length} Cards <ChevronDown size={18} />
-                            </button>
-                        )}
-                        {showAllCards && renderedViewCardCount < currentSet.flashcards.length && (
-                             <button className="show-more-button" disabled>
-                                Loading...
-                            </button>
-                        )}
-                        {showAllCards && renderedViewCardCount === currentSet.flashcards.length && (
-                            <button className="show-more-button" onClick={() => setShowAllCards(false)}>
-                                Show Less <ChevronUp size={18} />
-                            </button>
-                        )}
-                    </>
+                                </CollapsibleSection>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         );

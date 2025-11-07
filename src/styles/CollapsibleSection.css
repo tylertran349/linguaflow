@@ -1,0 +1,39 @@
+
+.collapsible-section {
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    background-color: var(--background-color-secondary);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background-color: var(--background-color-tertiary);
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color-primary);
+    text-align: left;
+    transition: background-color 0.2s ease;
+}
+
+.section-header:hover {
+    background-color: var(--hover-color);
+}
+
+.section-title {
+    flex-grow: 1;
+}
+
+.section-content {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color-light);
+    background-color: var(--background-color-primary);
+}
