@@ -1898,14 +1898,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
                             {currentQuestionType === 'written' && showDontKnowAnswer && (
                                 <div className="retype-answer-form">
-                                    <p>Correct answer:</p>
-                                    <div className="answer-container correct">
-                                        {answer}
-                                        {answer && answerLang && (
-                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                <Volume2 size={24} color="var(--color-green)" />
-                                            </button>
-                                        )}
+                                    <div className="feedback-group">
+                                        <p className="feedback-label correct">Correct answer:</p>
+                                        <div className="answer-container correct">
+                                            {answer}
+                                            {answer && answerLang && (
+                                                <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                    <Volume2 size={24} color="var(--color-green)" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <p>Type the correct answer to continue:</p>
                                     <textarea

@@ -1858,6 +1858,10 @@ input:checked + .slider:before {
     color: var(--text-color-secondary);
 }
 
+.retype-answer-form .feedback-group {
+    margin-bottom: var(--spacing-4);
+}
+
 .retype-answer-input {
     width: 100%;
     padding: 12px;
