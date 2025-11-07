@@ -1,6 +1,6 @@
 // src/components/Flashcards.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -144,6 +144,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // View state
     const [showAllCards, setShowAllCards] = useState(false);
     const [renderedViewCardCount, setRenderedViewCardCount] = useState(10);
+    const [viewSearchTerm, setViewSearchTerm] = useState('');
 
     // Fetch all sets
     const fetchSets = async () => {
@@ -1581,6 +1582,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderView = () => {
         if (!currentSet) return null;
 
+        const filteredCards = currentSet.flashcards.filter(card => {
+            const term = card.term || '';
+            const definition = card.definition || '';
+            return term.toLowerCase().includes(viewSearchTerm.toLowerCase()) || 
+                   definition.toLowerCase().includes(viewSearchTerm.toLowerCase());
+        });
+
         const groupedCards = { 'New': [] };
         FSRS_GRADES.forEach(g => {
             groupedCards[g.label] = [];
@@ -1588,7 +1596,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const fallbackGroup = 'Studied';
         groupedCards[fallbackGroup] = [];
 
-        currentSet.flashcards.forEach(card => {
+        filteredCards.forEach(card => {
             if (!card.lastReviewed) {
                 groupedCards['New'].push(card);
                 return;
@@ -1634,8 +1642,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     <p className="set-description">{currentSet.description}</p>
                 )}
                 
-                {currentSet.flashcards.length === 0 ? (
-                    <p className="status-message">No flashcards in this set.</p>
+                <div className="view-search-container">
+                    <Search className="search-icon" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search cards..."
+                        className="view-search-input"
+                        value={viewSearchTerm}
+                        onChange={(e) => setViewSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                {filteredCards.length === 0 ? (
+                    <p className="status-message">
+                        {currentSet.flashcards.length > 0 ? 'No matching cards found.' : 'No flashcards in this set.'}
+                    </p>
                 ) : (
                     <div className="grouped-cards-container">
                         {groupOrder.map(groupName => {
@@ -1891,7 +1912,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         value={dontKnowInputValue}
                                         onChange={(e) => {
                                             setDontKnowInputValue(e.target.value);
-                                            if (e.target.value.toLowerCase() === answer.toLowerCase()) {
+                                            if (e.target.value.trim().toLowerCase() === answer.trim().toLowerCase()) {
                                                 setIsDontKnowRetypeCorrect(true);
                                             } else {
                                                 setIsDontKnowRetypeCorrect(false);
@@ -1997,7 +2018,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                 value={retypeInputValue}
                                                                 onChange={(e) => {
                                                                     setRetypeInputValue(e.target.value);
-                                                                    if (e.target.value.toLowerCase() === answer.toLowerCase()) {
+                                                                    if (e.target.value.trim().toLowerCase() === answer.trim().toLowerCase()) {
                                                                         setIsRetypeCorrect(true);
                                                                     } else {
                                                                         setIsRetypeCorrect(false);
