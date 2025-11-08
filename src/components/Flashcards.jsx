@@ -694,6 +694,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setWrittenAnswer('');
         setAnswerFeedback(null);
         setHasFlippedOnce(false);
+        setRetypeInputValue('');
+        setIsRetypeCorrect(false);
+        setShowDontKnowAnswer(false);
+        setDontKnowInputValue('');
+        setIsDontKnowRetypeCorrect(false);
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
