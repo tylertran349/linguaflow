@@ -57,7 +57,8 @@ const defaultStudyOptions = {
         shuffle: false,
         studyRangeOnly: { start: '', end: '' },
         excludeRange: { start: '', end: '' },
-        retypeAnswer: true
+        retypeAnswer: true,
+        soundEffects: true
     }
 };
 
@@ -248,6 +249,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setFlashcards(data.flashcards || []);
             
             const loadedOptions = data.studyOptions || {};
+            console.log('Loaded study options from DB:', loadedOptions);
+            console.log('Loaded soundEffects value:', loadedOptions.learningOptions?.soundEffects);
+            
             const mergedOptions = {
                 ...defaultStudyOptions,
                 ...loadedOptions,
@@ -271,8 +275,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         ...defaultStudyOptions.learningOptions.excludeRange,
                         ...(loadedOptions.learningOptions?.excludeRange || {}),
                     },
+                    soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
                 },
             };
+            console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
             setStudyOptions(mergedOptions);
         } catch (err) {
             setError(err.message);
@@ -460,6 +466,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setLoading(true);
         setError(null);
         try {
+            // Ensure all learningOptions fields are explicitly included
+            const optionsToSave = {
+                ...studyOptions,
+                learningOptions: {
+                    studyStarredOnly: studyOptions.learningOptions?.studyStarredOnly ?? false,
+                    shuffle: studyOptions.learningOptions?.shuffle ?? false,
+                    studyRangeOnly: studyOptions.learningOptions?.studyRangeOnly ?? { start: '', end: '' },
+                    excludeRange: studyOptions.learningOptions?.excludeRange ?? { start: '', end: '' },
+                    retypeAnswer: studyOptions.learningOptions?.retypeAnswer ?? true,
+                    soundEffects: studyOptions.learningOptions?.soundEffects ?? true,
+                }
+            };
+            
+            console.log('Saving study options - soundEffects value:', optionsToSave.learningOptions.soundEffects);
+
             await retryUntilSuccess(async () => {
                 const token = await getToken();
                 const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/user-data`, {
@@ -468,7 +489,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ studyOptions })
+                    body: JSON.stringify({ studyOptions: optionsToSave })
                 });
                 if (!response.ok) {
                     throw new Error('Failed to save study options');
@@ -558,6 +579,34 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const playTTS = (text, languageCode) => {
         if (!text || !languageCode) return;
         speakText(text, languageCode, settings);
+    };
+
+    // Play success sound effect
+    const playSuccessSound = () => {
+        if (!studyOptions.learningOptions?.soundEffects) return;
+        try {
+            const audio = new Audio('/hero_simple-celebration-01.ogg');
+            audio.volume = 1; 
+            audio.play().catch(err => {
+                console.warn('Could not play success sound:', err);
+            });
+        } catch (err) {
+            console.warn('Error creating audio:', err);
+        }
+    };
+
+    // Play error sound effect
+    const playErrorSound = () => {
+        if (!studyOptions.learningOptions?.soundEffects) return;
+        try {
+            const audio = new Audio('/alert_error-02.ogg');
+            audio.volume = 1;
+            audio.play().catch(err => {
+                console.warn('Could not play error sound:', err);
+            });
+        } catch (err) {
+            console.warn('Error creating audio:', err);
+        }
     };
 
     // Start studying
@@ -1061,6 +1110,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             ...defaultStudyOptions.learningOptions.excludeRange,
                             ...(loadedOptions.learningOptions?.excludeRange || {}),
                         },
+                        soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
                     },
                 };
                 setStudyOptions(mergedOptions);
@@ -1269,6 +1319,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 type="checkbox"
                                 checked={studyOptions.learningOptions.retypeAnswer}
                                 onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, retypeAnswer: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Play sound effects</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.learningOptions?.soundEffects ?? true}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, soundEffects: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1757,7 +1818,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const isCorrect = writtenAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
-            if (!isCorrect) {
+            if (isCorrect) {
+                playSuccessSound();
+            } else {
+                playErrorSound();
                 setIsRetypeCorrect(false);
             }
         };
@@ -1767,6 +1831,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const isCorrect = selectedOption.trim() === answer.trim();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
+            if (isCorrect) {
+                playSuccessSound();
+            } else {
+                playErrorSound();
+            }
         };
 
         const handleTrueFalseAnswer = (userAnswer) => {
@@ -1774,6 +1843,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const isCorrect = userAnswer === currentCard.isTrueFalseCorrect;
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
+            if (isCorrect) {
+                playSuccessSound();
+            } else {
+                playErrorSound();
+            }
         };
 
         const gradeIcons = {

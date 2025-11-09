@@ -30,7 +30,9 @@ const userFlashcardSetDataSchema = new mongoose.Schema({
             excludeRange: {
                 start: { type: String, default: '' },
                 end: { type: String, default: '' }
-            }
+            },
+            retypeAnswer: { type: Boolean, default: true },
+            soundEffects: { type: Boolean, default: true }
         }
     },
     lastStudied: { type: Date, default: Date.now }
