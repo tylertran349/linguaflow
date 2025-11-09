@@ -2007,7 +2007,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 <div className="feedback-group">
                                                     <p className="feedback-label correct">You got it right!</p>
                                                     <div className="answer-container correct">
-                                                        {writtenAnswer}
+                                                        {answer}
+                                                        {answer && answerLang && (
+                                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                                <Volume2 size={24} color="var(--color-green)" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ) : (
