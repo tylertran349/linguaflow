@@ -12,7 +12,7 @@ import CollapsibleSection from './CollapsibleSection';
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
 // Retry helper for DB write operations
-const RETRY_DELAY_MS = 3000;
+const RETRY_DELAY_MS = 2000;
 const retryUntilSuccess = async (operation, { onError } = {}) => {
     // Retries forever until the operation resolves successfully
     // Caller controls UI state (e.g., loading spinners)
