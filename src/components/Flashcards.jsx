@@ -1024,7 +1024,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Render study options modal
     const renderStudyOptionsModal = () => {
+        const isCardsPerRoundInvalid = !studyOptions.cardsPerRound || studyOptions.cardsPerRound < 1;
+
         const handleSave = async () => {
+            if (isCardsPerRoundInvalid) {
+                setError('Cards Per Round must be at least 1.');
+                return;
+            }
             await saveStudyOptions();
             setShowStudyOptionsModal(false);
             setStudyAction('restart');
@@ -1076,10 +1082,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <button onClick={handleCancel} className="close-button"><X size={20} /></button>
                     </div>
                     <div className="modal-scroll-wrapper">
-                        {renderStudyOptionsForm()}
+                        {renderStudyOptionsForm(isCardsPerRoundInvalid)}
                     </div>
                     <div className="modal-actions">
-                        <button className="generate-button" onClick={handleSave} disabled={loading}>
+                        <button className="generate-button" onClick={handleSave} disabled={loading || isCardsPerRoundInvalid}>
                             {loading ? 'Saving...' : 'Save Options'}
                         </button>
                         <button onClick={handleCancel}>Cancel</button>
@@ -1090,16 +1096,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     };
 
     // Render study options form
-    const renderStudyOptionsForm = () => (
+    const renderStudyOptionsForm = (isCardsPerRoundInvalid) => (
         <div className="study-options-section">
             <div className="form-group">
                 <label>Cards Per Round</label>
                 <input
                     type="number"
                     min="1"
-                    value={studyOptions.cardsPerRound || 10}
-                    onChange={(e) => setStudyOptions(prev => ({ ...prev, cardsPerRound: parseInt(e.target.value) || 10 }))}
+                    value={studyOptions.cardsPerRound ?? ''}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setStudyOptions(prev => ({ ...prev, cardsPerRound: value === '' ? null : parseInt(value, 10) }));
+                    }}
+                    className={isCardsPerRoundInvalid ? 'input-error' : ''}
                 />
+                {isCardsPerRoundInvalid && <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>Must be at least 1.</p>}
             </div>
             <div className="form-group">
                 <label>Exam Date (optional)</label>
