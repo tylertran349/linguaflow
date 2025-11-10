@@ -1312,6 +1312,8 @@
     .written-answer-input {
         padding: 0.75rem;
         font-size: 0.95rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .written-answer-actions {
@@ -1826,7 +1828,6 @@ input:checked + .slider:before {
 .written-answer-input:focus {
     outline: none;
     border-color: var(--color-green);
-    box-shadow: 0 0 0 3px rgba(21, 156, 228, 0.1);
 }
 
 .written-answer-input.correct {
@@ -2175,7 +2176,6 @@ input:checked + .slider:before {
 .retype-answer-input:focus {
     outline: none;
     border-color: var(--color-green);
-    box-shadow: 0 0 0 3px rgba(21, 156, 228, 0.1);
 }
 
 .retype-answer-input.correct {
