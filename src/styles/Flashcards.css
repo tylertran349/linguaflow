@@ -751,6 +751,14 @@
     gap: clamp(0.25rem, 1vw, 0.5rem);
 }
 
+/* Make study card wider on large screens */
+@media (min-width: 1024px) {
+    .study-card {
+        max-width: 900px;
+        aspect-ratio: 6 / 4;
+    }
+}
+
 .card-header-row {
     display: flex;
     justify-content: space-between;
@@ -944,8 +952,15 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
     width: 100%;
-    max-width: 900px;
+    max-width: min(90vw, 600px);
     flex-shrink: 0;
+}
+
+/* Match grade buttons width with study card on large screens */
+@media (min-width: 1024px) {
+    .grade-buttons {
+        max-width: 900px;
+    }
 }
 
 .decision-button {
@@ -2063,6 +2078,14 @@ input:checked + .slider:before {
     aspect-ratio: 6 / 4;
     margin: 0 auto;
     flex-shrink: 0;
+}
+
+/* Make study card container wider on large screens */
+@media (min-width: 1024px) {
+    .study-card-container {
+        max-width: 900px;
+        aspect-ratio: 6 / 4;
+    }
 }
 
 .study-card-flipper {
