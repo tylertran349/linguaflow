@@ -1984,7 +1984,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         type="text"
                                         value={writtenAnswer}
                                         onChange={(e) => setWrittenAnswer(e.target.value)}
-                                        placeholder="Type your answer..."
+                                        placeholder={showTerm ? "Type the term..." : "Type the definition..."}
                                         className={`written-answer-input ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}
                                         autoFocus
                                     />
@@ -2023,7 +2023,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             e.target.style.height = 'auto';
                                             e.target.style.height = `${e.target.scrollHeight}px`;
                                         }}
-                                        placeholder="Retype the correct answer..."
+                                        placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
                                         className={`retype-answer-input ${isDontKnowRetypeCorrect ? 'correct' : ''}`}
                                         autoFocus
                                         rows={1}
@@ -2134,7 +2134,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                     e.target.style.height = 'auto';
                                                                     e.target.style.height = `${e.target.scrollHeight}px`;
                                                                 }}
-                                                                placeholder="Retype the correct answer..."
+                                                                placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
                                                                 className={`retype-answer-input ${isRetypeCorrect ? 'correct' : ''}`}
                                                                 autoFocus
                                                                 rows={1}
