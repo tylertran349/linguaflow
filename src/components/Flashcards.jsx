@@ -1891,18 +1891,20 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             }}
                         >
                             <div className="study-card study-card-front">
-                                <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
-                                <button
-                                    className="edit-card-button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCardToEdit(currentCard);
-                                        setIsEditCardModalOpen(true);
-                                    }}
-                                    title="Edit this card"
-                                >
-                                    <Edit2 size={18} />
-                                </button>
+                                <div className="card-header-row">
+                                    <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                    <button
+                                        className="edit-card-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCardToEdit(currentCard);
+                                            setIsEditCardModalOpen(true);
+                                        }}
+                                        title="Edit this card"
+                                    >
+                                        <Edit2 size={18} />
+                                    </button>
+                                </div>
                                 <div className="study-question">
                                     <div className="question-text">
                                         {question}
@@ -1918,18 +1920,20 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 </div>
                             </div>
                             <div className="study-card study-card-back">
-                                <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
-                                <button
-                                    className="edit-card-button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCardToEdit(currentCard);
-                                        setIsEditCardModalOpen(true);
-                                    }}
-                                    title="Edit this card"
-                                >
-                                    <Edit2 size={18} />
-                                </button>
+                                <div className="card-header-row">
+                                    <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                    <button
+                                        className="edit-card-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCardToEdit(currentCard);
+                                            setIsEditCardModalOpen(true);
+                                        }}
+                                        title="Edit this card"
+                                    >
+                                        <Edit2 size={18} />
+                                    </button>
+                                </div>
                                 <div className="study-answer">
                                     <div className={`answer-text`}>
                                         {answer}
@@ -1948,17 +1952,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     </div>
                 ) : (
                     <div className="study-card">
-                        <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
-                        <button 
-                            className="edit-card-button" 
-                            onClick={() => {
-                                setCardToEdit(currentCard);
-                                setIsEditCardModalOpen(true);
-                            }}
-                            title="Edit this card"
-                        >
-                            <Edit2 size={18} />
-                        </button>
+                        <div className="card-header-row">
+                            <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                            <button 
+                                className="edit-card-button" 
+                                onClick={() => {
+                                    setCardToEdit(currentCard);
+                                    setIsEditCardModalOpen(true);
+                                }}
+                                title="Edit this card"
+                            >
+                                <Edit2 size={18} />
+                            </button>
+                        </div>
                         <div className="study-question">
                             <div className="question-text">
                                 {question}
