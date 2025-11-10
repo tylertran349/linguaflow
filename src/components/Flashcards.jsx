@@ -1893,6 +1893,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <div className="study-card study-card-front">
                                 <div className="card-header-row">
                                     <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                    <div className="card-type-label">{showTerm ? 'Definition' : 'Term'}</div>
                                     <button
                                         className="edit-card-button"
                                         onClick={(e) => {
@@ -1922,6 +1923,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <div className="study-card study-card-back">
                                 <div className="card-header-row">
                                     <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                                    <div className="card-type-label">{showTerm ? 'Term' : 'Definition'}</div>
                                     <button
                                         className="edit-card-button"
                                         onClick={(e) => {
@@ -1954,6 +1956,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     <div className="study-card">
                         <div className="card-header-row">
                             <div className={`card-status-label ${cardStatus.className}`}>{cardStatus.label}</div>
+                            <div className="card-type-label">{showTerm ? 'Definition' : 'Term'}</div>
                             <button 
                                 className="edit-card-button" 
                                 onClick={() => {
