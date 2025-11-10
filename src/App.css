@@ -450,15 +450,16 @@ textarea {
   }
 
   .main-content {
+    margin-top: 80px;
     height: calc(100vh - 80px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .learning-container {
-    padding: var(--spacing-5);
-    margin-top: 80px;
-    min-height: calc(100vh - 80px);
+    padding: var(--spacing-16) var(--spacing-5) var(--spacing-5);
+    margin-top: 0;
+    min-height: 100%;
   }
 
   .hamburger-menu {
@@ -532,15 +533,16 @@ textarea {
   }
 
   .main-content {
+    margin-top: 80px;
     height: calc(100vh - 80px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .learning-container {
-    padding: var(--spacing-4);
-    min-height: calc(100vh - 80px);
-    margin-top: 80px;
+    padding: var(--spacing-16) var(--spacing-4) var(--spacing-4);
+    min-height: 100%;
+    margin-top: 0;
   }
 
   .hamburger-menu {
@@ -623,14 +625,16 @@ textarea {
   }
 
   .main-content {
+    margin-top: 80px;
     height: calc(100vh - 80px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .learning-container {
-    margin-top: 80px;
-    min-height: calc(100vh - 80px);
+    margin-top: 0;
+    min-height: 100%;
+    padding: var(--spacing-16) var(--spacing-3) var(--spacing-3);
   }
 
   .hamburger-menu {
@@ -644,10 +648,6 @@ textarea {
   .hamburger-menu span {
     width: 20px;
     height: 3px;
-  }
-
-  .learning-container {
-    padding: var(--spacing-3);
   }
 
   .split-screen-visual {
@@ -685,7 +685,7 @@ textarea {
 /* Landscape Mobile */
 @media (max-height: 500px) and (orientation: landscape) {
   .learning-container {
-    padding: var(--spacing-2);
+    padding: var(--spacing-8) var(--spacing-2) var(--spacing-2);
   }
 
   .welcome-container h1 {
