@@ -940,7 +940,8 @@
 }
 
 .grade-buttons {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
     width: 100%;
     max-width: 900px;
@@ -948,7 +949,6 @@
 }
 
 .decision-button {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1176,17 +1176,17 @@
     }
 
     .grade-buttons {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.625rem;
     }
 
     .decision-button {
-        padding: 0.625rem;
-        min-height: 50px;
+        padding: 0.75rem 0.5rem;
+        min-height: 65px;
     }
 
     .grade-label {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
 
     .import-options,
@@ -1310,16 +1310,17 @@
     }
 
     .grade-buttons {
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.625rem;
     }
     
     .decision-button {
-        padding: 0.625rem 0.5rem;
-        min-height: 55px;
+        padding: 0.75rem 0.5rem;
+        min-height: 62px;
     }
 
     .grade-label {
-        font-size: 0.8rem;
+        font-size: 0.825rem;
     }
 
     .study-bottom-actions {
@@ -1418,16 +1419,17 @@
     }
 
     .grade-buttons {
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
     }
     
     .decision-button {
-        padding: 0.5rem 0.375rem;
-        min-height: 50px;
+        padding: 0.625rem 0.5rem;
+        min-height: 58px;
     }
     
     .grade-label {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
     
     .mcq-options {
@@ -1543,16 +1545,17 @@
     }
 
     .grade-buttons {
-        gap: 0.375rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
     }
 
     .decision-button {
-        padding: 0.5rem 0.375rem;
-        min-height: 48px;
+        padding: 0.625rem 0.5rem;
+        min-height: 56px;
     }
 
     .grade-label {
-        font-size: 0.7rem;
+        font-size: 0.775rem;
     }
 
     .mcq-options {
