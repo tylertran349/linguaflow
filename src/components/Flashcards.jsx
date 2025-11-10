@@ -2200,13 +2200,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 </button>
                             )}
                         </div>
-                    ) : (
-                        currentQuestionType !== 'written' && !showDontKnowAnswer && (
-                            <button className="skip-button" onClick={handleSkip}>
-                                Skip
-                            </button>
-                        )
-                    )}
+                    ) : null}
                 </div>
             </div>
         );
