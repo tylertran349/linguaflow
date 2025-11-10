@@ -1178,6 +1178,21 @@
       width: 100%;
     }
 
+    /* Space study action buttons horizontally on mobile */
+    .study-header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .study-header-actions button {
+        justify-content: center;
+        flex: 0 1 auto;
+    }
+
     /* Study mode - optimize for tablet */
     .flashcards-study {
         padding: 1rem 0.5rem 1rem;
@@ -1271,7 +1286,17 @@
     }
 
     .study-header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
         gap: 0.375rem;
+    }
+
+    .study-header-actions button {
+        justify-content: center;
+        flex: 0 1 auto;
     }
 
     .study-progress {
