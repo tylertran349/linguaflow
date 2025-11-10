@@ -252,18 +252,34 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             console.log('Loaded study options from DB:', loadedOptions);
             console.log('Loaded soundEffects value:', loadedOptions.learningOptions?.soundEffects);
             
+            // Merge question types, but ensure at least one is enabled for each category
+            const mergedNewCardTypes = {
+                ...defaultStudyOptions.newCardQuestionTypes,
+                ...(loadedOptions.newCardQuestionTypes || {}),
+            };
+            const mergedSeenCardTypes = {
+                ...defaultStudyOptions.seenCardQuestionTypes,
+                ...(loadedOptions.seenCardQuestionTypes || {}),
+            };
+            
+            // If all new card types are disabled, fall back to defaults
+            const hasActiveNewCardType = Object.values(mergedNewCardTypes).some(v => v === true);
+            if (!hasActiveNewCardType) {
+                Object.assign(mergedNewCardTypes, defaultStudyOptions.newCardQuestionTypes);
+            }
+            
+            // If all seen card types are disabled, fall back to defaults
+            const hasActiveSeenCardType = Object.values(mergedSeenCardTypes).some(v => v === true);
+            if (!hasActiveSeenCardType) {
+                Object.assign(mergedSeenCardTypes, defaultStudyOptions.seenCardQuestionTypes);
+            }
+            
             const mergedOptions = {
                 ...defaultStudyOptions,
                 ...loadedOptions,
                 cardsPerRound: loadedOptions.cardsPerRound || defaultStudyOptions.cardsPerRound,
-                newCardQuestionTypes: {
-                    ...defaultStudyOptions.newCardQuestionTypes,
-                    ...(loadedOptions.newCardQuestionTypes || {}),
-                },
-                seenCardQuestionTypes: {
-                    ...defaultStudyOptions.seenCardQuestionTypes,
-                    ...(loadedOptions.seenCardQuestionTypes || {}),
-                },
+                newCardQuestionTypes: mergedNewCardTypes,
+                seenCardQuestionTypes: mergedSeenCardTypes,
                 learningOptions: {
                     ...defaultStudyOptions.learningOptions,
                     ...(loadedOptions.learningOptions || {}),
@@ -1080,6 +1096,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setError('Cards Per Round must be at least 1.');
                 return;
             }
+            
+            // Validate that at least one question type is selected for new cards
+            const hasActiveNewCardType = Object.values(studyOptions.newCardQuestionTypes).some(v => v === true);
+            if (!hasActiveNewCardType) {
+                setError('Please select at least one question type for new cards.');
+                return;
+            }
+            
+            // Validate that at least one question type is selected for seen cards
+            const hasActiveSeenCardType = Object.values(studyOptions.seenCardQuestionTypes).some(v => v === true);
+            if (!hasActiveSeenCardType) {
+                setError('Please select at least one question type for review cards.');
+                return;
+            }
+            
             await saveStudyOptions();
             setShowStudyOptionsModal(false);
             setStudyAction('restart');
@@ -1088,17 +1119,34 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const handleCancel = () => {
             if (currentSet) {
                 const loadedOptions = currentSet.studyOptions || {};
+                
+                // Merge question types, but ensure at least one is enabled for each category
+                const mergedNewCardTypes = {
+                    ...defaultStudyOptions.newCardQuestionTypes,
+                    ...(loadedOptions.newCardQuestionTypes || {}),
+                };
+                const mergedSeenCardTypes = {
+                    ...defaultStudyOptions.seenCardQuestionTypes,
+                    ...(loadedOptions.seenCardQuestionTypes || {}),
+                };
+                
+                // If all new card types are disabled, fall back to defaults
+                const hasActiveNewCardType = Object.values(mergedNewCardTypes).some(v => v === true);
+                if (!hasActiveNewCardType) {
+                    Object.assign(mergedNewCardTypes, defaultStudyOptions.newCardQuestionTypes);
+                }
+                
+                // If all seen card types are disabled, fall back to defaults
+                const hasActiveSeenCardType = Object.values(mergedSeenCardTypes).some(v => v === true);
+                if (!hasActiveSeenCardType) {
+                    Object.assign(mergedSeenCardTypes, defaultStudyOptions.seenCardQuestionTypes);
+                }
+                
                 const mergedOptions = {
                     ...defaultStudyOptions,
                     ...loadedOptions,
-                    newCardQuestionTypes: {
-                        ...defaultStudyOptions.newCardQuestionTypes,
-                        ...(loadedOptions.newCardQuestionTypes || {}),
-                    },
-                    seenCardQuestionTypes: {
-                        ...defaultStudyOptions.seenCardQuestionTypes,
-                        ...(loadedOptions.seenCardQuestionTypes || {}),
-                    },
+                    newCardQuestionTypes: mergedNewCardTypes,
+                    seenCardQuestionTypes: mergedSeenCardTypes,
                     learningOptions: {
                         ...defaultStudyOptions.learningOptions,
                         ...(loadedOptions.learningOptions || {}),
