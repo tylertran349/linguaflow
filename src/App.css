@@ -441,15 +441,24 @@ textarea {
 @media (max-width: 1023px) and (min-width: 768px) {
   .app-layout {
     display: block;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .main-header {
     display: flex;
   }
 
+  .main-content {
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .learning-container {
     padding: var(--spacing-5);
     margin-top: 80px;
+    min-height: calc(100vh - 80px);
   }
 
   .hamburger-menu {
@@ -513,6 +522,8 @@ textarea {
 @media (max-width: 767px) {
   .app-layout {
     display: block;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .main-header {
@@ -520,9 +531,15 @@ textarea {
     padding: 0 var(--spacing-4);
   }
 
+  .main-content {
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .learning-container {
     padding: var(--spacing-4);
-    min-height: 100vh;
+    min-height: calc(100vh - 80px);
     margin-top: 80px;
   }
 
@@ -595,13 +612,25 @@ textarea {
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
+  .app-layout {
+    height: 100vh;
+    overflow: hidden;
+  }
+
   .main-header {
     display: flex;
     padding: 0 var(--spacing-3);
   }
 
+  .main-content {
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .learning-container {
     margin-top: 80px;
+    min-height: calc(100vh - 80px);
   }
 
   .hamburger-menu {
