@@ -1283,6 +1283,22 @@
     .study-card-back {
         padding: clamp(0.75rem, 2vw, 1rem);
     }
+
+    /* Toggle switch adjustments for small screens */
+    .toggle-switch-container {
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .toggle-switch-container > span {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        padding-top: 0.25rem;
+    }
+
+    .toggle-switch {
+        flex-shrink: 0;
+    }
 }
 
 /* Responsive adjustments for limited height screens */
@@ -2144,6 +2160,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0;
+    gap: 1rem;
+}
+
+.toggle-switch-container > span {
+    flex: 1;
+    max-width: calc(100% - 70px);
 }
 
 .toggle-switch {
