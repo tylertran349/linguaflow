@@ -1503,12 +1503,228 @@
     }
 }
 
-/* iPhone SE specific adjustments */
-@media (max-height: 670px) {
+/* iPhone SE and small screen specific adjustments - Remove aspect ratio constraint */
+@media (max-width: 480px) {
+    /* Remove aspect ratio for small screens to allow natural content flow */
+    .study-card,
+    .study-card-container {
+        aspect-ratio: unset !important;
+        height: auto;
+        min-height: 250px;
+        max-height: none;
+    }
+
+    .study-card {
+        padding: 0.875rem;
+    }
+
     .flashcards-study {
-        padding: 0.375rem;
-        gap: 1.5rem;
-        padding-bottom: 3rem;
+        padding: 0.5rem 0.5rem 1rem;
+        gap: 0.75rem;
+        height: auto;
+        max-height: none;
+        min-height: calc(100vh - 80px);
+    }
+
+    .study-header {
+        flex-shrink: 0;
+    }
+
+    .study-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .study-header button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .study-progress {
+        flex-shrink: 0;
+        font-size: 0.85rem;
+        padding: 0.25rem 0;
+    }
+
+    .study-card-front,
+    .study-card-back {
+        height: auto;
+        min-height: 250px;
+        padding: 0.875rem;
+        overflow-y: visible;
+    }
+
+    .card-header-row {
+        flex-shrink: 0;
+        margin-bottom: 0.5rem;
+    }
+
+    .study-question {
+        padding: 1rem 0;
+        gap: 1rem;
+        overflow-y: visible;
+    }
+
+    .question-text {
+        font-size: 1.125rem;
+        line-height: 1.4;
+    }
+
+    .study-answer {
+        padding: 0.75rem 0 0;
+        gap: 0.75rem;
+        overflow-y: visible;
+    }
+
+    .answer-text {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    /* Written answer form */
+    .written-answer-form {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .written-answer-input {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        width: 100%;
+    }
+
+    .written-answer-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .written-answer-actions button {
+        flex: 1;
+    }
+
+    /* Multiple choice options */
+    .mcq-options {
+        grid-template-columns: 1fr;
+        gap: 0.625rem;
+        margin-top: 0.5rem;
+    }
+
+    .mcq-option {
+        padding: 0.875rem;
+        min-height: 52px;
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    /* True/False */
+    .true-false-container {
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .true-false-proposed-answer {
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .true-false-actions {
+        gap: 0.875rem;
+        width: 100%;
+    }
+
+    .tf-button {
+        padding: 0.875rem 1.25rem;
+        font-size: 1rem;
+    }
+
+    /* Answer feedback */
+    .written-answer-feedback {
+        gap: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .feedback-group {
+        gap: 0.5rem;
+    }
+
+    .feedback-label {
+        font-size: 0.8rem;
+    }
+
+    .answer-container {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    /* Retype form */
+    .retype-answer-form {
+        padding-top: 0.875rem;
+        gap: 0.625rem;
+    }
+
+    .retype-answer-form p {
+        font-size: 0.85rem;
+    }
+
+    .retype-answer-input {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        min-height: 48px;
+    }
+
+    /* Grade buttons */
+    .study-bottom-actions {
+        min-height: 60px;
+        flex-shrink: 0;
+        margin-top: 0.5rem;
+    }
+
+    .grade-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.625rem;
+    }
+
+    .decision-button {
+        padding: 0.75rem 0.5rem;
+        min-height: 62px;
+    }
+
+    .grade-label {
+        font-size: 0.825rem;
+    }
+
+    .answer-feedback {
+        gap: 0.875rem;
+    }
+
+    .answer-feedback p {
+        font-size: 0.95rem;
+    }
+
+    .correct-pair {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+        gap: 0.625rem;
+    }
+}
+
+/* Extra small screens and iPhone SE (height constraints) */
+@media (max-width: 480px) and (max-height: 670px) {
+    /* Further optimize for very small screens */
+    .study-card,
+    .study-card-container {
+        min-height: 200px;
+    }
+
+    .study-card {
+        padding: 0.75rem;
+    }
+
+    .flashcards-study {
+        padding: 0.375rem 0.375rem 0.75rem;
+        gap: 0.625rem;
     }
 
     .study-header h2 {
@@ -1520,40 +1736,82 @@
         font-size: 0.8rem;
     }
 
-    .study-card {
-        max-width: min(94vw, 420px);
-        padding: clamp(0.625rem, 1.75vw, 0.875rem);
-    }
-
-    .study-card-container {
-        max-width: min(94vw, 420px);
+    .study-progress {
+        font-size: 0.8rem;
     }
 
     .study-card-front,
     .study-card-back {
-        padding: clamp(0.625rem, 1.75vw, 0.875rem);
+        min-height: 200px;
+        padding: 0.75rem;
+    }
+
+    .study-question {
+        padding: 0.75rem 0;
+        gap: 0.75rem;
     }
 
     .question-text {
-        font-size: clamp(0.875rem, 3.5vw, 1.125rem);
-        padding: 0.375rem 0;
+        font-size: 1rem;
     }
 
-    .study-question,
     .study-answer {
-        padding: 0.375rem 0;
+        padding: 0.625rem 0 0;
+        gap: 0.625rem;
     }
 
     .answer-text {
-        font-size: clamp(0.8rem, 3vw, 1rem);
+        font-size: 0.925rem;
     }
 
-    .study-answer {
-        /* Gap handled by parent flex container */
+    .written-answer-form {
+        gap: 0.625rem;
+        margin-top: 0.375rem;
     }
 
-    .study-answer hr {
-        /* Gap handled by parent flex container */
+    .written-answer-input {
+        padding: 0.625rem;
+        font-size: 0.9rem;
+    }
+
+    .mcq-options {
+        gap: 0.5rem;
+        margin-top: 0.375rem;
+    }
+
+    .mcq-option {
+        padding: 0.75rem;
+        min-height: 48px;
+        font-size: 0.9rem;
+    }
+
+    .true-false-container {
+        gap: 0.875rem;
+        margin-top: 0.375rem;
+    }
+
+    .true-false-proposed-answer {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+    }
+
+    .tf-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .written-answer-feedback {
+        gap: 0.75rem;
+        margin-top: 0.375rem;
+    }
+
+    .feedback-label {
+        font-size: 0.75rem;
+    }
+
+    .answer-container {
+        padding: 0.75rem;
+        font-size: 0.9rem;
     }
 
     .retype-answer-form {
@@ -1562,69 +1820,207 @@
     }
 
     .retype-answer-form p {
-        margin: 0;
         font-size: 0.8rem;
     }
 
     .retype-answer-input {
-        padding: clamp(0.5rem, 1.25vw, 0.625rem);
-        font-size: clamp(0.8rem, 2vw, 0.9rem);
+        padding: 0.625rem;
+        font-size: 0.9rem;
+        min-height: 44px;
     }
 
-    .answer-container {
-        padding: clamp(0.5rem, 1.25vw, 0.625rem);
-        font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    .study-bottom-actions {
+        min-height: 55px;
+        margin-top: 0.375rem;
     }
 
     .grade-buttons {
-        grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
     }
 
     .decision-button {
-        padding: 0.625rem 0.5rem;
-        min-height: 56px;
+        padding: 0.625rem 0.375rem;
+        min-height: 58px;
     }
 
     .grade-label {
         font-size: 0.775rem;
     }
 
-    .mcq-options {
-        gap: 0.375rem;
+    .answer-feedback p {
+        font-size: 0.9rem;
     }
 
-    .mcq-option {
-        padding: clamp(0.5rem, 1.25vw, 0.625rem);
-        min-height: clamp(42px, 9vw, 50px);
-        font-size: clamp(0.75rem, 1.75vw, 0.875rem);
+    .correct-pair {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Very small height screens (iPhone SE 1st gen) */
+@media (max-width: 480px) and (max-height: 570px) {
+    .study-card,
+    .study-card-container {
+        min-height: 180px;
     }
 
-    .study-bottom-actions {
-        min-height: 50px;
+    .study-card {
+        padding: 0.625rem;
     }
 
-    .true-false-proposed-answer {
-        padding: clamp(0.625rem, 1.75vw, 0.875rem);
-        font-size: clamp(0.875rem, 2.75vw, 1.125rem);
+    .flashcards-study {
+        padding: 0.25rem 0.25rem 0.5rem;
+        gap: 0.5rem;
     }
 
-    .tf-button {
-        padding: clamp(0.625rem, 1.5vw, 0.75rem) clamp(0.75rem, 2vw, 1rem);
-        font-size: clamp(0.875rem, 2vw, 1rem);
+    .study-header h2 {
+        font-size: 0.95rem;
+    }
+
+    .study-header button {
+        padding: 0.325rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .study-progress {
+        font-size: 0.75rem;
+        padding: 0.125rem 0;
+    }
+
+    .study-card-front,
+    .study-card-back {
+        min-height: 180px;
+        padding: 0.625rem;
+    }
+
+    .card-header-row {
+        margin-bottom: 0.375rem;
+    }
+
+    .study-question {
+        padding: 0.625rem 0;
+        gap: 0.625rem;
+    }
+
+    .question-text {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    .study-answer {
+        padding: 0.5rem 0 0;
+        gap: 0.5rem;
+    }
+
+    .answer-text {
+        font-size: 0.875rem;
+        line-height: 1.3;
     }
 
     .written-answer-form {
         gap: 0.5rem;
+        margin-top: 0.25rem;
     }
 
     .written-answer-input {
-        padding: clamp(0.5rem, 1.25vw, 0.625rem);
-        font-size: clamp(0.8rem, 2vw, 0.9rem);
+        padding: 0.5rem;
+        font-size: 0.85rem;
     }
 
-    .feedback-group {
+    .mcq-options {
         gap: 0.375rem;
+        margin-top: 0.25rem;
+    }
+
+    .mcq-option {
+        padding: 0.625rem;
+        min-height: 44px;
+        font-size: 0.85rem;
+    }
+
+    .true-false-container {
+        gap: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .true-false-proposed-answer {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .tf-button {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9rem;
+    }
+
+    .written-answer-feedback {
+        gap: 0.625rem;
+        margin-top: 0.25rem;
+    }
+
+    .feedback-label {
+        font-size: 0.7rem;
+    }
+
+    .answer-container {
+        padding: 0.625rem;
+        font-size: 0.85rem;
+    }
+
+    .retype-answer-form {
+        padding-top: 0.625rem;
+        gap: 0.375rem;
+    }
+
+    .retype-answer-form p {
+        font-size: 0.75rem;
+    }
+
+    .retype-answer-input {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        min-height: 40px;
+    }
+
+    .study-bottom-actions {
+        min-height: 50px;
+        margin-top: 0.25rem;
+    }
+
+    .grade-buttons {
+        gap: 0.375rem;
+    }
+
+    .decision-button {
+        padding: 0.5rem 0.25rem;
+        min-height: 54px;
+    }
+
+    .grade-icon {
+        transform: scale(0.9);
+    }
+
+    .grade-label {
+        font-size: 0.725rem;
+    }
+
+    .answer-feedback p {
+        font-size: 0.85rem;
+    }
+
+    .correct-pair {
+        padding: 0.625rem;
+        font-size: 0.85rem;
+    }
+
+    .tts-button-large {
+        padding: 0.125rem;
+    }
+
+    .card-status-label,
+    .card-type-label {
+        font-size: 0.625rem;
+        padding: 0.2rem 0.5rem;
     }
 }
 
