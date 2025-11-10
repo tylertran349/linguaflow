@@ -2194,7 +2194,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     );
                                 })}
                             </div>
-                            {showDontKnowAnswer && (
+                            {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer)) && (
                                 <button className="generate-button" onClick={handleRealSkip} disabled={isProcessingReview}>
                                     Skip
                                 </button>

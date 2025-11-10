@@ -7,6 +7,15 @@
   align-items: center;
   gap: var(--spacing-6);
   padding: var(--spacing-4);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet and Mobile - Ensure proper spacing with fixed header */
+@media (max-width: 1023px) {
+  .flashcards-container {
+    padding-top: var(--spacing-2);
+  }
 }
 
 .error-banner {
@@ -180,10 +189,6 @@
   border-radius: var(--radius-lg);
   font-size: var(--font-size-base);
   font-family: inherit;
-}
-
-.form-group input[type="checkbox"] {
-  /* Checkbox spacing handled by parent flex container */
 }
 
 /* Cards Section */
@@ -673,21 +678,28 @@
     transition: background-color 0.2s ease;
 }
 
-/* Study Mode */
+/* Study Mode - Container */
 .flashcards-study {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem 0.75rem 0.75rem;
     width: 100%;
     max-width: 1100px;
     margin: 0 auto;
     min-height: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    gap: 0.75rem;
     box-sizing: border-box;
+    padding: 1rem 0.75rem 1.5rem;
+    gap: 1rem;
+}
+
+/* Desktop only - flashcards-study handles its own scrolling */
+@media (min-width: 1024px) {
+    .flashcards-study {
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
 }
 
 .study-header {
@@ -739,25 +751,18 @@
     padding: clamp(1rem, 3vw, 1.5rem);
     width: 100%;
     max-width: min(90vw, 600px);
-    aspect-ratio: 6 / 4;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     text-align: center;
     box-shadow: var(--shadow-lg);
     transition: transform 0.2s;
     border: 1px solid var(--color-light-grey);
     flex-shrink: 0;
-    overflow-y: visible;
-    gap: clamp(0.25rem, 1vw, 0.5rem);
-}
-
-/* Remove aspect ratio when card contains retype form to allow natural height */
-.study-card:has(.retype-answer-form) {
-    aspect-ratio: unset;
-    height: auto;
-    min-height: 400px;
+    overflow: visible;
+    gap: clamp(0.5rem, 1.5vw, 0.75rem);
+    min-height: fit-content;
 }
 
 /* Make study card wider on large screens */
@@ -765,12 +770,13 @@
     .study-card {
         max-width: 900px;
         aspect-ratio: 6 / 4;
+        justify-content: space-between;
     }
     
-    /* Remove aspect ratio on large screens when card contains retype form */
-    .study-card:has(.retype-answer-form) {
+    /* Remove aspect ratio on large screens when card contains retype/written form */
+    .study-card:has(.retype-answer-form),
+    .study-card:has(.written-answer-feedback) {
         aspect-ratio: unset;
-        height: auto;
         min-height: 450px;
     }
 }
@@ -860,12 +866,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
-  justify-content: center;
-  padding: clamp(0.5rem, 2vw, 1rem) 0;
+  justify-content: flex-start;
+  padding: clamp(0.75rem, 2vw, 1.25rem) 0;
   gap: clamp(0.75rem, 2vw, 1.5rem);
-  min-height: 0;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .question-text {
@@ -884,14 +888,12 @@
 }
 
 .study-answer {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   width: 100%;
   gap: clamp(0.5rem, 1.5vw, 1rem);
-  min-height: 0;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .study-answer hr {
@@ -953,8 +955,8 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    min-height: 70px;
     flex-shrink: 0;
+    padding: 0.5rem 0;
 }
 
 .skip-button {
@@ -1079,13 +1081,14 @@
 @media (max-width: 992px) {
     .grade-buttons {
         grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-4);
+        gap: 0.75rem;
     }
 }
 
 @media (max-width: 768px) {
     .flashcards-container {
         padding: var(--spacing-2);
+        gap: var(--spacing-4);
     }
 
     .flashcards-sets-list,
@@ -1132,7 +1135,7 @@
   
     .grade-buttons {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
+      gap: 0.625rem;
     }
   
     .view-header,
@@ -1159,62 +1162,55 @@
       width: 100%;
     }
 
+    /* Study mode - optimize for tablet */
     .flashcards-study {
-        padding: 1.25rem 0.5rem 3rem;
-        min-height: calc(100vh - 100px);
-        gap: 1.25rem;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        padding: 1rem 0.5rem 1rem;
+        gap: 0.875rem;
     }
 
     .study-card {
-        padding: clamp(0.875rem, 2.5vw, 1.25rem);
-        max-width: min(95vw, 500px);
-        aspect-ratio: unset;
-        height: auto;
-        min-height: 250px;
-        max-height: none;
+        padding: 1rem;
+        max-width: min(95vw, 550px);
     }
 
     .study-card-container {
-        max-width: min(95vw, 500px);
-        aspect-ratio: unset;
-        height: auto;
+        max-width: min(95vw, 550px);
     }
 
     .study-card-front, .study-card-back {
-        padding: clamp(0.875rem, 2.5vw, 1.25rem);
+        padding: 1rem;
     }
 
     .question-text {
-        font-size: clamp(1rem, 4vw, 1.5rem);
+        font-size: clamp(1.1rem, 4vw, 1.6rem);
     }
 
     .answer-text {
-        font-size: clamp(0.95rem, 3.5vw, 1.25rem);
+        font-size: clamp(1rem, 3.5vw, 1.3rem);
     }
 
     .mcq-options {
         grid-template-columns: 1fr;
-        gap: 0.5rem;
+        gap: 0.625rem;
     }
 
     .mcq-option {
-        min-height: clamp(48px, 11vw, 60px);
-        padding: clamp(0.75rem, 1.75vw, 0.875rem);
-        font-size: clamp(0.825rem, 2vw, 0.95rem);
+        min-height: 52px;
+        padding: 0.875rem;
+        font-size: 0.95rem;
     }
 
     .decision-button {
-        padding: 0.625rem 0.375rem;
-        min-height: 55px;
+        padding: 0.75rem 0.5rem;
+        min-height: 60px;
     }
 
     .grade-label {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
     }
 }
 
+/* Small mobile devices (max 480px width) */
 @media (max-width: 480px) {
     .sets-header h2,
     .create-header h2,
@@ -1222,380 +1218,55 @@
         font-size: var(--font-size-xl);
     }
 
+    /* Study mode - optimize for small mobile */
     .flashcards-study {
-        gap: 1.5rem;
-    }
-
-    .study-header h2 {
-        font-size: 1.125rem;
-    }
-
-    .grade-buttons {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.625rem;
-    }
-
-    .decision-button {
-        padding: 0.75rem 0.5rem;
-        min-height: 65px;
-    }
-
-    .grade-label {
-        font-size: 0.8rem;
-    }
-
-    .import-options,
-    .radio-group {
-        flex-direction: column;
-    }
-    
-    .radio-group label {
-        width: 100%;
-    }
-
-    .custom-separator-input {
-        width: 100px;
-    }
-
-    .written-answer-form {
-        flex-direction: column;
-    }
-
-    .written-answer-form button,
-    .written-answer-actions button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .study-options-modal {
-        width: 95vw;
-        max-height: 85vh;
-    }
-
-    .modal-header {
-        padding: var(--spacing-4);
-    }
-
-    .close-button {
-        top: 1rem;
-        right: 1rem;
-    }
-    
-    .modal-scroll-wrapper {
-        padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
-    }
-
-    .study-card {
-        max-width: min(96vw, 450px);
-        padding: clamp(0.75rem, 2vw, 1rem);
-    }
-
-    .study-card-container {
-        max-width: min(96vw, 450px);
-    }
-
-    .question-text {
-        font-size: clamp(0.95rem, 4vw, 1.25rem);
-    }
-
-    .answer-text {
-        font-size: clamp(0.875rem, 3.5vw, 1.125rem);
-    }
-
-    .study-card-front,
-    .study-card-back {
-        padding: clamp(0.75rem, 2vw, 1rem);
-    }
-
-    /* Toggle switch adjustments for small screens */
-    .toggle-switch-container {
+        padding: 0.75rem 0.375rem 0.75rem;
         gap: 0.75rem;
-        align-items: flex-start;
-    }
-
-    .toggle-switch-container > span {
-        font-size: 0.9rem;
-        line-height: 1.3;
-        padding-top: 0.25rem;
-    }
-
-    .toggle-switch {
-        flex-shrink: 0;
-    }
-}
-
-/* Responsive adjustments for limited height screens */
-@media (max-height: 850px) {
-    .flashcards-container {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-        gap: 0.75rem;
-    }
-
-    .flashcards-create-edit, .flashcards-view {
-        padding: var(--spacing-6);
-    }
-
-    .create-header, .view-header {
-        /* Gap handled by parent flex container */
-    }
-    
-    .create-form {
-        gap: var(--spacing-4);
-    }
-
-    .set-card {
-        padding: var(--spacing-4);
-        gap: var(--spacing-2);
-    }
-
-    .flashcards-study {
-        padding: 1rem 0.5rem 0.5rem;
-        gap: 1rem;
-    }
-
-    .study-card {
-        max-width: min(92vw, 550px);
-        padding: clamp(0.875rem, 2.5vw, 1.25rem);
-    }
-
-    .study-card-container {
-        max-width: min(92vw, 550px);
-    }
-
-    .study-card-front,
-    .study-card-back {
-        padding: clamp(0.875rem, 2.5vw, 1.25rem);
-    }
-
-    .study-header h2 {
-        font-size: 1.25rem;
-    }
-
-    .question-text {
-        font-size: clamp(1rem, 3.5vw, 1.5rem);
-    }
-
-    .answer-text {
-        font-size: clamp(0.95rem, 3vw, 1.25rem);
-    }
-
-    .grade-buttons {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.625rem;
-    }
-    
-    .decision-button {
-        padding: 0.75rem 0.5rem;
-        min-height: 62px;
-    }
-
-    .grade-label {
-        font-size: 0.825rem;
-    }
-
-    .study-bottom-actions {
-        min-height: 60px;
-    }
-}
-
-/* More aggressive adjustments for very short screens */
-@media (max-height: 750px) {
-    .flashcards-container {
-        padding-top: 0.375rem;
-        padding-bottom: 0.375rem;
-    }
-    
-    .flashcards-create-edit, .flashcards-view {
-        padding: var(--spacing-4);
-        max-height: calc(100vh - 100px);
-    }
-
-    .flashcards-sets-list {
-        max-height: calc(100vh - 100px);
-    }
-
-    .create-header, .view-header {
-        padding-bottom: var(--spacing-3);
-    }
-    
-    .create-form {
-        gap: var(--spacing-3);
-    }
-
-    .form-group {
-        gap: var(--spacing-1);
-    }
-
-    .form-group input[type="text"],
-    .form-group input[type="number"],
-    .form-group input[type="date"],
-    .form-group textarea,
-    .form-group select {
-        padding: var(--spacing-2);
-    }
-
-    .card-item {
-        padding: var(--spacing-3);
-    }
-    
-    .card-content {
-        gap: var(--spacing-3);
-    }
-    
-    .view-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .card-item-view {
-        padding: 1rem 1.25rem;
-    }
-    
-    .flashcards-study {
-        padding: 1rem 0.375rem 3rem;
-        gap: 1.25rem;
-        min-height: calc(100vh - 60px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .study-header h2 {
-        font-size: 1.125rem;
-    }
-    
-    .study-card {
-        max-width: min(93vw, 500px);
-        padding: clamp(0.75rem, 2vw, 1rem);
-        aspect-ratio: unset;
-        height: auto;
-        min-height: 250px;
-        max-height: none;
-    }
-
-    .study-card-container {
-        max-width: min(93vw, 500px);
-        aspect-ratio: unset;
-        height: auto;
-    }
-
-    .study-card-front,
-    .study-card-back {
-        padding: clamp(0.75rem, 2vw, 1rem);
-    }
-    
-    .question-text {
-        font-size: clamp(0.95rem, 3.5vw, 1.25rem);
-    }
-    
-    .answer-text {
-        font-size: clamp(0.875rem, 3vw, 1.125rem);
-    }
-    
-    .study-answer hr {
-        /* Gap handled by parent flex container */
-    }
-
-    .grade-buttons {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
-    }
-    
-    .decision-button {
-        padding: 0.625rem 0.5rem;
-        min-height: 58px;
-    }
-    
-    .grade-label {
-        font-size: 0.8rem;
-    }
-    
-    .mcq-options {
-        gap: 0.5rem;
-    }
-
-    .mcq-option {
-        padding: clamp(0.625rem, 1.5vw, 0.75rem);
-        min-height: clamp(45px, 10vw, 55px);
-        font-size: clamp(0.8rem, 2vw, 0.9rem);
-    }
-
-    .written-answer-feedback {
-        gap: 0.75rem;
-    }
-
-    .feedback-group {
-        gap: 0.375rem;
-    }
-
-    .answer-container {
-        padding: 0.75rem;
-    }
-
-    .study-bottom-actions {
-        min-height: 55px;
-    }
-
-    .modal-content {
-        max-height: 95vh;
-    }
-
-    .modal-header, .modal-actions {
-        padding: var(--spacing-4);
-    }
-
-    .modal-scroll-wrapper {
-        padding: var(--spacing-2) var(--spacing-4);
-    }
-}
-
-/* iPhone SE and small screen specific adjustments - Remove aspect ratio constraint */
-@media (max-width: 480px) {
-    /* Remove aspect ratio for small screens to allow natural content flow */
-    .study-card,
-    .study-card-container {
-        aspect-ratio: unset !important;
-        height: auto;
-        min-height: 250px;
-        max-height: none;
-    }
-
-    .study-card {
-        padding: 0.875rem;
-    }
-
-    .flashcards-study {
-        padding: 1rem 0.5rem 1rem;
-        gap: 0.75rem;
-        min-height: calc(100vh - 80px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        min-height: 100%;
     }
 
     .study-header {
         flex-shrink: 0;
+        padding-bottom: 0.25rem;
     }
 
     .study-header h2 {
-        font-size: 1.125rem;
+        font-size: 1.05rem;
+        line-height: 1.3;
     }
 
     .study-header button {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.8rem;
+    }
+
+    .study-header-actions {
+        gap: 0.375rem;
     }
 
     .study-progress {
-        flex-shrink: 0;
-        font-size: 0.85rem;
-        padding: 0.25rem 0;
+        font-size: 0.8rem;
+        padding: 0.125rem 0;
+    }
+
+    /* Study card - allow natural content flow */
+    .study-card {
+        max-width: min(97vw, 440px);
+        padding: 0.875rem;
+        gap: 0.625rem;
+    }
+
+    .study-card-container {
+        max-width: min(97vw, 440px);
+        aspect-ratio: unset;
+        height: auto;
     }
 
     .study-card-front,
     .study-card-back {
-        height: auto;
-        min-height: 250px;
         padding: 0.875rem;
-        overflow-y: visible;
+        height: auto;
+        overflow: visible;
     }
 
     .card-header-row {
@@ -1603,25 +1274,30 @@
         margin-bottom: 0.5rem;
     }
 
+    .card-status-label,
+    .card-type-label {
+        font-size: 0.625rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Question and answer sections */
     .study-question {
-        padding: 1rem 0;
-        gap: 1rem;
-        overflow-y: visible;
+        padding: 0.875rem 0;
+        gap: 0.875rem;
     }
 
     .question-text {
-        font-size: 1.125rem;
+        font-size: 1.075rem;
         line-height: 1.4;
     }
 
     .study-answer {
-        padding: 0.75rem 0 0;
+        padding-top: 0.625rem;
         gap: 0.75rem;
-        overflow-y: visible;
     }
 
     .answer-text {
-        font-size: 1rem;
+        font-size: 0.975rem;
         line-height: 1.4;
     }
 
@@ -1630,21 +1306,23 @@
         flex-direction: column;
         gap: 0.75rem;
         margin-top: 0.5rem;
+        width: 100%;
     }
 
     .written-answer-input {
         padding: 0.75rem;
         font-size: 0.95rem;
-        width: 100%;
     }
 
     .written-answer-actions {
         width: 100%;
         justify-content: space-between;
+        gap: 0.625rem;
     }
 
     .written-answer-actions button {
         flex: 1;
+        padding: 0.75rem;
     }
 
     /* Multiple choice options */
@@ -1655,10 +1333,10 @@
     }
 
     .mcq-option {
-        padding: 0.875rem;
+        padding: 0.875rem 0.75rem;
         min-height: 52px;
         font-size: 0.95rem;
-        line-height: 1.3;
+        line-height: 1.35;
     }
 
     /* True/False */
@@ -1668,14 +1346,13 @@
     }
 
     .true-false-proposed-answer {
-        padding: 1rem;
+        padding: 1rem 0.875rem;
         font-size: 1rem;
         line-height: 1.4;
     }
 
     .true-false-actions {
         gap: 0.875rem;
-        width: 100%;
     }
 
     .tf-button {
@@ -1698,7 +1375,7 @@
     }
 
     .answer-container {
-        padding: 0.875rem;
+        padding: 0.875rem 0.75rem;
         font-size: 0.95rem;
         line-height: 1.4;
     }
@@ -1721,9 +1398,8 @@
 
     /* Grade buttons */
     .study-bottom-actions {
-        min-height: 60px;
         flex-shrink: 0;
-        margin-top: 0.5rem;
+        padding: 0.5rem 0 0;
     }
 
     .grade-buttons {
@@ -1751,323 +1427,180 @@
     .correct-pair {
         padding: 0.875rem;
         font-size: 0.95rem;
-        gap: 0.625rem;
+    }
+
+    /* Other UI elements */
+    .import-options,
+    .radio-group {
+        flex-direction: column;
+    }
+    
+    .radio-group label {
+        width: 100%;
+    }
+
+    .custom-separator-input {
+        width: 100px;
+    }
+
+    .study-options-modal {
+        width: 95vw;
+        max-height: 85vh;
+    }
+
+    .modal-header {
+        padding: var(--spacing-4);
+    }
+
+    .close-button {
+        top: 1rem;
+        right: 1rem;
+    }
+    
+    .modal-scroll-wrapper {
+        padding: var(--spacing-2) var(--spacing-4) var(--spacing-4);
+    }
+
+    /* Toggle switch adjustments */
+    .toggle-switch-container {
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .toggle-switch-container > span {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        padding-top: 0.25rem;
+    }
+
+    .toggle-switch {
+        flex-shrink: 0;
     }
 }
 
-/* Extra small screens and iPhone SE (height constraints) */
-@media (max-width: 480px) and (max-height: 670px) {
-    /* Further optimize for very small screens */
-    .study-card,
-    .study-card-container {
-        min-height: 200px;
+/* Responsive adjustments for limited height screens */
+@media (max-height: 750px) {
+    .flashcards-container {
+        padding: var(--spacing-2);
+        gap: 0.625rem;
+    }
+
+    .flashcards-create-edit, .flashcards-view {
+        padding: var(--spacing-5);
+    }
+    
+    .create-form {
+        gap: var(--spacing-3);
+    }
+
+    .set-card {
+        padding: var(--spacing-4);
+        gap: var(--spacing-2);
+    }
+
+    .flashcards-study {
+        padding: 0.625rem 0.375rem 0.625rem;
+        gap: 0.625rem;
+    }
+
+    .study-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .study-header button {
+        padding: 0.4rem 0.65rem;
+        font-size: 0.775rem;
+    }
+
+    .study-progress {
+        font-size: 0.775rem;
     }
 
     .study-card {
         padding: 0.75rem;
     }
 
-    .flashcards-study {
-        padding: 1rem 0.375rem 0.75rem;
-        gap: 0.625rem;
-    }
-
-    .study-header h2 {
-        font-size: 1rem;
-    }
-
-    .study-header button {
-        padding: 0.375rem 0.625rem;
-        font-size: 0.8rem;
-    }
-
-    .study-progress {
-        font-size: 0.8rem;
-    }
-
     .study-card-front,
     .study-card-back {
-        min-height: 200px;
         padding: 0.75rem;
-    }
-
-    .study-question {
-        padding: 0.75rem 0;
-        gap: 0.75rem;
     }
 
     .question-text {
         font-size: 1rem;
-    }
-
-    .study-answer {
-        padding: 0.625rem 0 0;
-        gap: 0.625rem;
     }
 
     .answer-text {
         font-size: 0.925rem;
     }
 
-    .written-answer-form {
-        gap: 0.625rem;
-        margin-top: 0.375rem;
-    }
-
-    .written-answer-input {
-        padding: 0.625rem;
-        font-size: 0.9rem;
-    }
-
-    .mcq-options {
-        gap: 0.5rem;
-        margin-top: 0.375rem;
-    }
-
-    .mcq-option {
-        padding: 0.75rem;
-        min-height: 48px;
-        font-size: 0.9rem;
-    }
-
-    .true-false-container {
-        gap: 0.875rem;
-        margin-top: 0.375rem;
-    }
-
-    .true-false-proposed-answer {
-        padding: 0.875rem;
-        font-size: 0.95rem;
-    }
-
-    .tf-button {
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-    }
-
-    .written-answer-feedback {
-        gap: 0.75rem;
-        margin-top: 0.375rem;
-    }
-
-    .feedback-label {
-        font-size: 0.75rem;
-    }
-
-    .answer-container {
-        padding: 0.75rem;
-        font-size: 0.9rem;
-    }
-
-    .retype-answer-form {
-        padding-top: 0.75rem;
-        gap: 0.5rem;
-    }
-
-    .retype-answer-form p {
-        font-size: 0.8rem;
-    }
-
-    .retype-answer-input {
-        padding: 0.625rem;
-        font-size: 0.9rem;
-        min-height: 44px;
-    }
-
-    .study-bottom-actions {
-        min-height: 55px;
-        margin-top: 0.375rem;
-    }
-
     .grade-buttons {
         gap: 0.5rem;
     }
-
+    
     .decision-button {
-        padding: 0.625rem 0.375rem;
+        padding: 0.625rem 0.5rem;
         min-height: 58px;
     }
 
     .grade-label {
-        font-size: 0.775rem;
-    }
-
-    .answer-feedback p {
-        font-size: 0.9rem;
-    }
-
-    .correct-pair {
-        padding: 0.75rem;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 }
 
-/* Very small height screens (iPhone SE 1st gen) */
-@media (max-width: 480px) and (max-height: 570px) {
-    .study-card,
-    .study-card-container {
-        min-height: 180px;
-    }
 
-    .study-card {
-        padding: 0.625rem;
-    }
-
+/* Extra small screens like iPhone SE (width AND height constraints) */
+@media (max-width: 380px) and (max-height: 670px) {
     .flashcards-study {
-        padding: 0.75rem 0.25rem 0.5rem;
+        padding: 0.5rem 0.25rem 0.5rem;
         gap: 0.5rem;
     }
 
     .study-header h2 {
-        font-size: 0.95rem;
+        font-size: 0.975rem;
     }
 
     .study-header button {
-        padding: 0.325rem 0.5rem;
+        padding: 0.375rem 0.6rem;
         font-size: 0.75rem;
     }
 
     .study-progress {
         font-size: 0.75rem;
-        padding: 0.125rem 0;
+    }
+
+    .study-card {
+        padding: 0.675rem;
     }
 
     .study-card-front,
     .study-card-back {
-        min-height: 180px;
-        padding: 0.625rem;
-    }
-
-    .card-header-row {
-        margin-bottom: 0.375rem;
-    }
-
-    .study-question {
-        padding: 0.625rem 0;
-        gap: 0.625rem;
+        padding: 0.675rem;
     }
 
     .question-text {
-        font-size: 0.95rem;
-        line-height: 1.3;
-    }
-
-    .study-answer {
-        padding: 0.5rem 0 0;
-        gap: 0.5rem;
+        font-size: 0.975rem;
     }
 
     .answer-text {
-        font-size: 0.875rem;
-        line-height: 1.3;
-    }
-
-    .written-answer-form {
-        gap: 0.5rem;
-        margin-top: 0.25rem;
-    }
-
-    .written-answer-input {
-        padding: 0.5rem;
-        font-size: 0.85rem;
-    }
-
-    .mcq-options {
-        gap: 0.375rem;
-        margin-top: 0.25rem;
+        font-size: 0.9rem;
     }
 
     .mcq-option {
-        padding: 0.625rem;
-        min-height: 44px;
-        font-size: 0.85rem;
-    }
-
-    .true-false-container {
-        gap: 0.75rem;
-        margin-top: 0.25rem;
-    }
-
-    .true-false-proposed-answer {
-        padding: 0.75rem;
-        font-size: 0.9rem;
-    }
-
-    .tf-button {
-        padding: 0.625rem 0.875rem;
-        font-size: 0.9rem;
-    }
-
-    .written-answer-feedback {
-        gap: 0.625rem;
-        margin-top: 0.25rem;
-    }
-
-    .feedback-label {
-        font-size: 0.7rem;
-    }
-
-    .answer-container {
-        padding: 0.625rem;
-        font-size: 0.85rem;
-    }
-
-    .retype-answer-form {
-        padding-top: 0.625rem;
-        gap: 0.375rem;
-    }
-
-    .retype-answer-form p {
-        font-size: 0.75rem;
-    }
-
-    .retype-answer-input {
-        padding: 0.5rem;
-        font-size: 0.85rem;
-        min-height: 40px;
-    }
-
-    .study-bottom-actions {
-        min-height: 50px;
-        margin-top: 0.25rem;
-    }
-
-    .grade-buttons {
-        gap: 0.375rem;
+        padding: 0.7rem;
+        min-height: 46px;
+        font-size: 0.875rem;
     }
 
     .decision-button {
-        padding: 0.5rem 0.25rem;
-        min-height: 54px;
-    }
-
-    .grade-icon {
-        transform: scale(0.9);
+        padding: 0.6rem 0.4rem;
+        min-height: 56px;
     }
 
     .grade-label {
-        font-size: 0.725rem;
-    }
-
-    .answer-feedback p {
-        font-size: 0.85rem;
-    }
-
-    .correct-pair {
-        padding: 0.625rem;
-        font-size: 0.85rem;
-    }
-
-    .tts-button-large {
-        padding: 0.125rem;
-    }
-
-    .card-status-label,
-    .card-type-label {
-        font-size: 0.625rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.775rem;
     }
 }
+
 
 .modal-backdrop {
     position: fixed;
@@ -2539,9 +2072,9 @@ input:checked + .slider:before {
     perspective: 1000px;
     width: 100%;
     max-width: min(90vw, 600px);
-    aspect-ratio: 6 / 4;
     margin: 0 auto;
     flex-shrink: 0;
+    min-height: fit-content;
 }
 
 /* Make study card container wider on large screens */
@@ -2624,10 +2157,6 @@ input:checked + .slider:before {
     font-size: 0.875rem;
     color: var(--color-grey);
     font-weight: 500;
-}
-
-.retype-answer-form .feedback-group {
-    /* Gap handled by parent flex container */
 }
 
 .retype-answer-input {
