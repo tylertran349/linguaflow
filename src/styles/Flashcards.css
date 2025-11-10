@@ -693,6 +693,22 @@
     gap: 1rem;
 }
 
+/* Ensure proper spacing between card container and grading buttons on mobile */
+@media (max-width: 768px) {
+    .flashcards-study {
+        gap: 0.875rem;
+    }
+    
+    /* Add explicit spacing for flashcard question type on mobile */
+    .study-card-container {
+        margin-bottom: 0;
+    }
+    
+    .study-bottom-actions {
+        margin-top: 0;
+    }
+}
+
 /* Desktop only - flashcards-study handles its own scrolling */
 @media (min-width: 1024px) {
     .flashcards-study {
@@ -1223,6 +1239,20 @@
         padding: 0.75rem 0.375rem 0.75rem;
         gap: 0.75rem;
         min-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Ensure flashcard container doesn't overlap with grading buttons */
+    .study-card-container {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+    
+    .study-bottom-actions {
+        flex-shrink: 0;
+        margin-top: 0;
+        padding: 0.5rem 0 0;
     }
 
     .study-header {
@@ -1260,13 +1290,22 @@
         max-width: min(97vw, 440px);
         aspect-ratio: unset;
         height: auto;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+    
+    .study-card-flipper {
+        height: auto;
+        min-height: fit-content;
     }
 
     .study-card-front,
     .study-card-back {
         padding: 0.875rem;
         height: auto;
+        min-height: fit-content;
         overflow: visible;
+        position: relative;
     }
 
     .card-header-row {
@@ -1402,6 +1441,25 @@
     .study-bottom-actions {
         flex-shrink: 0;
         padding: 0.5rem 0 0;
+    }
+    
+    /* Flashcard question type: ensure proper spacing on small mobile */
+    .study-card-container {
+        min-height: 220px;
+    }
+    
+    .study-card-flipper {
+        min-height: 220px;
+    }
+    
+    .study-card-front,
+    .study-card-back {
+        min-height: 220px;
+    }
+    
+    /* Ensure proper gap between card and buttons */
+    .flashcards-study {
+        gap: 0.875rem;
     }
 
     .grade-buttons {
@@ -1555,6 +1613,20 @@
     .flashcards-study {
         padding: 0.5rem 0.25rem 0.5rem;
         gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Ensure flashcard container has proper spacing */
+    .study-card-container {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+    
+    .study-bottom-actions {
+        flex-shrink: 0;
+        margin-top: 0;
+        padding: 0.5rem 0 0;
     }
 
     .study-header h2 {
@@ -2076,6 +2148,8 @@ input:checked + .slider:before {
     margin: 0 auto;
     flex-shrink: 0;
     min-height: fit-content;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Make study card container wider on large screens */
@@ -2093,6 +2167,7 @@ input:checked + .slider:before {
     transition: transform 0.6s;
     transform-style: preserve-3d;
     cursor: pointer;
+    min-height: fit-content;
 }
 
 .study-card-flipper.is-flipped {
@@ -2137,6 +2212,54 @@ input:checked + .slider:before {
     padding: clamp(0.5rem, 2vw, 1rem) 0;
     overflow-y: auto;
     min-height: 0;
+}
+
+/* Mobile fix: Ensure flashcard question type has proper spacing from grading buttons */
+@media (max-width: 768px) {
+    /* Ensure proper flexbox spacing in the study container */
+    .flashcards-study {
+        gap: 1rem;
+    }
+    
+    .study-card-container {
+        flex-shrink: 0;
+        height: auto;
+        min-height: 250px; /* Ensure minimum height for card content */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .study-card-flipper {
+        height: 100%;
+        min-height: 250px;
+        position: relative;
+        flex: 1 1 auto;
+    }
+    
+    .study-card-front,
+    .study-card-back {
+        height: 100%;
+        min-height: 250px;
+        max-height: none;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .study-card-front .study-question,
+    .study-card-back .study-answer {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+    
+    /* Ensure grading buttons have proper spacing */
+    .study-bottom-actions {
+        flex-shrink: 0;
+        margin-top: 0;
+        padding-top: 0.75rem;
+    }
 }
 
 .written-answer-feedback .answer-container.incorrect {
