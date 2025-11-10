@@ -753,11 +753,25 @@
     gap: clamp(0.25rem, 1vw, 0.5rem);
 }
 
+/* Remove aspect ratio when card contains retype form to allow natural height */
+.study-card:has(.retype-answer-form) {
+    aspect-ratio: unset;
+    height: auto;
+    min-height: 400px;
+}
+
 /* Make study card wider on large screens */
 @media (min-width: 1024px) {
     .study-card {
         max-width: 900px;
         aspect-ratio: 6 / 4;
+    }
+    
+    /* Remove aspect ratio on large screens when card contains retype form */
+    .study-card:has(.retype-answer-form) {
+        aspect-ratio: unset;
+        height: auto;
+        min-height: 450px;
     }
 }
 
