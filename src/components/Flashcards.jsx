@@ -298,8 +298,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             };
             console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
             setStudyOptions(mergedOptions);
+            
+            // Return the loaded data for immediate use
+            return data;
         } catch (err) {
             setError(err.message);
+            return null;
         } finally {
             setLoading(false);
         }
@@ -893,10 +897,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
 
             const reviewedCard = cardsToStudy[currentCardIndex];
-            if (grade === Grade.Forgot || grade === Grade.Hard) {
-                setCardsToStudy(prev => [...prev, reviewedCard]);
-            }
+            const reviewedCardId = reviewedCard._id;
+            const shouldReAdd = grade === Grade.Forgot || grade === Grade.Hard;
 
+            // Remove the reviewed card from the study session
             const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
             setCardsToStudy(newCards);
             
@@ -917,7 +921,108 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
-            loadSet(currentSet._id);
+            // Await loadSet to ensure currentSet is updated with the new grade before any new study round starts
+            const updatedSet = await loadSet(currentSet._id);
+            
+            // Update cards in the current study session with fresh data from the server
+            // If loadSet fails, we still continue - the grade was saved, just the local state might be slightly stale
+            if (updatedSet && updatedSet.flashcards) {
+                setCardsToStudy(prev => {
+                    // First, update existing cards with fresh data
+                    const updatedCards = prev.map(card => {
+                        // Find the updated card in the loaded set
+                        const updatedCard = updatedSet.flashcards.find(c => 
+                            c._id === card._id || 
+                            (c.term === card.term && c.definition === card.definition)
+                        );
+                        // If found, merge the updated data while preserving session-specific properties
+                        if (updatedCard) {
+                            const updatedCardData = {
+                                ...updatedCard,
+                                questionType: card.questionType,
+                                isTrueFalseCorrect: card.isTrueFalseCorrect,
+                                falsePair: card.falsePair
+                            };
+                            
+                            // Update falsePair reference to point to a fresh card from the updated set
+                            if (card.falsePair && updatedCardData.questionType === 'trueFalse') {
+                                const freshFalsePair = updatedSet.flashcards.find(c => 
+                                    c._id === card.falsePair._id ||
+                                    (c.term === card.falsePair.term && c.definition === card.falsePair.definition)
+                                );
+                                if (freshFalsePair) {
+                                    updatedCardData.falsePair = freshFalsePair;
+                                } else {
+                                    // If falsePair card no longer exists, regenerate the true/false question
+                                    const isCorrectPairing = Math.random() < 0.5;
+                                    updatedCardData.isTrueFalseCorrect = isCorrectPairing;
+                                    if (!isCorrectPairing) {
+                                        const otherCards = updatedSet.flashcards.filter(c => c._id !== updatedCard._id);
+                                        if (otherCards.length > 0) {
+                                            const randomCard = otherCards[Math.floor(Math.random() * otherCards.length)];
+                                            updatedCardData.falsePair = randomCard;
+                                        } else {
+                                            updatedCardData.isTrueFalseCorrect = true;
+                                            updatedCardData.falsePair = null;
+                                        }
+                                    } else {
+                                        updatedCardData.falsePair = null;
+                                    }
+                                }
+                            }
+                            
+                            return updatedCardData;
+                        }
+                        return card;
+                    });
+                    
+                    // If the card should be re-added, add it with fresh data from the server
+                    if (shouldReAdd) {
+                        const freshCard = updatedSet.flashcards.find(c => 
+                            c._id === reviewedCardId || 
+                            (c.term === reviewedCard.term && c.definition === reviewedCard.definition)
+                        );
+                        if (freshCard) {
+                            // Determine question type for the re-added card
+                            const isNew = !freshCard.lastReviewed;
+                            const activeNewCardTypes = Object.entries(studyOptions.newCardQuestionTypes)
+                                .filter(([, isActive]) => isActive)
+                                .map(([type]) => type);
+                            const activeSeenCardTypes = Object.entries(studyOptions.seenCardQuestionTypes)
+                                .filter(([, isActive]) => isActive)
+                                .map(([type]) => type);
+                            const questionTypes = isNew ? activeNewCardTypes : activeSeenCardTypes;
+                            const questionType = questionTypes.length > 0 
+                                ? questionTypes[Math.floor(Math.random() * questionTypes.length)]
+                                : reviewedCard.questionType;
+                            
+                            const cardToReAdd = {
+                                ...freshCard,
+                                questionType
+                            };
+                            
+                            // Add true/false properties if needed
+                            if (questionType === 'trueFalse') {
+                                const isCorrectPairing = Math.random() < 0.5;
+                                cardToReAdd.isTrueFalseCorrect = isCorrectPairing;
+                                if (!isCorrectPairing) {
+                                    const otherCards = updatedSet.flashcards.filter(c => c._id !== freshCard._id);
+                                    if (otherCards.length > 0) {
+                                        const randomCard = otherCards[Math.floor(Math.random() * otherCards.length)];
+                                        cardToReAdd.falsePair = randomCard;
+                                    } else {
+                                        cardToReAdd.isTrueFalseCorrect = true;
+                                    }
+                                }
+                            }
+                            
+                            return [...updatedCards, cardToReAdd];
+                        }
+                    }
+                    
+                    return updatedCards;
+                });
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -2142,7 +2247,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     <div className="true-false-proposed-answer">
                                         { currentCard.isTrueFalseCorrect 
                                             ? answer 
-                                            : (showTerm ? currentCard.falsePair.term : currentCard.falsePair.definition)
+                                            : (currentCard.falsePair ? (showTerm ? currentCard.falsePair.term : currentCard.falsePair.definition) : answer)
                                         }
                                     </div>
                                     <div className="true-false-actions">
