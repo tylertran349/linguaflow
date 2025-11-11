@@ -88,6 +88,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [customTermDefSeparator, setCustomTermDefSeparator] = useState('');
     const [rowSeparator, setRowSeparator] = useState('newline'); // 'newline', 'semicolon', 'custom'
     const [customRowSeparator, setCustomRowSeparator] = useState('');
+    const [importTermLanguage, setImportTermLanguage] = useState('');
+    const [importDefinitionLanguage, setImportDefinitionLanguage] = useState('');
     
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
@@ -346,8 +348,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     parsed.push({
                         term,
                         definition,
-                        termLanguage: settings?.targetLanguage ? getLanguageCode(settings.targetLanguage) : null,
-                        definitionLanguage: settings?.nativeLanguage ? getLanguageCode(settings.nativeLanguage) : null
+                        termLanguage: importTermLanguage || (settings?.targetLanguage ? getLanguageCode(settings.targetLanguage) : null),
+                        definitionLanguage: importDefinitionLanguage || (settings?.nativeLanguage ? getLanguageCode(settings.nativeLanguage) : null)
                     });
                 }
             }
@@ -369,6 +371,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setFlashcards(prev => [...prev, ...parsed]);
         setImportText('');
         setShowImport(false);
+        setImportTermLanguage('');
+        setImportDefinitionLanguage('');
     };
 
     // Save set
@@ -1577,6 +1581,32 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             </label>
                                         </div>
                                     </div>
+                                    <div className="import-option-group">
+                                        <label className="import-option-label">Term Language:</label>
+                                        <select
+                                            value={importTermLanguage}
+                                            onChange={(e) => setImportTermLanguage(e.target.value)}
+                                            className="import-language-select"
+                                        >
+                                            <option value="">Use default ({settings?.targetLanguage ? settings.targetLanguage : 'None'})</option>
+                                            {supportedLanguages.map(lang => (
+                                                <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="import-option-group">
+                                        <label className="import-option-label">Definition Language:</label>
+                                        <select
+                                            value={importDefinitionLanguage}
+                                            onChange={(e) => setImportDefinitionLanguage(e.target.value)}
+                                            className="import-language-select"
+                                        >
+                                            <option value="">Use default ({settings?.nativeLanguage ? settings.nativeLanguage : 'None'})</option>
+                                            {supportedLanguages.map(lang => (
+                                                <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                                 <textarea
                                     value={importText}
@@ -1593,6 +1623,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         setCustomTermDefSeparator('');
                                         setRowSeparator('newline');
                                         setCustomRowSeparator('');
+                                        setImportTermLanguage('');
+                                        setImportDefinitionLanguage('');
                                     }}>
                                         Cancel
                                     </button>
