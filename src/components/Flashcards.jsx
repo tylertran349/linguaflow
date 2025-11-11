@@ -935,6 +935,34 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
+    // Auto-advance after correct retype in "Don't know" scenario
+    useEffect(() => {
+        if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview) {
+            const timer = setTimeout(() => {
+                handleReviewDecision(Grade.Forgot);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [showDontKnowAnswer, isDontKnowRetypeCorrect, isProcessingReview, handleReviewDecision]);
+
+    // Auto-advance after correct retype in incorrect answer scenario
+    useEffect(() => {
+        if (
+            !showDontKnowAnswer &&
+            currentQuestionType === 'written' &&
+            answerFeedback === 'incorrect' &&
+            showAnswer &&
+            isRetypeCorrect &&
+            studyOptions.learningOptions?.retypeAnswer &&
+            !isProcessingReview
+        ) {
+            const timer = setTimeout(() => {
+                handleReviewDecision(Grade.Forgot);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [showDontKnowAnswer, currentQuestionType, answerFeedback, showAnswer, isRetypeCorrect, studyOptions, isProcessingReview, handleReviewDecision]);
+
     const handleSkip = () => {
         if (currentQuestionType === 'written') {
             setShowDontKnowAnswer(true);
@@ -2082,7 +2110,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             {currentQuestionType === 'written' && showDontKnowAnswer && (
                                 <div className="retype-answer-form">
                                     <div className="feedback-group">
-                                        <p className="feedback-label correct">Correct answer:</p>
+                                        <p className="feedback-label correct">You didn't know the answer, so here is the correct answer:</p>
                                         <div className="answer-container correct">
                                             {answer}
                                             {answer && answerLang && (
@@ -2184,14 +2212,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="feedback-group">
-                                                        <p className="feedback-label incorrect">Incorrect answer</p>
-                                                        <div className="answer-container incorrect">
-                                                            {writtenAnswer}
+                                                    {writtenAnswer.trim() && (
+                                                        <div className="feedback-group">
+                                                            <p className="feedback-label incorrect">Incorrect answer</p>
+                                                            <div className="answer-container incorrect">
+                                                                {writtenAnswer}
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
                                                     <div className="feedback-group">
-                                                        <p className="feedback-label correct">Correct answer</p>
+                                                        <p className="feedback-label correct">
+                                                            {writtenAnswer.trim() ? 'Correct answer' : 'You skipped this, but here is the correct answer:'}
+                                                        </p>
                                                         <div className="answer-container correct">
                                                             {answer}
                                                             {answer && answerLang && (
@@ -2255,29 +2287,29 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 <div className="study-bottom-actions">
                     {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer ? (
                         <div className="grading-container">
-                            <div className="grade-buttons">
-                                {FSRS_GRADES.map(item => {
-                                    const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                    const isRetypeRequired = showDontKnowAnswer
-                                        ? !isDontKnowRetypeCorrect
-                                        : (currentQuestionType === 'written' && 
+                            {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer) && (
+                                <div className="grade-buttons">
+                                    {FSRS_GRADES.map(item => {
+                                        const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
+                                        const isRetypeRequired = currentQuestionType === 'written' && 
                                             answerFeedback === 'incorrect' && 
                                             studyOptions.learningOptions.retypeAnswer && 
-                                            !isRetypeCorrect);
-                                    return (
-                                        <button
-                                            key={item.grade}
-                                            className={`decision-button ${gradeName}`}
-                                            onClick={() => handleReviewDecision(item.grade)}
-                                            disabled={isProcessingReview || isRetypeRequired}
-                                            title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
-                                        >
-                                            <div className="grade-icon">{gradeIcons[item.grade]}</div>
-                                            <div className="grade-label">{item.label}</div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                            !isRetypeCorrect;
+                                        return (
+                                            <button
+                                                key={item.grade}
+                                                className={`decision-button ${gradeName}`}
+                                                onClick={() => handleReviewDecision(item.grade)}
+                                                disabled={isProcessingReview || isRetypeRequired}
+                                                title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
+                                            >
+                                                <div className="grade-icon">{gradeIcons[item.grade]}</div>
+                                                <div className="grade-label">{item.label}</div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                             {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer)) && (
                                 <button className="generate-button" onClick={handleRealSkip} disabled={isProcessingReview}>
                                     Skip
