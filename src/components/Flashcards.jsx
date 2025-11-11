@@ -943,6 +943,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         handleReviewDecisionRef.current = handleReviewDecision;
     }, [handleReviewDecision]);
 
+    // Ensure inputs are cleared when moving to a different study card
+    useEffect(() => {
+        if (viewMode !== 'study' || cardsToStudy.length === 0) return;
+        // Clear all text inputs specific to answering to avoid bleed-over between cards
+        setWrittenAnswer('');
+        setRetypeInputValue('');
+        setIsRetypeCorrect(false);
+        setDontKnowInputValue('');
+        setIsDontKnowRetypeCorrect(false);
+    }, [viewMode, currentCardIndex, cardsToStudy.length]);
+
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {
         if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview) {
