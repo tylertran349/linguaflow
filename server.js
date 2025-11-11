@@ -10,7 +10,7 @@ import { Webhook } from 'svix';
 import Sentence from './src/models/Sentence.js';
 import UserSettings from './src/models/UserSettings.js';
 import FlashcardSet from './src/models/FlashcardSet.js';
-import { FSRS, Grade } from './src/services/fsrsService.js'; 
+import { FSRS, Grade, s_0, d_0, retrievability, interval } from './src/services/fsrsService.js'; 
 import UserFlashcardSetData from './src/models/UserFlashcardSetData.js';
 
 // --- 1. INITIAL SETUP ---
@@ -435,6 +435,52 @@ app.get('/api/flashcards/my-sets', ClerkExpressRequireAuth(), async (req, res) =
     try {
         const userId = req.auth.userId;
         const sets = await FlashcardSet.find({ userId: userId }).sort({ updatedAt: -1 });
+        
+        // Migrate legacy cards in all sets
+        for (const set of sets) {
+            let hasLegacyCards = false;
+            const fsrs = new FSRS();
+            
+            for (let i = 0; i < set.flashcards.length; i++) {
+                const card = set.flashcards[i];
+                // Check if card has lastReviewed but no lastGrade (legacy "Studied" status)
+                if (card.lastReviewed && !card.lastGrade) {
+                    hasLegacyCards = true;
+                    
+                    // Assign "Good" grade (Grade.Good = 3)
+                    card.lastGrade = Grade.Good;
+                    
+                    // Initialize FSRS fields if they don't exist
+                    if (!card.stability || !card.difficulty) {
+                        // Initialize as if it's a new card with Grade.Good
+                        card.stability = s_0(Grade.Good);
+                        card.difficulty = d_0(Grade.Good);
+                        
+                        // Calculate next review date using FSRS interval for Good grade
+                        const now = new Date();
+                        const intervalDays = Math.max(Math.round(interval(fsrs.r_d, card.stability)), 1);
+                        card.nextReviewDate = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+                        
+                        // Initialize other FSRS fields if missing
+                        if (!card.lapses) card.lapses = 0; // Good doesn't count as a lapse
+                        if (!card.reps) card.reps = 1;
+                    } else {
+                        // Card has FSRS fields, calculate next review based on existing stability
+                        const now = new Date();
+                        const intervalDays = Math.max(Math.round(interval(fsrs.r_d, card.stability)), 1);
+                        card.nextReviewDate = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+                    }
+                }
+            }
+            
+            // Save the set if we migrated any cards
+            if (hasLegacyCards) {
+                set.updatedAt = Date.now();
+                await set.save();
+                console.log(`Migrated legacy cards in set ${set._id}`);
+            }
+        }
+        
         res.json(sets);
     } catch (error) {
         console.error("Error fetching user's flashcard sets:", error);
@@ -456,6 +502,49 @@ app.get('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, re
         // Check if user has access (own set or public)
         if (set.userId !== userId && !set.isPublic) {
             return res.status(403).json({ message: 'Access denied.' });
+        }
+        
+        // Migrate legacy cards: cards with lastReviewed but no lastGrade
+        let hasLegacyCards = false;
+        const fsrs = new FSRS();
+        
+        for (let i = 0; i < set.flashcards.length; i++) {
+            const card = set.flashcards[i];
+            // Check if card has lastReviewed but no lastGrade (legacy "Studied" status)
+            if (card.lastReviewed && !card.lastGrade) {
+                hasLegacyCards = true;
+                
+                // Assign "Good" grade (Grade.Good = 3)
+                card.lastGrade = Grade.Good;
+                
+                // Initialize FSRS fields if they don't exist
+                if (!card.stability || !card.difficulty) {
+                    // Initialize as if it's a new card with Grade.Good
+                    card.stability = s_0(Grade.Good);
+                    card.difficulty = d_0(Grade.Good);
+                    
+                    // Calculate next review date using FSRS interval for Good grade
+                    const now = new Date();
+                    const intervalDays = Math.max(Math.round(interval(fsrs.r_d, card.stability)), 1);
+                    card.nextReviewDate = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+                    
+                    // Initialize other FSRS fields if missing
+                    if (!card.lapses) card.lapses = 0; // Good doesn't count as a lapse
+                    if (!card.reps) card.reps = 1;
+                } else {
+                    // Card has FSRS fields, calculate next review based on existing stability
+                    const now = new Date();
+                    const intervalDays = Math.max(Math.round(interval(fsrs.r_d, card.stability)), 1);
+                    card.nextReviewDate = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+                }
+            }
+        }
+        
+        // Save the set if we migrated any cards
+        if (hasLegacyCards) {
+            set.updatedAt = Date.now();
+            await set.save();
+            console.log(`Migrated legacy cards in set ${setId}`);
         }
         
         // Fetch user-specific study data for this set
