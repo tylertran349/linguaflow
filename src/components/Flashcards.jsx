@@ -866,6 +866,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         startStudy();
     };
 
+    // Memoized handler for flashcard flip to prevent unnecessary re-renders
+    const handleCardFlip = useCallback(() => {
+        if (!showAnswer) {
+            setHasFlippedOnce(true);
+        }
+        setShowAnswer(prev => !prev);
+    }, [showAnswer]);
+
     // Handle review decision
     const handleReviewDecision = async (grade) => {
         if (isProcessingReviewRef.current) return;
@@ -1964,12 +1972,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     <div className="study-card-container">
                         <div 
                             className={`study-card-flipper ${showAnswer ? 'is-flipped' : ''}`}
-                            onClick={() => {
-                                if (!showAnswer) {
-                                    setHasFlippedOnce(true);
-                                }
-                                setShowAnswer(prev => !prev);
-                            }}
+                            onClick={handleCardFlip}
                         >
                             <div className="study-card study-card-front">
                                 <div className="card-header-row">
