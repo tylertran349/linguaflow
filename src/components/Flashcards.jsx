@@ -115,6 +115,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
+    const handleReviewDecisionRef = useRef(null);
 
     // State for the new study round logic
     const [isRoundComplete, setIsRoundComplete] = useState(false);
@@ -935,15 +936,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
+    useEffect(() => {
+        handleReviewDecisionRef.current = handleReviewDecision;
+    }, [handleReviewDecision]);
+
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {
         if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview) {
             const timer = setTimeout(() => {
-                handleReviewDecision(Grade.Forgot);
+                handleReviewDecisionRef.current?.(Grade.Forgot);
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [showDontKnowAnswer, isDontKnowRetypeCorrect, isProcessingReview, handleReviewDecision]);
+    }, [showDontKnowAnswer, isDontKnowRetypeCorrect, isProcessingReview]);
 
     // Auto-advance after correct retype in incorrect answer scenario
     useEffect(() => {
@@ -957,11 +962,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             !isProcessingReview
         ) {
             const timer = setTimeout(() => {
-                handleReviewDecision(Grade.Forgot);
+                handleReviewDecisionRef.current?.(Grade.Forgot);
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [showDontKnowAnswer, currentQuestionType, answerFeedback, showAnswer, isRetypeCorrect, studyOptions, isProcessingReview, handleReviewDecision]);
+    }, [showDontKnowAnswer, currentQuestionType, answerFeedback, showAnswer, isRetypeCorrect, studyOptions, isProcessingReview]);
 
     const handleSkip = () => {
         if (currentQuestionType === 'written') {
