@@ -321,7 +321,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
         
         // Split text into rows
-        const rows = text.split(rowSep).filter(row => row.trim());
+        const rows = text
+            .split(rowSep)
+            .map(row => row.replace(/\r/g, ''))
+            .filter(row => row.trim());
         
         // Determine term/definition separator
         let termDefSep;
@@ -335,17 +338,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         // Parse each row
         for (const row of rows) {
-            const trimmedRow = row.trim();
-            if (!trimmedRow) continue;
-            
+            const rowContent = row;
+            if (!rowContent.trim()) continue;
+
             // Split by term/definition separator
-            const parts = trimmedRow.split(termDefSep);
-            
+            const parts = rowContent.split(termDefSep);
+
             if (parts.length >= 2) {
-                const term = parts[0].trim();
-                const definition = parts.slice(1).join(termDefSep).trim(); // Join back in case separator appears in definition
-                
-                if (term && definition) {
+                const term = parts[0];
+                const definition = parts.slice(1).join(termDefSep); // Join back in case separator appears in definition
+
+                if (term.trim() && definition.trim()) {
                     parsed.push({
                         term,
                         definition,
