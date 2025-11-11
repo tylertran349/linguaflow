@@ -1880,6 +1880,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                             <Volume2 size={16} color="var(--color-green)" />
                                                         </button>
                                                     )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setCardToEdit(card);
+                                                            setIsEditCardModalOpen(true);
+                                                        }}
+                                                        className="edit-button-small"
+                                                        aria-label="Edit card"
+                                                        title="Edit card"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
                                                 </div>
                                                 <div className="card-side card-definition">
                                                     <span>{card.definition}</span>
