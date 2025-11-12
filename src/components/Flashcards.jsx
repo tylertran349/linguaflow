@@ -299,8 +299,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             };
             console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
             setStudyOptions(mergedOptions);
+            return data; // Return the loaded set data
         } catch (err) {
             setError(err.message);
+            return null;
         } finally {
             setLoading(false);
         }
@@ -634,8 +636,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     };
 
     // Start studying
-    const startStudy = useCallback(() => {
-        if (!currentSet) return;
+    const startStudy = useCallback((setToUse = null) => {
+        const set = setToUse || currentSet;
+        if (!set) return;
         
         setError(null);
 
@@ -647,10 +650,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
         if (!isNaN(rangeStart) && !isNaN(rangeEnd) && rangeStart > 0 && rangeEnd >= rangeStart) {
             // "Study only" range is active, so we ignore due dates and other filters on the card pool.
-            cards = currentSet.flashcards.slice(rangeStart - 1, rangeEnd);
+            cards = set.flashcards.slice(rangeStart - 1, rangeEnd);
         } else {
             // No "study only" range, so we start with all cards and filter them down.
-            let cardPool = [...currentSet.flashcards];
+            let cardPool = [...set.flashcards];
 
             const excludeStart = parseInt(excludeRange?.start, 10);
             const excludeEnd = parseInt(excludeRange?.end, 10);
@@ -748,7 +751,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 newCardData.isTrueFalseCorrect = isCorrectPairing;
 
                 if (!isCorrectPairing) {
-                    const otherCards = currentSet.flashcards.filter(c => c._id !== card._id);
+                    const otherCards = set.flashcards.filter(c => c._id !== card._id);
                     if (otherCards.length > 0) {
                         const randomCard = otherCards[Math.floor(Math.random() * otherCards.length)];
                         newCardData.falsePair = randomCard;
@@ -866,8 +869,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setCardsToStudy([]);
     };
 
-    const handleKeepStudying = () => {
-        startStudy();
+    const handleKeepStudying = async () => {
+        if (!currentSet) return;
+        // Reload the set to ensure we have the latest card data with updated grades
+        const freshSet = await loadSet(currentSet._id);
+        // Pass the fresh set data directly to startStudy to avoid stale state
+        if (freshSet) {
+            startStudy(freshSet);
+        }
     };
 
     // Memoized handler for flashcard flip to prevent unnecessary re-renders
