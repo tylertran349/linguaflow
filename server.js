@@ -416,11 +416,13 @@ app.get('/api/flashcards/sets', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
         
-        // Get user's own sets and public sets from other users
-        const userSets = await FlashcardSet.find({ userId: userId });
+        // Get user's own sets and public sets from other users (exclude trashed)
+        // Use $ne: true to include sets where isTrashed is false or doesn't exist (for backward compatibility)
+        const userSets = await FlashcardSet.find({ userId: userId, isTrashed: { $ne: true } });
         const publicSets = await FlashcardSet.find({ 
             userId: { $ne: userId },
-            isPublic: true 
+            isPublic: true,
+            isTrashed: { $ne: true }
         });
         
         res.json([...userSets, ...publicSets]);
@@ -434,7 +436,8 @@ app.get('/api/flashcards/sets', ClerkExpressRequireAuth(), async (req, res) => {
 app.get('/api/flashcards/my-sets', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
-        const sets = await FlashcardSet.find({ userId: userId }).sort({ updatedAt: -1 });
+        // Use $ne: true to include sets where isTrashed is false or doesn't exist (for backward compatibility)
+        const sets = await FlashcardSet.find({ userId: userId, isTrashed: { $ne: true } }).sort({ updatedAt: -1 });
         
         // Migrate legacy cards in all sets
         for (const set of sets) {
@@ -496,6 +499,11 @@ app.get('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, re
         
         const set = await FlashcardSet.findById(setId);
         if (!set) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
+        // Don't allow access to trashed sets through normal endpoints
+        if (set.isTrashed) {
             return res.status(404).json({ message: 'Flashcard set not found.' });
         }
         
@@ -672,6 +680,11 @@ app.put('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, re
             return res.status(404).json({ message: 'Flashcard set not found.' });
         }
         
+        // Don't allow updating trashed sets
+        if (set.isTrashed) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
         // Only the owner can update
         if (set.userId !== userId) {
             return res.status(403).json({ message: 'You can only update your own sets.' });
@@ -694,7 +707,7 @@ app.put('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, re
     }
 });
 
-// --- DELETE FLASHCARD SET ---
+// --- MOVE FLASHCARD SET TO TRASH ---
 app.delete('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
@@ -710,11 +723,107 @@ app.delete('/api/flashcards/sets/:setId', ClerkExpressRequireAuth(), async (req,
             return res.status(403).json({ message: 'You can only delete your own sets.' });
         }
         
-        await FlashcardSet.findByIdAndDelete(setId);
-        res.json({ message: 'Flashcard set deleted successfully.' });
+        // Move to trash instead of permanent delete
+        set.isTrashed = true;
+        set.trashedAt = new Date();
+        await set.save();
+        
+        res.json({ message: 'Flashcard set moved to trash successfully.' });
     } catch (error) {
-        console.error("Error deleting flashcard set:", error);
-        res.status(500).json({ message: 'Failed to delete flashcard set.' });
+        console.error("Error moving flashcard set to trash:", error);
+        res.status(500).json({ message: 'Failed to move flashcard set to trash.' });
+    }
+});
+
+// --- GET TRASHED FLASHCARD SETS ---
+app.get('/api/flashcards/trash', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const sets = await FlashcardSet.find({ userId: userId, isTrashed: true }).sort({ trashedAt: -1 });
+        res.json(sets);
+    } catch (error) {
+        console.error("Error fetching trashed flashcard sets:", error);
+        res.status(500).json({ message: 'Failed to fetch trashed flashcard sets.' });
+    }
+});
+
+// --- RESTORE FLASHCARD SET FROM TRASH ---
+app.post('/api/flashcards/sets/:setId/restore', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+        
+        const set = await FlashcardSet.findById(setId);
+        if (!set) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
+        // Only the owner can restore
+        if (set.userId !== userId) {
+            return res.status(403).json({ message: 'You can only restore your own sets.' });
+        }
+        
+        if (!set.isTrashed) {
+            return res.status(400).json({ message: 'This set is not in trash.' });
+        }
+        
+        set.isTrashed = false;
+        set.trashedAt = null;
+        await set.save();
+        
+        res.json({ message: 'Flashcard set restored successfully.' });
+    } catch (error) {
+        console.error("Error restoring flashcard set:", error);
+        res.status(500).json({ message: 'Failed to restore flashcard set.' });
+    }
+});
+
+// --- PERMANENTLY DELETE FLASHCARD SET FROM TRASH ---
+app.delete('/api/flashcards/trash/:setId', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+        
+        const set = await FlashcardSet.findById(setId);
+        if (!set) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
+        // Only the owner can permanently delete
+        if (set.userId !== userId) {
+            return res.status(403).json({ message: 'You can only delete your own sets.' });
+        }
+        
+        if (!set.isTrashed) {
+            return res.status(400).json({ message: 'This set is not in trash. Use the regular delete endpoint to move it to trash first.' });
+        }
+        
+        await FlashcardSet.findByIdAndDelete(setId);
+        res.json({ message: 'Flashcard set permanently deleted successfully.' });
+    } catch (error) {
+        console.error("Error permanently deleting flashcard set:", error);
+        res.status(500).json({ message: 'Failed to permanently delete flashcard set.' });
+    }
+});
+
+// --- AUTO-DELETE TRASHED SETS OLDER THAN 30 DAYS ---
+app.post('/api/flashcards/trash/cleanup', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const result = await FlashcardSet.deleteMany({
+            isTrashed: true,
+            trashedAt: { $lt: thirtyDaysAgo }
+        });
+        
+        res.json({ 
+            message: `Permanently deleted ${result.deletedCount} flashcard set(s) older than 30 days.`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error("Error cleaning up trash:", error);
+        res.status(500).json({ message: 'Failed to clean up trash.' });
     }
 });
 
@@ -885,7 +994,30 @@ app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// --- 8. START THE SERVER ---
+// --- 8. AUTO-DELETE TRASHED SETS OLDER THAN 30 DAYS (runs every 24 hours) ---
+const cleanupTrash = async () => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const result = await FlashcardSet.deleteMany({
+            isTrashed: true,
+            trashedAt: { $lt: thirtyDaysAgo }
+        });
+        
+        if (result.deletedCount > 0) {
+            console.log(`Auto-deleted ${result.deletedCount} flashcard set(s) older than 30 days from trash.`);
+        }
+    } catch (error) {
+        console.error("Error in trash cleanup:", error);
+    }
+};
+
+// Run cleanup immediately on server start, then every 24 hours
+cleanupTrash();
+setInterval(cleanupTrash, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+
+// --- 9. START THE SERVER ---
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

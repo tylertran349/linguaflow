@@ -1,6 +1,6 @@
 // src/components/Flashcards.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search, RotateCcw } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -69,7 +69,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Main state
     const [sets, setSets] = useState([]);
     const [currentSet, setCurrentSet] = useState(null);
-    const [viewMode, setViewMode] = useState('sets'); // 'sets', 'create', 'edit', 'study', 'view'
+    const [viewMode, setViewMode] = useState('sets'); // 'sets', 'create', 'edit', 'study', 'view', 'trash'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -150,6 +150,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [renderedViewCardCount, setRenderedViewCardCount] = useState(10);
     const [viewSearchTerm, setViewSearchTerm] = useState('');
 
+    // Trash state
+    const [trashSets, setTrashSets] = useState([]);
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
+    const [setToDelete, setSetToDelete] = useState(null);
+
     // Fetch all sets
     const fetchSets = async () => {
         if (!isSignedIn) return;
@@ -185,6 +191,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
         // Initial load is handled by the retry effect below when hasLoadedOnce is false.
     }, [isSignedIn, hasLoadedOnce]);
+
+    // Fetch trash sets when trash view is opened
+    useEffect(() => {
+        if (viewMode === 'trash' && isSignedIn) {
+            fetchTrashSets();
+        }
+    }, [viewMode, isSignedIn]);
 
     // Initial load with retry for up to ~20 seconds
     useEffect(() => {
@@ -532,29 +545,123 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
-    // Delete set
-    const handleDeleteSet = async (setId) => {
-        if (!confirm('Are you sure you want to delete this set?')) return;
+    // Fetch trash sets
+    const fetchTrashSets = async () => {
+        if (!isSignedIn) return;
+        
+        setLoading(true);
+        setError(null);
+        try {
+            const token = await getToken();
+            const response = await fetch(`${API_BASE_URL}/api/flashcards/trash`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch trashed flashcard sets');
+            }
+            
+            const data = await response.json();
+            setTrashSets(data);
+            return true;
+        } catch (err) {
+            setError(err.message);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Delete set (move to trash)
+    const handleDeleteSet = (setId) => {
+        const set = sets.find(s => s._id === setId);
+        setSetToDelete(set);
+        setShowDeleteConfirmModal(true);
+    };
+
+    const confirmDeleteSet = async () => {
+        if (!setToDelete) return;
         
         setLoading(true);
         setError(null);
         try {
             await retryUntilSuccess(async () => {
                 const token = await getToken();
-                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}`, {
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setToDelete._id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!response.ok) {
-                    throw new Error('Failed to delete flashcard set');
+                    throw new Error('Failed to move flashcard set to trash');
                 }
             }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
 
             await fetchSets();
-            if (currentSet && currentSet._id === setId) {
+            if (currentSet && currentSet._id === setToDelete._id) {
                 setViewMode('sets');
                 resetCreateState();
             }
+            setShowDeleteConfirmModal(false);
+            setSetToDelete(null);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Restore set from trash
+    const handleRestoreSet = async (setId) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${setId}/restore`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to restore flashcard set');
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
+            await fetchTrashSets();
+            await fetchSets();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Permanently delete set from trash
+    const handlePermanentDeleteSet = (setId) => {
+        const set = trashSets.find(s => s._id === setId);
+        setSetToDelete(set);
+        setShowPermanentDeleteModal(true);
+    };
+
+    const confirmPermanentDeleteSet = async () => {
+        if (!setToDelete) return;
+        
+        setLoading(true);
+        setError(null);
+        try {
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/trash/${setToDelete._id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to permanently delete flashcard set');
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
+            await fetchTrashSets();
+            setShowPermanentDeleteModal(false);
+            setSetToDelete(null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -1125,9 +1232,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             <div className="flashcards-sets-list">
                 <div className="sets-header">
                     <h2>Your Flashcard Sets</h2>
-                    <button className="generate-button" onClick={() => setViewMode('create')}>
-                        <Plus size={20} /> Create New Set
-                    </button>
+                    <div className="sets-header-actions">
+                        <button className="generate-button" onClick={() => setViewMode('trash')}>
+                            <Trash2 size={18} /> Trash
+                        </button>
+                        <button className="generate-button" onClick={() => setViewMode('create')}>
+                            <Plus size={20} /> Create New Set
+                        </button>
+                    </div>
                 </div>
                 <div className="sets-grid">
                     {sets.map(set => (
@@ -1151,6 +1263,157 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <p className="set-meta">{set.flashcards?.length || 0} cards</p>
                         </div>
                     ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Render trash view
+    const renderTrash = () => {
+        if (loading && trashSets.length === 0) {
+            return <p className="status-message">Loading trashed sets...</p>;
+        }
+        
+        if (error) {
+            return <p className="status-message error">{error}</p>;
+        }
+        
+        if (trashSets.length === 0) {
+            return (
+                <div className="initial-state-container">
+                    <p className="status-message">Trash is empty.</p>
+                    <button className="generate-button" onClick={() => setViewMode('sets')}>
+                        Back to Sets
+                    </button>
+                </div>
+            );
+        }
+        
+        const formatDate = (date) => {
+            if (!date) return 'Unknown';
+            const d = new Date(date);
+            const now = new Date();
+            const daysDiff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            if (daysDiff === 0) return 'Today';
+            if (daysDiff === 1) return 'Yesterday';
+            if (daysDiff < 30) return `${daysDiff} days ago`;
+            return d.toLocaleDateString();
+        };
+
+        const getDaysUntilDeletion = (trashedAt) => {
+            if (!trashedAt) return 30;
+            const d = new Date(trashedAt);
+            const now = new Date();
+            const daysDiff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            return Math.max(0, 30 - daysDiff);
+        };
+        
+        return (
+            <div className="flashcards-sets-list">
+                <div className="sets-header">
+                    <h2>Trash</h2>
+                    <button className="generate-button" onClick={() => setViewMode('sets')}>
+                        Back to Sets
+                    </button>
+                </div>
+                <div className="sets-grid">
+                    {trashSets.map(set => {
+                        const daysLeft = getDaysUntilDeletion(set.trashedAt);
+                        return (
+                            <div key={set._id} className="set-card">
+                                <div className="set-card-header">
+                                    <h3>{set.title}</h3>
+                                    <div className="set-card-actions">
+                                        <button onClick={() => handleRestoreSet(set._id)} title="Restore">
+                                            <RotateCcw size={18} />
+                                        </button>
+                                        <button onClick={() => handlePermanentDeleteSet(set._id)} title="Permanently delete">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="set-description">{set.description || 'No description'}</p>
+                                <p className="set-meta">{set.flashcards?.length || 0} cards</p>
+                                <p className="trash-meta">
+                                    Trashed: {formatDate(set.trashedAt)} • Auto-deletes in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
+    // Render delete confirmation modal
+    const renderDeleteConfirmModal = () => {
+        if (!showDeleteConfirmModal || !setToDelete) return null;
+        
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowDeleteConfirmModal(false);
+                setSetToDelete(null);
+            }
+        };
+        
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>Move to Trash</h3>
+                        <button onClick={() => { setShowDeleteConfirmModal(false); setSetToDelete(null); }} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>Are you sure you want to move "{setToDelete.title}" to trash?</p>
+                        <p className="modal-hint">Items in trash are automatically deleted after 30 days. You can restore them before then.</p>
+                    </div>
+                    <div className="modal-actions">
+                        <button className="generate-button delete-button" onClick={confirmDeleteSet} disabled={loading}>
+                            {loading ? 'Moving...' : 'Move to Trash'}
+                        </button>
+                        <button onClick={() => { setShowDeleteConfirmModal(false); setSetToDelete(null); }}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render permanent delete confirmation modal
+    const renderPermanentDeleteModal = () => {
+        if (!showPermanentDeleteModal || !setToDelete) return null;
+        
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowPermanentDeleteModal(false);
+                setSetToDelete(null);
+            }
+        };
+        
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>Permanently Delete</h3>
+                        <button onClick={() => { setShowPermanentDeleteModal(false); setSetToDelete(null); }} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>Are you sure you want to permanently delete "{setToDelete.title}"?</p>
+                        <p className="modal-hint" style={{ color: 'var(--color-red)' }}>This action cannot be undone. All cards in this set will be permanently deleted.</p>
+                    </div>
+                    <div className="modal-actions">
+                        <button className="generate-button delete-button" onClick={confirmPermanentDeleteSet} disabled={loading}>
+                            {loading ? 'Deleting...' : 'Permanently Delete'}
+                        </button>
+                        <button onClick={() => { setShowPermanentDeleteModal(false); setSetToDelete(null); }}>
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -2386,9 +2649,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             />
             
             {viewMode === 'sets' && renderSetsList()}
+            {viewMode === 'trash' && renderTrash()}
             {(viewMode === 'create' || viewMode === 'edit') && renderCreateEdit()}
             {viewMode === 'view' && renderView()}
             {viewMode === 'study' && renderStudy()}
+            
+            {renderDeleteConfirmModal()}
+            {renderPermanentDeleteModal()}
         </div>
     );
 }

@@ -22,6 +22,7 @@
   --color-dark-grey: #333333;    /* Dark grey for text */
   --color-light-grey: #e5e7eb;   /* Light grey for borders and backgrounds */
   --color-green: #10b981;        /* Green accent color */
+  --color-red: #ef4444;          /* Red for delete actions and errors */
 
   /* Layout & Font */
   --font-main: 'Inter', sans-serif;

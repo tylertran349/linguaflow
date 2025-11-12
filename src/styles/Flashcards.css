@@ -43,6 +43,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+}
+
+.sets-header-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: center;
 }
 
 .sets-header h2 {
@@ -114,6 +122,14 @@
   font-size: var(--font-size-sm);
   margin: 0;
   font-weight: 500;
+}
+
+.trash-meta {
+  color: var(--color-grey);
+  font-size: var(--font-size-xs);
+  margin: 0;
+  font-style: italic;
+  margin-top: var(--spacing-2);
 }
 
 /* Create/Edit Form */
@@ -516,6 +532,16 @@
 .generate-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.generate-button.delete-button {
+  background: var(--color-red) !important;
+  color: white !important;
+}
+
+.generate-button.delete-button:hover:not(:disabled) {
+  background: var(--color-red) !important;
+  opacity: 0.9;
 }
 
 /* View Mode */
@@ -1796,6 +1822,24 @@
 
 .modal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
   background: #95a5a6;
+}
+
+.modal-body {
+    padding: var(--spacing-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.modal-body p {
+    margin: 0;
+    color: var(--color-dark-grey);
+}
+
+.modal-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-grey);
+    margin: 0;
 }
 
 .modal-actions {

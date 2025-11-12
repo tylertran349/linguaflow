@@ -59,7 +59,9 @@ const flashcardSetSchema = new mongoose.Schema({
     },
     
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    isTrashed: { type: Boolean, default: false },
+    trashedAt: { type: Date, default: null }
 });
 
 // Update the updatedAt field before saving
