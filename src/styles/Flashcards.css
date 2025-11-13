@@ -1084,7 +1084,7 @@
     box-shadow: none;
 }
 
-.decision-button.forgot .grade-icon { color: var(--color-red); }
+.decision-button.forgot .grade-icon { color: white; }
 .decision-button.hard .grade-icon { color: var(--color-yellow); }
 
 .decision-button.good {
