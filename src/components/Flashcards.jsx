@@ -58,7 +58,8 @@ const defaultStudyOptions = {
         studyRangeOnly: { start: '', end: '' },
         excludeRange: { start: '', end: '' },
         retypeAnswer: true,
-        soundEffects: true
+        soundEffects: true,
+        autoAdvance: true
     }
 };
 
@@ -271,6 +272,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const loadedOptions = data.studyOptions || {};
             console.log('Loaded study options from DB:', loadedOptions);
             console.log('Loaded soundEffects value:', loadedOptions.learningOptions?.soundEffects);
+            console.log('Loaded autoAdvance value:', loadedOptions.learningOptions?.autoAdvance);
             
             // Merge question types, but ensure at least one is enabled for each category
             const mergedNewCardTypes = {
@@ -312,6 +314,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         ...(loadedOptions.learningOptions?.excludeRange || {}),
                     },
                     soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
+                    autoAdvance: loadedOptions.learningOptions?.autoAdvance !== undefined ? loadedOptions.learningOptions.autoAdvance : defaultStudyOptions.learningOptions.autoAdvance,
                 },
             };
             console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
@@ -519,10 +522,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     excludeRange: studyOptions.learningOptions?.excludeRange ?? { start: '', end: '' },
                     retypeAnswer: studyOptions.learningOptions?.retypeAnswer ?? true,
                     soundEffects: studyOptions.learningOptions?.soundEffects ?? true,
+                    autoAdvance: studyOptions.learningOptions?.autoAdvance !== undefined ? studyOptions.learningOptions.autoAdvance : true,
                 }
             };
             
             console.log('Saving study options - soundEffects value:', optionsToSave.learningOptions.soundEffects);
+            console.log('Saving study options - autoAdvance value:', optionsToSave.learningOptions.autoAdvance);
 
             await retryUntilSuccess(async () => {
                 const token = await getToken();
@@ -1076,13 +1081,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {
-        if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview) {
+        if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview && studyOptions.learningOptions?.autoAdvance !== false) {
             const timer = setTimeout(() => {
                 handleReviewDecisionRef.current?.(Grade.Forgot);
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [showDontKnowAnswer, isDontKnowRetypeCorrect, isProcessingReview]);
+    }, [showDontKnowAnswer, isDontKnowRetypeCorrect, isProcessingReview, studyOptions.learningOptions?.autoAdvance]);
 
     // Auto-advance after correct retype in incorrect answer scenario
     useEffect(() => {
@@ -1093,6 +1098,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             showAnswer &&
             isRetypeCorrect &&
             studyOptions.learningOptions?.retypeAnswer &&
+            studyOptions.learningOptions?.autoAdvance !== false &&
             !isProcessingReview
         ) {
             const timer = setTimeout(() => {
@@ -1591,6 +1597,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             ...(loadedOptions.learningOptions?.excludeRange || {}),
                         },
                         soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
+                        autoAdvance: loadedOptions.learningOptions?.autoAdvance !== undefined ? loadedOptions.learningOptions.autoAdvance : defaultStudyOptions.learningOptions.autoAdvance,
                     },
                 };
                 setStudyOptions(mergedOptions);
@@ -1810,6 +1817,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 type="checkbox"
                                 checked={studyOptions.learningOptions?.soundEffects ?? true}
                                 onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, soundEffects: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Auto-advance after correct retype</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.learningOptions?.autoAdvance ?? true}
+                                onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, autoAdvance: e.target.checked } }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -2546,10 +2564,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             e.target.style.height = `${e.target.scrollHeight}px`;
                                         }}
                                         placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
-                                        className={`retype-answer-input ${isDontKnowRetypeCorrect ? 'correct' : ''}`}
+                                        className={`retype-answer-input ${isDontKnowRetypeCorrect ? 'correct' : (dontKnowInputValue.trim() ? 'incorrect' : '')}`}
                                         autoFocus
                                         rows={1}
                                     />
+                                    {isDontKnowRetypeCorrect && studyOptions.learningOptions?.autoAdvance === false && (
+                                        <div className="retype-answer-actions" style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                                            <button 
+                                                className="generate-button" 
+                                                onClick={() => handleReviewDecision(Grade.Forgot)} 
+                                                disabled={isProcessingReview}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
     
@@ -2661,10 +2690,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                     e.target.style.height = `${e.target.scrollHeight}px`;
                                                                 }}
                                                                 placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
-                                                                className={`retype-answer-input ${isRetypeCorrect ? 'correct' : ''}`}
+                                                                className={`retype-answer-input ${isRetypeCorrect ? 'correct' : (retypeInputValue.trim() ? 'incorrect' : '')}`}
                                                                 autoFocus
                                                                 rows={1}
                                                             />
+                                                            {isRetypeCorrect && studyOptions.learningOptions?.autoAdvance === false && (
+                                                                <div className="retype-answer-actions" style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        className="generate-button" 
+                                                                        onClick={() => handleReviewDecision(Grade.Forgot)} 
+                                                                        disabled={isProcessingReview}
+                                                                    >
+                                                                        Next
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </>

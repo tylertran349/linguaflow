@@ -32,7 +32,8 @@ const userFlashcardSetDataSchema = new mongoose.Schema({
                 end: { type: String, default: '' }
             },
             retypeAnswer: { type: Boolean, default: true },
-            soundEffects: { type: Boolean, default: true }
+            soundEffects: { type: Boolean, default: true },
+            autoAdvance: { type: Boolean, default: true }
         }
     },
     lastStudied: { type: Date, default: Date.now }

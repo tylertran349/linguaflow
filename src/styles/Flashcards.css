@@ -2402,6 +2402,12 @@ input:checked + .slider:before {
     background-color: #e8f5e9;
 }
 
+.retype-answer-input.incorrect {
+    border-color: #c33;
+    background-color: #fee;
+    color: #c33;
+}
+
 /* Round Complete Styles */
 .round-complete-container {
   display: flex;
