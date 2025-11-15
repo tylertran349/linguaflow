@@ -2564,9 +2564,49 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
         const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
         
+        // Get all valid answers for the current question
+        // If questionFormat is 'term', find all terms with the same definition
+        // If questionFormat is 'definition', find all definitions with the same term
+        const getValidAnswers = () => {
+            if (!currentSet || !question) return [answer];
+            
+            const validAnswers = [];
+            const normalizedQuestion = question.trim().toLowerCase();
+            
+            if (!normalizedQuestion) return [answer];
+            
+            currentSet.flashcards.forEach(card => {
+                if (showTerm) {
+                    // Question is definition, so find all terms with matching definition
+                    const cardDefinition = card.definition?.trim().toLowerCase() || '';
+                    if (cardDefinition === normalizedQuestion && card.term) {
+                        validAnswers.push(card.term.trim());
+                    }
+                } else {
+                    // Question is term, so find all definitions with matching term
+                    const cardTerm = card.term?.trim().toLowerCase() || '';
+                    if (cardTerm === normalizedQuestion && card.definition) {
+                        validAnswers.push(card.definition.trim());
+                    }
+                }
+            });
+            
+            // If no matches found, fall back to the original answer
+            if (validAnswers.length === 0) return [answer];
+            
+            // Remove duplicates and return
+            return [...new Set(validAnswers)];
+        };
+        
+        // Compute valid answers once for this render
+        const validAnswers = getValidAnswers();
+        
         const handleWrittenAnswerSubmit = (e) => {
             e.preventDefault();
-            const isCorrect = writtenAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+            const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
+            const isCorrect = validAnswers.some(validAnswer => 
+                validAnswer.toLowerCase() === normalizedUserAnswer
+            );
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
             if (isCorrect) {
@@ -2744,14 +2784,27 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             {currentQuestionType === 'written' && showDontKnowAnswer && (
                                 <div className="retype-answer-form">
                                     <div className="feedback-group">
-                                        <p className="feedback-label correct">You didn't know the answer, so here is the correct answer:</p>
-                                        <div className="answer-container correct">
-                                            {answer}
-                                            {answer && answerLang && (
-                                                <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                    <Volume2 size={24} color="var(--color-green)" />
-                                                </button>
-                                            )}
+                                        <p className="feedback-label correct">You didn't know the answer, so here {validAnswers.length === 1 ? 'is the correct answer' : 'are the correct answers'}:</p>
+                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                            {validAnswers.map((validAnswer, idx) => (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
+                                                    <span>{validAnswer}</span>
+                                                    {validAnswer && answerLang && (
+                                                        <button onClick={() => {
+                                                            // Find the language for this specific answer
+                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
+                                                                showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
+                                                            );
+                                                            const langToUse = showTerm 
+                                                                ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                            playTTS(validAnswer, langToUse);
+                                                        }} className="tts-button-large">
+                                                            <Volume2 size={24} color="var(--color-green)" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                     <p>Type the correct answer to continue:</p>
@@ -2759,11 +2812,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         value={dontKnowInputValue}
                                         onChange={(e) => {
                                             setDontKnowInputValue(e.target.value);
-                                            if (e.target.value.trim().toLowerCase() === answer.trim().toLowerCase()) {
-                                                setIsDontKnowRetypeCorrect(true);
-                                            } else {
-                                                setIsDontKnowRetypeCorrect(false);
-                                            }
+                                            const normalizedUserAnswer = e.target.value.trim().toLowerCase();
+                                            const isCorrect = validAnswers.some(validAnswer => 
+                                                validAnswer.toLowerCase() === normalizedUserAnswer
+                                            );
+                                            setIsDontKnowRetypeCorrect(isCorrect);
                                         }}
                                         onInput={(e) => {
                                             e.target.style.height = 'auto';
@@ -2846,13 +2899,31 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             {answerFeedback === 'correct' ? (
                                                 <div className="feedback-group">
                                                     <p className="feedback-label correct">You got it right!</p>
-                                                    <div className="answer-container correct">
-                                                        {answer}
-                                                        {answer && answerLang && (
-                                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                                <Volume2 size={24} color="var(--color-green)" />
-                                                            </button>
-                                                        )}
+                                                    {validAnswers.length > 1 && (
+                                                        <p className="feedback-label" style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
+                                                            All correct answers:
+                                                        </p>
+                                                    )}
+                                                    <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                        {validAnswers.map((validAnswer, idx) => (
+                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
+                                                                <span>{validAnswer}</span>
+                                                                {validAnswer && answerLang && (
+                                                                    <button onClick={() => {
+                                                                        // Find the language for this specific answer
+                                                                        const cardWithAnswer = currentSet?.flashcards.find(card => 
+                                                                            showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
+                                                                        );
+                                                                        const langToUse = showTerm 
+                                                                            ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                            : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                        playTTS(validAnswer, langToUse);
+                                                                    }} className="tts-button-large">
+                                                                        <Volume2 size={24} color="var(--color-green)" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -2867,15 +2938,30 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                     )}
                                                     <div className="feedback-group">
                                                         <p className="feedback-label correct">
-                                                            {writtenAnswer.trim() ? 'Correct answer' : 'You skipped this, but here is the correct answer:'}
+                                                            {writtenAnswer.trim() 
+                                                                ? (validAnswers.length === 1 ? 'Correct answer' : 'Correct answers')
+                                                                : `You skipped this, but here ${validAnswers.length === 1 ? 'is the correct answer' : 'are the correct answers'}:`}
                                                         </p>
-                                                        <div className="answer-container correct">
-                                                            {answer}
-                                                            {answer && answerLang && (
-                                                                <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                                    <Volume2 size={24} color="var(--color-green)" />
-                                                                </button>
-                                                            )}
+                                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                            {validAnswers.map((validAnswer, idx) => (
+                                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
+                                                                    <span>{validAnswer}</span>
+                                                                    {validAnswer && answerLang && (
+                                                                        <button onClick={() => {
+                                                                            // Find the language for this specific answer
+                                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
+                                                                                showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
+                                                                            );
+                                                                            const langToUse = showTerm 
+                                                                                ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                            playTTS(validAnswer, langToUse);
+                                                                        }} className="tts-button-large">
+                                                                            <Volume2 size={24} color="var(--color-green)" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                     {studyOptions.learningOptions.retypeAnswer && (
@@ -2885,11 +2971,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                 value={retypeInputValue}
                                                                 onChange={(e) => {
                                                                     setRetypeInputValue(e.target.value);
-                                                                    if (e.target.value.trim().toLowerCase() === answer.trim().toLowerCase()) {
-                                                                        setIsRetypeCorrect(true);
-                                                                    } else {
-                                                                        setIsRetypeCorrect(false);
-                                                                    }
+                                                                    const normalizedUserAnswer = e.target.value.trim().toLowerCase();
+                                                                    const isCorrect = validAnswers.some(validAnswer => 
+                                                                        validAnswer.toLowerCase() === normalizedUserAnswer
+                                                                    );
+                                                                    setIsRetypeCorrect(isCorrect);
                                                                 }}
                                                                 onInput={(e) => {
                                                                     e.target.style.height = 'auto';
