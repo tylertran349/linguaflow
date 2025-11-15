@@ -59,7 +59,7 @@ const defaultStudyOptions = {
         excludeRange: { start: '', end: '' },
         retypeAnswer: true,
         soundEffects: true,
-        autoAdvance: true
+        autoAdvance: false
     }
 };
 
@@ -522,7 +522,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     excludeRange: studyOptions.learningOptions?.excludeRange ?? { start: '', end: '' },
                     retypeAnswer: studyOptions.learningOptions?.retypeAnswer ?? true,
                     soundEffects: studyOptions.learningOptions?.soundEffects ?? true,
-                    autoAdvance: studyOptions.learningOptions?.autoAdvance !== undefined ? studyOptions.learningOptions.autoAdvance : true,
+                    autoAdvance: studyOptions.learningOptions?.autoAdvance !== undefined ? studyOptions.learningOptions.autoAdvance : false,
                 }
             };
             
@@ -1936,7 +1936,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={studyOptions.learningOptions?.autoAdvance ?? true}
+                                checked={studyOptions.learningOptions?.autoAdvance ?? false}
                                 onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, autoAdvance: e.target.checked } }))}
                             />
                             <span className="slider"></span>

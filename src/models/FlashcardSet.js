@@ -57,7 +57,7 @@ const flashcardSetSchema = new mongoose.Schema({
             },
             retypeAnswer: { type: Boolean, default: true },
             soundEffects: { type: Boolean, default: true },
-            autoAdvance: { type: Boolean, default: true }
+            autoAdvance: { type: Boolean, default: false }
         }
     },
     
