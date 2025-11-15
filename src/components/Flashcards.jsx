@@ -2369,42 +2369,76 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         return (
             <div className="flashcards-view">
                 <div className="view-header">
-                    <div>
-                        <h2>{currentSet.title}</h2>
-                        <p className="set-meta">{currentSet.flashcards.length} cards</p>
-                    </div>
-                    <div className="view-actions">
-                        <button onClick={async () => { await loadSet(currentSet._id); setViewMode('edit'); }}>
-                            <Edit2 size={18} /> Edit
-                        </button>
-                        <button onClick={async () => { await loadSet(currentSet._id); setStudyAction('start'); }}>
-                            <Play size={18} /> Study
-                        </button>
-                        <button onClick={() => setViewMode('sets')}>
-                            <X size={18} /> Close
-                        </button>
+                    <div className="view-header-content">
+                        <div className="view-title-section">
+                            <h2>{currentSet.title}</h2>
+                            <div className="view-meta-info">
+                                <span className="card-count-badge">{currentSet.flashcards.length} {currentSet.flashcards.length === 1 ? 'card' : 'cards'}</span>
+                                {currentSet.description && (
+                                    <span className="view-description-preview">{currentSet.description}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="view-actions">
+                            <button 
+                                className="view-action-btn view-action-primary"
+                                onClick={async () => { await loadSet(currentSet._id); setStudyAction('start'); }}
+                            >
+                                <Play size={18} /> Study
+                            </button>
+                            <button 
+                                className="view-action-btn view-action-secondary"
+                                onClick={async () => { await loadSet(currentSet._id); setViewMode('edit'); }}
+                            >
+                                <Edit2 size={18} /> Edit
+                            </button>
+                            <button 
+                                className="view-action-btn view-action-close"
+                                onClick={() => setViewMode('sets')}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
-                {currentSet.description && (
-                    <p className="set-description">{currentSet.description}</p>
-                )}
                 
                 <div className="view-search-container">
                     <Search className="search-icon" size={20} />
                     <input
                         type="text"
-                        placeholder="Search cards..."
+                        placeholder="Search cards by term or definition..."
                         className="view-search-input"
                         value={viewSearchTerm}
                         onChange={(e) => setViewSearchTerm(e.target.value)}
                     />
+                    {viewSearchTerm && (
+                        <button 
+                            className="search-clear-btn"
+                            onClick={() => setViewSearchTerm('')}
+                            aria-label="Clear search"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
 
                 {filteredCards.length === 0 ? (
-                    <p className="status-message">
-                        {currentSet.flashcards.length > 0 ? 'No matching cards found.' : 'No flashcards in this set.'}
-                    </p>
+                    <div className="empty-state">
+                        <div className="empty-state-icon">
+                            <Search size={48} />
+                        </div>
+                        <p className="empty-state-message">
+                            {currentSet.flashcards.length > 0 ? 'No matching cards found.' : 'No flashcards in this set.'}
+                        </p>
+                        {viewSearchTerm && (
+                            <button 
+                                className="empty-state-action"
+                                onClick={() => setViewSearchTerm('')}
+                            >
+                                Clear search
+                            </button>
+                        )}
+                    </div>
                 ) : (
                     <div className="grouped-cards-container">
                         {groupOrder.map(groupName => {
@@ -2421,41 +2455,68 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     <div className="cards-list-view">
                                         {cardsInGroup.map((card, index) => (
                                             <div key={index} className="card-item-view">
-                                                <div className="card-side card-term">
-                                                    {card.starred && <Star size={16} color="#ffdc62" fill="#ffdc62" />}
-                                                    <span>{card.term}</span>
-                                                    {card.term && card.termLanguage && (
-                                                        <button onClick={() => playTTS(card.term, card.termLanguage)} className="tts-button-small">
-                                                            <Volume2 size={16} color="var(--color-green)" />
-                                                        </button>
+                                                <div className="card-item-header">
+                                                    {card.starred && (
+                                                        <div className="card-star-indicator">
+                                                            <Star size={20} color="#ffdc62" fill="#ffdc62" />
+                                                        </div>
                                                     )}
-                                                    <button
-                                                        onClick={() => {
-                                                            setCardToEdit(card);
-                                                            setIsEditCardModalOpen(true);
-                                                        }}
-                                                        className="edit-button-small"
-                                                        aria-label="Edit card"
-                                                        title="Edit card"
-                                                    >
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCardClick(card)}
-                                                        className="edit-button-small"
-                                                        aria-label="Delete card"
-                                                        title="Delete card"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <div className="card-item-actions">
+                                                        <button
+                                                            onClick={() => {
+                                                                setCardToEdit(card);
+                                                                setIsEditCardModalOpen(true);
+                                                            }}
+                                                            className="card-action-btn card-action-edit"
+                                                            aria-label="Edit card"
+                                                            title="Edit card"
+                                                        >
+                                                            <Edit2 size={20} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteCardClick(card)}
+                                                            className="card-action-btn card-action-delete"
+                                                            aria-label="Delete card"
+                                                            title="Delete card"
+                                                        >
+                                                            <Trash2 size={20} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="card-side card-definition">
-                                                    <span>{card.definition}</span>
-                                                    {card.definition && card.definitionLanguage && (
-                                                        <button onClick={() => playTTS(card.definition, card.definitionLanguage)} className="tts-button-small">
-                                                            <Volume2 size={16} color="var(--color-green)" />
-                                                        </button>
-                                                    )}
+                                                <div className="card-item-content">
+                                                    <div className="card-side card-term">
+                                                        <div className="card-label">Term</div>
+                                                        <div className="card-text-wrapper">
+                                                            <span className="card-text">{card.term}</span>
+                                                            {card.term && card.termLanguage && (
+                                                                <button 
+                                                                    onClick={() => playTTS(card.term, card.termLanguage)} 
+                                                                    className="card-action-btn card-action-tts card-action-tts-inline"
+                                                                    aria-label="Play term audio"
+                                                                    title="Play audio"
+                                                                >
+                                                                    <Volume2 size={20} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="card-divider"></div>
+                                                    <div className="card-side card-definition">
+                                                        <div className="card-label">Definition</div>
+                                                        <div className="card-text-wrapper">
+                                                            <span className="card-text">{card.definition}</span>
+                                                            {card.definition && card.definitionLanguage && (
+                                                                <button 
+                                                                    onClick={() => playTTS(card.definition, card.definitionLanguage)} 
+                                                                    className="card-action-btn card-action-tts card-action-tts-inline"
+                                                                    aria-label="Play definition audio"
+                                                                    title="Play audio"
+                                                                >
+                                                                    <Volume2 size={20} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
