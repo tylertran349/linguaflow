@@ -758,6 +758,27 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setError(null);
 
+        // Helper to check if a date is today (same day, ignoring time)
+        const isToday = (date) => {
+            if (!date) return false;
+            const d = new Date(date);
+            const today = new Date();
+            return d.getFullYear() === today.getFullYear() &&
+                   d.getMonth() === today.getMonth() &&
+                   d.getDate() === today.getDate();
+        };
+
+        // Count how many new cards have been reviewed today
+        // A card was "new" when reviewed if it was its first review (reps === 1) and reviewed today
+        const newCardsReviewedToday = set.flashcards.filter(card => 
+            card.lastReviewed && 
+            isToday(card.lastReviewed) && 
+            card.reps === 1
+        ).length;
+
+        // Calculate how many new cards can still be shown today
+        const remainingNewCardsToday = Math.max(0, studyOptions.newCardsPerDay - newCardsReviewedToday);
+
         const { studyRangeOnly, excludeRange } = studyOptions.learningOptions;
         let cards;
 
@@ -766,7 +787,28 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
         if (!isNaN(rangeStart) && !isNaN(rangeEnd) && rangeStart > 0 && rangeEnd >= rangeStart) {
             // "Study only" range is active, so we ignore due dates and other filters on the card pool.
-            cards = set.flashcards.slice(rangeStart - 1, rangeEnd);
+            const rangeCards = set.flashcards.slice(rangeStart - 1, rangeEnd);
+            
+            // Still apply newCardsPerDay limit even in range mode
+            const rangeReviewCards = rangeCards.filter(card => card.lastReviewed);
+            const rangeNewCards = rangeCards.filter(card => !card.lastReviewed);
+            
+            // Shuffle if enabled
+            if (studyOptions.learningOptions.shuffle) {
+                rangeReviewCards.sort(() => Math.random() - 0.5);
+                rangeNewCards.sort(() => Math.random() - 0.5);
+            }
+            
+            // Prioritize review cards, then add new cards up to the limit
+            const rangeCardsForRound = rangeReviewCards.slice(0, studyOptions.cardsPerRound);
+            const rangeRemainingSlots = studyOptions.cardsPerRound - rangeCardsForRound.length;
+            
+            if (rangeRemainingSlots > 0 && remainingNewCardsToday > 0) {
+                const rangeNewCardsToAdd = Math.min(rangeRemainingSlots, remainingNewCardsToday);
+                rangeCardsForRound.push(...rangeNewCards.slice(0, rangeNewCardsToAdd));
+            }
+            
+            cards = rangeCardsForRound;
         } else {
             // No "study only" range, so we start with all cards and filter them down.
             let cardPool = [...set.flashcards];
@@ -798,11 +840,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             }
 
             // Prioritize review cards, then fill the round with new cards
+            // But limit new cards based on newCardsPerDay
             const cardsForRound = reviewCards.slice(0, studyOptions.cardsPerRound);
             const remainingSlots = studyOptions.cardsPerRound - cardsForRound.length;
 
-            if (remainingSlots > 0) {
-                cardsForRound.push(...newCards.slice(0, remainingSlots));
+            if (remainingSlots > 0 && remainingNewCardsToday > 0) {
+                // Limit new cards to both remaining slots AND remaining new cards today
+                const newCardsToAdd = Math.min(remainingSlots, remainingNewCardsToday);
+                cardsForRound.push(...newCards.slice(0, newCardsToAdd));
             }
 
             cards = cardsForRound;
@@ -1723,7 +1768,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 />
             </div>
             <div className="form-group">
-                <label>New Cards Per Day</label>
+                <label>Maximum Number of New Cards Per Day</label>
                 <input
                     type="number"
                     min="1"
