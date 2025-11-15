@@ -1529,9 +1529,55 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const renderStudyOptionsModal = () => {
         const isCardsPerRoundInvalid = !studyOptions.cardsPerRound || studyOptions.cardsPerRound < 1;
 
+        // Validate study range
+        const studyRangeStart = studyOptions.learningOptions.studyRangeOnly?.start;
+        const studyRangeEnd = studyOptions.learningOptions.studyRangeOnly?.end;
+        const studyRangeStartNum = studyRangeStart ? parseInt(studyRangeStart, 10) : null;
+        const studyRangeEndNum = studyRangeEnd ? parseInt(studyRangeEnd, 10) : null;
+        
+        const studyRangeStartInvalid = studyRangeStart && (isNaN(studyRangeStartNum) || studyRangeStartNum < 1);
+        const studyRangeEndInvalid = studyRangeEnd && (isNaN(studyRangeEndNum) || studyRangeEndNum < 1);
+        const studyRangeOrderInvalid = studyRangeStartNum && studyRangeEndNum && studyRangeEndNum < studyRangeStartNum;
+        const isStudyRangeInvalid = studyRangeStartInvalid || studyRangeEndInvalid || studyRangeOrderInvalid;
+
+        // Validate exclude range
+        const excludeRangeStart = studyOptions.learningOptions.excludeRange?.start;
+        const excludeRangeEnd = studyOptions.learningOptions.excludeRange?.end;
+        const excludeRangeStartNum = excludeRangeStart ? parseInt(excludeRangeStart, 10) : null;
+        const excludeRangeEndNum = excludeRangeEnd ? parseInt(excludeRangeEnd, 10) : null;
+        
+        const excludeRangeStartInvalid = excludeRangeStart && (isNaN(excludeRangeStartNum) || excludeRangeStartNum < 1);
+        const excludeRangeEndInvalid = excludeRangeEnd && (isNaN(excludeRangeEndNum) || excludeRangeEndNum < 1);
+        const excludeRangeOrderInvalid = excludeRangeStartNum && excludeRangeEndNum && excludeRangeEndNum < excludeRangeStartNum;
+        const isExcludeRangeInvalid = excludeRangeStartInvalid || excludeRangeEndInvalid || excludeRangeOrderInvalid;
+
+        const hasValidationErrors = isCardsPerRoundInvalid || isStudyRangeInvalid || isExcludeRangeInvalid;
+
         const handleSave = async () => {
             if (isCardsPerRoundInvalid) {
                 setError('Cards Per Round must be at least 1.');
+                return;
+            }
+            
+            if (isStudyRangeInvalid) {
+                if (studyRangeStartInvalid) {
+                    setError('Study range start value must be at least 1.');
+                } else if (studyRangeEndInvalid) {
+                    setError('Study range end value must be at least 1.');
+                } else if (studyRangeOrderInvalid) {
+                    setError('Study range end value must be greater than or equal to start value.');
+                }
+                return;
+            }
+            
+            if (isExcludeRangeInvalid) {
+                if (excludeRangeStartInvalid) {
+                    setError('Exclude range start value must be at least 1.');
+                } else if (excludeRangeEndInvalid) {
+                    setError('Exclude range end value must be at least 1.');
+                } else if (excludeRangeOrderInvalid) {
+                    setError('Exclude range end value must be greater than or equal to start value.');
+                }
                 return;
             }
             
@@ -1619,10 +1665,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <button onClick={handleCancel} className="close-button"><X size={20} /></button>
                     </div>
                     <div className="modal-scroll-wrapper">
-                        {renderStudyOptionsForm(isCardsPerRoundInvalid)}
+                        {renderStudyOptionsForm({
+                            isCardsPerRoundInvalid,
+                            studyRangeStartInvalid,
+                            studyRangeEndInvalid,
+                            studyRangeOrderInvalid,
+                            excludeRangeStartInvalid,
+                            excludeRangeEndInvalid,
+                            excludeRangeOrderInvalid
+                        })}
                     </div>
                     <div className="modal-actions">
-                        <button className="generate-button" onClick={handleSave} disabled={loading || isCardsPerRoundInvalid}>
+                        <button className="generate-button" onClick={handleSave} disabled={loading || hasValidationErrors}>
                             {loading ? 'Saving...' : 'Save Options'}
                         </button>
                         <button onClick={handleCancel}>Cancel</button>
@@ -1633,7 +1687,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     };
 
     // Render study options form
-    const renderStudyOptionsForm = (isCardsPerRoundInvalid) => (
+    const renderStudyOptionsForm = (validation) => {
+        const {
+            isCardsPerRoundInvalid,
+            studyRangeStartInvalid,
+            studyRangeEndInvalid,
+            studyRangeOrderInvalid,
+            excludeRangeStartInvalid,
+            excludeRangeEndInvalid,
+            excludeRangeOrderInvalid
+        } = validation;
+
+        return (
         <div className="study-options-section">
             <div className="form-group">
                 <label>Cards Per Round</label>
@@ -1843,6 +1908,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         placeholder="Start"
                         value={studyOptions.learningOptions.studyRangeOnly?.start || ''}
                         onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, studyRangeOnly: { ...prev.learningOptions.studyRangeOnly, start: e.target.value } } }))}
+                        className={studyRangeStartInvalid ? 'input-error' : ''}
                     />
                     <span>-</span>
                     <input
@@ -1851,8 +1917,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         placeholder="End"
                         value={studyOptions.learningOptions.studyRangeOnly?.end || ''}
                         onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, studyRangeOnly: { ...prev.learningOptions.studyRangeOnly, end: e.target.value } } }))}
+                        className={studyRangeEndInvalid || studyRangeOrderInvalid ? 'input-error' : ''}
                     />
                 </div>
+                {studyRangeStartInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        Start must be at least 1.
+                    </p>
+                )}
+                {!studyRangeStartInvalid && studyRangeEndInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        End must be at least 1.
+                    </p>
+                )}
+                {!studyRangeStartInvalid && !studyRangeEndInvalid && studyRangeOrderInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        End must be greater than or equal to start.
+                    </p>
+                )}
             </div>
             <div className="form-group">
                 <label>Do not study cards in range</label>
@@ -1863,6 +1945,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         placeholder="Start"
                         value={studyOptions.learningOptions.excludeRange?.start || ''}
                         onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, excludeRange: { ...prev.learningOptions.excludeRange, start: e.target.value } } }))}
+                        className={excludeRangeStartInvalid ? 'input-error' : ''}
                     />
                     <span>-</span>
                     <input
@@ -1871,11 +1954,28 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         placeholder="End"
                         value={studyOptions.learningOptions.excludeRange?.end || ''}
                         onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, excludeRange: { ...prev.learningOptions.excludeRange, end: e.target.value } } }))}
+                        className={excludeRangeEndInvalid || excludeRangeOrderInvalid ? 'input-error' : ''}
                     />
                 </div>
+                {excludeRangeStartInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        Start must be at least 1.
+                    </p>
+                )}
+                {!excludeRangeStartInvalid && excludeRangeEndInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        End must be at least 1.
+                    </p>
+                )}
+                {!excludeRangeStartInvalid && !excludeRangeEndInvalid && excludeRangeOrderInvalid && (
+                    <p className="error-text" style={{ color: 'var(--color-red)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        End must be greater than or equal to start.
+                    </p>
+                )}
             </div>
         </div>
-    );
+        );
+    };
 
     // Render create/edit form
     const renderCreateEdit = () => {
