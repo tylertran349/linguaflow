@@ -156,6 +156,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
     const [setToDelete, setSetToDelete] = useState(null);
 
+    // Card deletion confirmation state
+    const [showDeleteCardConfirmModal, setShowDeleteCardConfirmModal] = useState(false);
+    const [cardToDelete, setCardToDelete] = useState(null);
+
     // Fetch all sets
     const fetchSets = async () => {
         if (!isSignedIn) return;
@@ -1192,6 +1196,59 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
+    const handleDeleteCardClick = (card) => {
+        setCardToDelete(card);
+        setShowDeleteCardConfirmModal(true);
+    };
+
+    const confirmDeleteCard = async () => {
+        if (!cardToDelete) return;
+        await handleDeleteCardFromSet(cardToDelete);
+        setShowDeleteCardConfirmModal(false);
+        setCardToDelete(null);
+    };
+
+    const handleDeleteCardFromSet = async (card) => {
+        if (!currentSet || !card) return;
+    
+        setLoading(true);
+        setError(null);
+    
+        try {
+            const cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === card._id);
+    
+            if (cardIndexInSet === -1) {
+                throw new Error("Card not found in the current set.");
+            }
+
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${cardIndexInSet}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    let message = 'Failed to delete flashcard.';
+                    try {
+                        const errorData = await response.json();
+                        message = errorData.message || message;
+                    } catch (_) {}
+                    throw new Error(message);
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+    
+            // Reload the set to reflect the deletion
+            await loadSet(currentSet._id);
+    
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Reset create state
     const resetCreateState = () => {
         setSetTitle('');
@@ -1411,6 +1468,49 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             {loading ? 'Deleting...' : 'Permanently Delete'}
                         </button>
                         <button onClick={() => { setShowPermanentDeleteModal(false); setSetToDelete(null); }}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render card deletion confirmation modal
+    const renderDeleteCardConfirmModal = () => {
+        if (!showDeleteCardConfirmModal || !cardToDelete) return null;
+        
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowDeleteCardConfirmModal(false);
+                setCardToDelete(null);
+            }
+        };
+        
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>Delete Flashcard</h3>
+                        <button onClick={() => { setShowDeleteCardConfirmModal(false); setCardToDelete(null); }} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>Are you sure you want to delete this flashcard?</p>
+                        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '4px' }}>
+                            <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>Term:</p>
+                            <p style={{ margin: '0 0 12px 0' }}>{cardToDelete.term}</p>
+                            <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>Definition:</p>
+                            <p style={{ margin: 0 }}>{cardToDelete.definition}</p>
+                        </div>
+                        <p className="modal-hint" style={{ color: 'var(--color-red)', marginTop: '12px' }}>This action cannot be undone.</p>
+                    </div>
+                    <div className="modal-actions">
+                        <button className="generate-button delete-button" onClick={confirmDeleteCard} disabled={loading}>
+                            {loading ? 'Deleting...' : 'Delete'}
+                        </button>
+                        <button onClick={() => { setShowDeleteCardConfirmModal(false); setCardToDelete(null); }}>
                             Cancel
                         </button>
                     </div>
@@ -2177,6 +2277,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
+                                                    <button
+                                                        onClick={() => handleDeleteCardClick(card)}
+                                                        className="edit-button-small"
+                                                        aria-label="Delete card"
+                                                        title="Delete card"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </div>
                                                 <div className="card-side card-definition">
                                                     <span>{card.definition}</span>
@@ -2656,6 +2764,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             
             {renderDeleteConfirmModal()}
             {renderPermanentDeleteModal()}
+            {renderDeleteCardConfirmModal()}
         </div>
     );
 }

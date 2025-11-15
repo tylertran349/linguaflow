@@ -908,6 +908,40 @@ app.put('/api/flashcards/sets/:setId/cards/:cardIndex', ClerkExpressRequireAuth(
     }
 });
 
+// --- DELETE A SINGLE FLASHCARD ---
+app.delete('/api/flashcards/sets/:setId/cards/:cardIndex', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId, cardIndex } = req.params;
+
+        const set = await FlashcardSet.findById(setId);
+        if (!set) {
+            return res.status(404).json({ message: 'Flashcard set not found.' });
+        }
+        
+        if (set.userId !== userId) {
+            return res.status(403).json({ message: 'You can only delete cards from your own sets.' });
+        }
+        
+        const cardIndexNum = parseInt(cardIndex);
+        if (isNaN(cardIndexNum) || cardIndexNum < 0 || cardIndexNum >= set.flashcards.length) {
+            return res.status(400).json({ message: 'Invalid card index.' });
+        }
+
+        // Remove the card from the array
+        set.flashcards.splice(cardIndexNum, 1);
+        
+        set.updatedAt = Date.now();
+        await set.save();
+        
+        res.json({ message: 'Flashcard deleted successfully.' });
+
+    } catch (error) {
+        console.error("Error deleting flashcard:", error);
+        res.status(500).json({ message: 'Failed to delete flashcard.' });
+    }
+});
+
 // --- UPDATE STUDY OPTIONS FOR A SET ---
 app.put('/api/flashcards/sets/:setId/study-options', ClerkExpressRequireAuth(), async (req, res) => {
     try {
