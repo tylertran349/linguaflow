@@ -2945,9 +2945,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <button onClick={() => setShowImport(!showImport)}>
                                     {isEdit ? 'Import More Cards' : 'Import from Text'}
                                 </button>
-                                <button onClick={addCard}>
-                                    <Plus size={18} /> Add Card
-                                </button>
                             </div>
                         </div>
                         
@@ -3203,6 +3200,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         </div>
                                     </div>
                                 )})}
+                            </div>
+                        )}
+                        
+                        {flashcards.length > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                                <button onClick={addCard}>
+                                    <Plus size={18} /> Add Card
+                                </button>
                             </div>
                         )}
                         
