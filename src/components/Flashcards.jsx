@@ -463,9 +463,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             if (duplicateHandling === 'keep-new' && (indicesToReplace.size > 0 || indicesToRemove.size > 0)) {
                 // Create new array with replacements in place
                 const updatedPrev = prev.map((card, index) => {
-                    // Replace in place if marked for replacement
+                    // Replace in place if marked for replacement, but preserve study progress fields
                     if (indicesToReplace.has(index)) {
-                        return indicesToReplace.get(index);
+                        const newCard = indicesToReplace.get(index);
+                        // Preserve study progress and other metadata from the existing card
+                        return {
+                            ...newCard,
+                            // Preserve FSRS study progress fields
+                            stability: card.stability,
+                            difficulty: card.difficulty,
+                            reps: card.reps,
+                            lapses: card.lapses,
+                            lastReviewed: card.lastReviewed,
+                            nextReviewDate: card.nextReviewDate,
+                            interval: card.interval,
+                            lastGrade: card.lastGrade,
+                            // Preserve starred status (user might want to keep it)
+                            starred: card.starred
+                        };
                     }
                     return card;
                 });
