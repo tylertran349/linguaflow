@@ -175,10 +175,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [exportAlphabeticalOrder, setExportAlphabeticalOrder] = useState(false);
     const [exportTextCopied, setExportTextCopied] = useState(false);
 
-    // Batch remove state
-    const [showBatchRemoveModal, setShowBatchRemoveModal] = useState(false);
-    const [batchRemoveTermsList, setBatchRemoveTermsList] = useState(''); // Comma-separated list of terms to keep
+    // Batch keep state
+    const [showBatchKeepModal, setShowBatchKeepModal] = useState(false);
+    const [batchKeepTermsList, setBatchKeepTermsList] = useState(''); // Comma-separated list of terms to keep
     const [cardsToRemove, setCardsToRemove] = useState([]); // Cards that will be removed
+    const [showAllCardsToRemove, setShowAllCardsToRemove] = useState(false);
 
     // Fetch all sets
     const fetchSets = async () => {
@@ -1257,14 +1258,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
 
         // If no terms list provided, don't remove anything
-        if (!batchRemoveTermsList.trim()) {
+        if (!batchKeepTermsList.trim()) {
             setCardsToRemove([]);
             return;
         }
 
         // Parse the comma-separated list and normalize terms
         // Handle edge cases: empty strings, whitespace-only, duplicates
-        const termsToKeep = batchRemoveTermsList
+        const termsToKeep = batchKeepTermsList
             .split(',')
             .map(term => term.trim().toLowerCase())
             .filter(term => term.length > 0); // Remove empty strings after trimming
@@ -1296,19 +1297,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         });
 
         setCardsToRemove(cardsToRemoveList);
-    }, [currentSet, batchRemoveTermsList]);
+    }, [currentSet, batchKeepTermsList]);
 
     // Recalculate cards to remove when the terms list or current set changes
     useEffect(() => {
-        if (showBatchRemoveModal && currentSet) {
+        if (showBatchKeepModal && currentSet) {
             calculateCardsToRemove();
-        } else if (showBatchRemoveModal && !currentSet) {
+        } else if (showBatchKeepModal && !currentSet) {
             // Set was deleted or unloaded, close the modal
-            setShowBatchRemoveModal(false);
-            setBatchRemoveTermsList('');
+            setShowBatchKeepModal(false);
+            setBatchKeepTermsList('');
             setCardsToRemove([]);
         }
-    }, [batchRemoveTermsList, currentSet, showBatchRemoveModal, calculateCardsToRemove]);
+    }, [batchKeepTermsList, currentSet, showBatchKeepModal, calculateCardsToRemove]);
 
     const handleStopStudying = () => {
         setViewMode('view');
@@ -1586,8 +1587,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     };
 
-    // Handle batch removal of cards
-    const handleBatchRemoveCards = async () => {
+    // Handle batch keep of cards
+    const handleBatchKeepCards = async () => {
         if (!currentSet || cardsToRemove.length === 0) return;
         
         // Prevent concurrent executions
@@ -1693,9 +1694,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             // Close modal and reset state only if all deletions succeeded
             // If there were failures, keep modal open so user can see the error
             if (failCount === 0) {
-                setShowBatchRemoveModal(false);
-                setBatchRemoveTermsList('');
+                setShowBatchKeepModal(false);
+                setBatchKeepTermsList('');
                 setCardsToRemove([]);
+                setShowAllCardsToRemove(false);
             }
         } catch (err) {
             setError(err.message || 'An error occurred while deleting cards.');
@@ -2246,33 +2248,35 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         );
     };
 
-    // Render batch remove modal
-    const renderBatchRemoveModal = () => {
-        if (!showBatchRemoveModal || !currentSet) return null;
+    // Render batch keep modal
+    const renderBatchKeepModal = () => {
+        if (!showBatchKeepModal || !currentSet) return null;
         
         const handleBackdropClick = (e) => {
             // Prevent closing during deletion
             if (loading) return;
             if (e.target === e.currentTarget) {
-                setShowBatchRemoveModal(false);
-                setBatchRemoveTermsList('');
+                setShowBatchKeepModal(false);
+                setBatchKeepTermsList('');
                 setCardsToRemove([]);
+                setShowAllCardsToRemove(false);
             }
         };
 
         const handleClose = () => {
             // Prevent closing during deletion
             if (loading) return;
-            setShowBatchRemoveModal(false);
-            setBatchRemoveTermsList('');
+            setShowBatchKeepModal(false);
+            setBatchKeepTermsList('');
             setCardsToRemove([]);
+            setShowAllCardsToRemove(false);
         };
 
         return (
             <div className="modal-backdrop" onClick={handleBackdropClick}>
                 <div className="modal-content" style={{ maxWidth: '800px' }}>
                     <div className="modal-header">
-                        <h3>Batch Remove Flashcards</h3>
+                        <h3>Batch Keep Flashcards</h3>
                         <button onClick={handleClose} className="close-button">
                             <X size={20} />
                         </button>
@@ -2286,9 +2290,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 Enter a comma-separated list of terms you want to KEEP. All NEW (unstudied) cards that are NOT in this list will be removed. Cards that have been studied will NEVER be removed, even if not in this list.
                             </p>
                             <textarea
-                                value={batchRemoveTermsList}
+                                value={batchKeepTermsList}
                                 onChange={(e) => {
-                                    setBatchRemoveTermsList(e.target.value);
+                                    setBatchKeepTermsList(e.target.value);
                                 }}
                                 placeholder="term1, term2, term3, ..."
                                 rows={4}
@@ -2319,33 +2323,58 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     borderRadius: '4px',
                                     border: '1px solid var(--color-border)'
                                 }}>
-                                    {cardsToRemove.slice(0, 50).map((card, index) => (
-                                        <div key={index} style={{ 
-                                            marginBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '12px' : '0',
-                                            paddingBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '12px' : '0',
-                                            borderBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '1px solid var(--color-border)' : 'none'
-                                        }}>
-                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{card.term}</div>
-                                            <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{card.definition}</div>
-                                        </div>
-                                    ))}
-                                    {cardsToRemove.length > 50 && (
+                                    {(showAllCardsToRemove ? cardsToRemove : cardsToRemove.slice(0, 50)).map((card, index) => {
+                                        const displayedCards = showAllCardsToRemove ? cardsToRemove : cardsToRemove.slice(0, 50);
+                                        return (
+                                            <div key={index} style={{ 
+                                                marginBottom: index < displayedCards.length - 1 ? '12px' : '0',
+                                                paddingBottom: index < displayedCards.length - 1 ? '12px' : '0',
+                                                borderBottom: index < displayedCards.length - 1 ? '1px solid var(--color-border)' : 'none'
+                                            }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{card.term}</div>
+                                                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{card.definition}</div>
+                                            </div>
+                                        );
+                                    })}
+                                    {cardsToRemove.length > 50 && !showAllCardsToRemove && (
                                         <div style={{ 
                                             marginTop: '12px', 
                                             paddingTop: '12px', 
                                             borderTop: '1px solid var(--color-border)',
-                                            color: 'var(--color-text-secondary)',
-                                            fontSize: '0.9rem',
-                                            fontStyle: 'italic'
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px'
                                         }}>
-                                            ...and {cardsToRemove.length - 50} more cards
+                                            <div style={{ 
+                                                color: 'var(--color-text-secondary)',
+                                                fontSize: '0.9rem',
+                                                fontStyle: 'italic'
+                                            }}>
+                                                ...and {cardsToRemove.length - 50} more cards
+                                            </div>
+                                            <button
+                                                onClick={() => setShowAllCardsToRemove(true)}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    backgroundColor: 'var(--color-green)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Show All {cardsToRemove.length} Cards
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {batchRemoveTermsList.trim() && cardsToRemove.length === 0 && (
+                        {batchKeepTermsList.trim() && cardsToRemove.length === 0 && (
                             <div style={{ 
                                 marginTop: '12px', 
                                 padding: '12px', 
@@ -2357,7 +2386,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             </div>
                         )}
 
-                        {!batchRemoveTermsList.trim() && (
+                        {!batchKeepTermsList.trim() && (
                             <div style={{ 
                                 marginTop: '12px', 
                                 padding: '12px', 
@@ -2372,7 +2401,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     <div className="modal-actions">
                         <button 
                             className="generate-button delete-button" 
-                            onClick={handleBatchRemoveCards} 
+                            onClick={handleBatchKeepCards} 
                             disabled={loading || cardsToRemove.length === 0}
                         >
                             {loading ? 'Removing...' : `Remove ${cardsToRemove.length} Card${cardsToRemove.length !== 1 ? 's' : ''}`}
@@ -3274,13 +3303,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             <button 
                                 className="view-action-btn view-action-secondary"
                                 onClick={() => {
-                                    setBatchRemoveTermsList('');
+                                    setBatchKeepTermsList('');
                                     setCardsToRemove([]);
-                                    setShowBatchRemoveModal(true);
+                                    setShowAllCardsToRemove(false);
+                                    setShowBatchKeepModal(true);
                                 }}
                                 style={{ color: 'var(--color-red)' }}
                             >
-                                <Trash2 size={18} /> Batch Remove
+                                <Trash2 size={18} /> Batch Keep
                             </button>
                             <button 
                                 className="view-action-btn view-action-close"
@@ -3989,7 +4019,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {renderDeleteCardConfirmModal()}
             {renderDuplicateConfirmModal()}
             {renderExportModal()}
-            {renderBatchRemoveModal()}
+            {renderBatchKeepModal()}
         </div>
     );
 }
