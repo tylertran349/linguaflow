@@ -175,6 +175,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [exportAlphabeticalOrder, setExportAlphabeticalOrder] = useState(false);
     const [exportTextCopied, setExportTextCopied] = useState(false);
 
+    // Batch remove state
+    const [showBatchRemoveModal, setShowBatchRemoveModal] = useState(false);
+    const [batchRemoveTermsList, setBatchRemoveTermsList] = useState(''); // Comma-separated list of terms to keep
+    const [cardsToRemove, setCardsToRemove] = useState([]); // Cards that will be removed
+
     // Fetch all sets
     const fetchSets = async () => {
         if (!isSignedIn) return;
@@ -1244,6 +1249,67 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [showAllCards, currentSet]);
 
+    // Calculate which cards should be removed based on the comma-separated list
+    const calculateCardsToRemove = useCallback(() => {
+        if (!currentSet) {
+            setCardsToRemove([]);
+            return;
+        }
+
+        // If no terms list provided, don't remove anything
+        if (!batchRemoveTermsList.trim()) {
+            setCardsToRemove([]);
+            return;
+        }
+
+        // Parse the comma-separated list and normalize terms
+        // Handle edge cases: empty strings, whitespace-only, duplicates
+        const termsToKeep = batchRemoveTermsList
+            .split(',')
+            .map(term => term.trim().toLowerCase())
+            .filter(term => term.length > 0); // Remove empty strings after trimming
+
+        // If no valid terms after parsing, don't remove anything (safety check)
+        if (termsToKeep.length === 0) {
+            setCardsToRemove([]);
+            return;
+        }
+
+        // Find cards to remove:
+        // - Cards that have NOT been studied (no lastReviewed)
+        // - AND are NOT in the termsToKeep list
+        const cardsToRemoveList = currentSet.flashcards.filter(card => {
+            // Never remove cards that have been studied
+            if (card.lastReviewed) {
+                return false;
+            }
+
+            // For new cards, check if term is in the keep list
+            // Handle edge case: card with no term or empty term
+            const cardTerm = (card.term || '').trim().toLowerCase();
+            if (!cardTerm) {
+                // Cards with empty terms should be kept (safety measure)
+                return false;
+            }
+            
+            return !termsToKeep.includes(cardTerm);
+        });
+
+        setCardsToRemove(cardsToRemoveList);
+    }, [currentSet, batchRemoveTermsList]);
+
+    // Recalculate cards to remove when the terms list or current set changes
+    useEffect(() => {
+        if (showBatchRemoveModal && currentSet) {
+            calculateCardsToRemove();
+        } else if (showBatchRemoveModal && !currentSet) {
+            // Set was deleted or unloaded, close the modal
+            setShowBatchRemoveModal(false);
+            setBatchRemoveTermsList('');
+            setCardsToRemove([]);
+        }
+    }, [batchRemoveTermsList, currentSet, showBatchRemoveModal, calculateCardsToRemove]);
+
     const handleStopStudying = () => {
         setViewMode('view');
         setIsRoundComplete(false);
@@ -1515,6 +1581,124 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     
         } catch (err) {
             setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle batch removal of cards
+    const handleBatchRemoveCards = async () => {
+        if (!currentSet || cardsToRemove.length === 0) return;
+        
+        // Prevent concurrent executions
+        if (loading) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Pre-calculate all indices upfront to avoid issues with shifting indices
+            // Map each card to its index in the original set
+            const cardIndexMap = new Map();
+            cardsToRemove.forEach(card => {
+                const index = currentSet.flashcards.findIndex(c => c._id === card._id);
+                if (index !== -1) {
+                    cardIndexMap.set(card._id, index);
+                }
+            });
+
+            // Sort cards by index in descending order (delete from highest index first)
+            // This ensures that when we delete, indices below don't shift
+            const sortedCards = [...cardsToRemove]
+                .filter(card => cardIndexMap.has(card._id))
+                .sort((a, b) => {
+                    const indexA = cardIndexMap.get(a._id);
+                    const indexB = cardIndexMap.get(b._id);
+                    return indexB - indexA; // Delete from highest index first
+                });
+
+            if (sortedCards.length === 0) {
+                setError('No valid cards found to delete. The set may have been modified.');
+                return;
+            }
+
+            // Track successful and failed deletions
+            let successCount = 0;
+            let failCount = 0;
+            const errors = [];
+
+            // Delete each card using the original indices
+            // Since we delete from highest to lowest, indices below don't shift
+            for (const card of sortedCards) {
+                const originalIndex = cardIndexMap.get(card._id);
+                
+                // Safety check: verify card still exists in the original set
+                if (originalIndex === undefined || originalIndex >= currentSet.flashcards.length) {
+                    failCount++;
+                    errors.push(`Card "${card.term || 'card'}" no longer exists in the set.`);
+                    continue;
+                }
+
+                // Verify it's the same card (safety check)
+                const cardAtIndex = currentSet.flashcards[originalIndex];
+                if (!cardAtIndex || cardAtIndex._id !== card._id) {
+                    failCount++;
+                    errors.push(`Card at index ${originalIndex} does not match expected card.`);
+                    continue;
+                }
+
+                try {
+                    await retryUntilSuccess(async () => {
+                        const token = await getToken();
+                        const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${originalIndex}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (!response.ok) {
+                            let message = 'Failed to delete flashcard.';
+                            try {
+                                const errorData = await response.json();
+                                message = errorData.message || message;
+                            } catch (_) {}
+                            throw new Error(message);
+                        }
+                    }, { 
+                        onError: (e) => {
+                            // Log error but continue with other deletions
+                            console.warn(`Failed to delete card "${card.term}":`, e.message);
+                        }
+                    });
+                    
+                    successCount++;
+                } catch (err) {
+                    failCount++;
+                    errors.push(`Failed to delete "${card.term || 'card'}": ${err.message}`);
+                }
+            }
+
+            // Reload the set to reflect all deletions
+            await loadSet(currentSet._id);
+            
+            // Show summary message
+            if (failCount > 0) {
+                // Some failures occurred
+                setError(`${successCount} card(s) deleted successfully. ${failCount} card(s) failed to delete. ${errors.slice(0, 3).join(' ')}`);
+            } else if (successCount > 0) {
+                // All successful - clear any previous errors
+                setError(null);
+            }
+            
+            // Close modal and reset state only if all deletions succeeded
+            // If there were failures, keep modal open so user can see the error
+            if (failCount === 0) {
+                setShowBatchRemoveModal(false);
+                setBatchRemoveTermsList('');
+                setCardsToRemove([]);
+            }
+        } catch (err) {
+            setError(err.message || 'An error occurred while deleting cards.');
         } finally {
             setLoading(false);
         }
@@ -2055,6 +2239,146 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     <div className="modal-actions">
                         <button onClick={handleClose}>
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render batch remove modal
+    const renderBatchRemoveModal = () => {
+        if (!showBatchRemoveModal || !currentSet) return null;
+        
+        const handleBackdropClick = (e) => {
+            // Prevent closing during deletion
+            if (loading) return;
+            if (e.target === e.currentTarget) {
+                setShowBatchRemoveModal(false);
+                setBatchRemoveTermsList('');
+                setCardsToRemove([]);
+            }
+        };
+
+        const handleClose = () => {
+            // Prevent closing during deletion
+            if (loading) return;
+            setShowBatchRemoveModal(false);
+            setBatchRemoveTermsList('');
+            setCardsToRemove([]);
+        };
+
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content" style={{ maxWidth: '800px' }}>
+                    <div className="modal-header">
+                        <h3>Batch Remove Flashcards</h3>
+                        <button onClick={handleClose} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label>
+                                <strong>Terms to Keep (comma-separated):</strong>
+                            </label>
+                            <p className="modal-hint" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>
+                                Enter a comma-separated list of terms you want to KEEP. All NEW (unstudied) cards that are NOT in this list will be removed. Cards that have been studied will NEVER be removed, even if not in this list.
+                            </p>
+                            <textarea
+                                value={batchRemoveTermsList}
+                                onChange={(e) => {
+                                    setBatchRemoveTermsList(e.target.value);
+                                }}
+                                placeholder="term1, term2, term3, ..."
+                                rows={4}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    fontFamily: 'monospace',
+                                    fontSize: '14px',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    resize: 'vertical'
+                                }}
+                            />
+                        </div>
+                        
+                        {cardsToRemove.length > 0 && (
+                            <div className="form-group" style={{ marginTop: '20px' }}>
+                                <label>
+                                    <strong>Cards to be Removed ({cardsToRemove.length}):</strong>
+                                </label>
+                                <div style={{ 
+                                    marginTop: '12px', 
+                                    maxHeight: '400px', 
+                                    overflowY: 'auto',
+                                    padding: '12px',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--color-border)'
+                                }}>
+                                    {cardsToRemove.slice(0, 50).map((card, index) => (
+                                        <div key={index} style={{ 
+                                            marginBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '12px' : '0',
+                                            paddingBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '12px' : '0',
+                                            borderBottom: index < Math.min(cardsToRemove.length, 50) - 1 ? '1px solid var(--color-border)' : 'none'
+                                        }}>
+                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{card.term}</div>
+                                            <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{card.definition}</div>
+                                        </div>
+                                    ))}
+                                    {cardsToRemove.length > 50 && (
+                                        <div style={{ 
+                                            marginTop: '12px', 
+                                            paddingTop: '12px', 
+                                            borderTop: '1px solid var(--color-border)',
+                                            color: 'var(--color-text-secondary)',
+                                            fontSize: '0.9rem',
+                                            fontStyle: 'italic'
+                                        }}>
+                                            ...and {cardsToRemove.length - 50} more cards
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {batchRemoveTermsList.trim() && cardsToRemove.length === 0 && (
+                            <div style={{ 
+                                marginTop: '12px', 
+                                padding: '12px', 
+                                backgroundColor: 'var(--color-bg-secondary)', 
+                                borderRadius: '4px',
+                                color: 'var(--color-text-secondary)'
+                            }}>
+                                No cards will be removed. All new cards match terms in your list, or all cards have been studied.
+                            </div>
+                        )}
+
+                        {!batchRemoveTermsList.trim() && (
+                            <div style={{ 
+                                marginTop: '12px', 
+                                padding: '12px', 
+                                backgroundColor: 'var(--color-bg-secondary)', 
+                                borderRadius: '4px',
+                                color: 'var(--color-text-secondary)'
+                            }}>
+                                Enter a comma-separated list of terms above to see which cards will be removed.
+                            </div>
+                        )}
+                    </div>
+                    <div className="modal-actions">
+                        <button 
+                            className="generate-button delete-button" 
+                            onClick={handleBatchRemoveCards} 
+                            disabled={loading || cardsToRemove.length === 0}
+                        >
+                            {loading ? 'Removing...' : `Remove ${cardsToRemove.length} Card${cardsToRemove.length !== 1 ? 's' : ''}`}
+                        </button>
+                        <button onClick={handleClose}>
+                            Cancel
                         </button>
                     </div>
                 </div>
@@ -2948,6 +3272,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <Download size={18} /> Export
                             </button>
                             <button 
+                                className="view-action-btn view-action-secondary"
+                                onClick={() => {
+                                    setBatchRemoveTermsList('');
+                                    setCardsToRemove([]);
+                                    setShowBatchRemoveModal(true);
+                                }}
+                                style={{ color: 'var(--color-red)' }}
+                            >
+                                <Trash2 size={18} /> Batch Remove
+                            </button>
+                            <button 
                                 className="view-action-btn view-action-close"
                                 onClick={() => setViewMode('sets')}
                             >
@@ -3654,6 +3989,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {renderDeleteCardConfirmModal()}
             {renderDuplicateConfirmModal()}
             {renderExportModal()}
+            {renderBatchRemoveModal()}
         </div>
     );
 }
