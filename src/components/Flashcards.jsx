@@ -397,14 +397,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         setFlashcards(prev => {
             const newCards = [];
-            const existingTerms = new Map(); // Map of normalized term -> card index
-            const cardsToReplace = new Map(); // Map of index -> new card (for keep-new option)
+            const existingTerms = new Map(); // Map of normalized term -> array of indices (handles multiple cards with same term)
+            const termsToReplace = new Map(); // Map of normalized term -> new card (for keep-new option)
+            const indicesToRemove = new Set(); // Set of indices to remove (for keep-new when replacing all duplicates)
             
             // Build a map of existing terms (case-insensitive)
+            // Store arrays of indices to handle multiple cards with the same term
             prev.forEach((card, index) => {
                 const normalizedTerm = card.term?.trim().toLowerCase() || '';
                 if (normalizedTerm) {
-                    existingTerms.set(normalizedTerm, index);
+                    if (!existingTerms.has(normalizedTerm)) {
+                        existingTerms.set(normalizedTerm, []);
+                    }
+                    existingTerms.get(normalizedTerm).push(index);
                 }
             });
             
@@ -417,16 +422,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     return;
                 }
                 
-                const existingIndex = existingTerms.get(normalizedTerm);
+                const existingIndices = existingTerms.get(normalizedTerm);
                 
-                if (existingIndex !== undefined) {
+                if (existingIndices && existingIndices.length > 0) {
                     // Duplicate found - handle based on user's choice
                     if (duplicateHandling === 'keep-existing') {
-                        // Skip the new card, keep the existing one
+                        // Skip the new card, keep all existing ones
                         return;
                     } else if (duplicateHandling === 'keep-new') {
-                        // Mark this card for replacement
-                        cardsToReplace.set(existingIndex, newCard);
+                        // Mark all existing cards with this term for removal
+                        existingIndices.forEach(idx => indicesToRemove.add(idx));
+                        // Store the new card to replace them (if same term appears multiple times in import, last one wins)
+                        termsToReplace.set(normalizedTerm, newCard);
                     } else if (duplicateHandling === 'keep-both') {
                         // Keep both - add the new card
                         newCards.push(newCard);
@@ -438,11 +445,17 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             });
             
             // If we need to replace cards, create a new array with replacements
-            if (duplicateHandling === 'keep-new' && cardsToReplace.size > 0) {
-                const updatedPrev = prev.map((card, index) => {
-                    return cardsToReplace.has(index) ? cardsToReplace.get(index) : card;
+            if (duplicateHandling === 'keep-new' && (indicesToRemove.size > 0 || termsToReplace.size > 0)) {
+                // Filter out cards to be removed and add replacement cards
+                const filteredPrev = prev.filter((card, index) => {
+                    // Remove card if it's marked for removal
+                    return !indicesToRemove.has(index);
                 });
-                return [...updatedPrev, ...newCards];
+                
+                // Add replacement cards for each unique term that was replaced
+                const replacementCards = Array.from(termsToReplace.values());
+                
+                return [...filteredPrev, ...replacementCards, ...newCards];
             } else {
                 // For 'keep-existing' or 'keep-both', just add new cards
                 return [...prev, ...newCards];
