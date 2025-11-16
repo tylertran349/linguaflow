@@ -777,7 +777,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         ).length;
 
         // Calculate how many new cards can still be shown today
-        const remainingNewCardsToday = Math.max(0, studyOptions.newCardsPerDay - newCardsReviewedToday);
+        const newCardsPerDay = studyOptions.newCardsPerDay ?? 10;
+        const remainingNewCardsToday = Math.max(0, newCardsPerDay - newCardsReviewedToday);
 
         const { studyRangeOnly, excludeRange } = studyOptions.learningOptions;
         let cards;
@@ -1640,6 +1641,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 return;
             }
             
+            // Ensure newCardsPerDay is valid before saving
+            if (!studyOptions.newCardsPerDay || studyOptions.newCardsPerDay < 1) {
+                setStudyOptions(prev => ({ ...prev, newCardsPerDay: 10 }));
+            }
+            
             await saveStudyOptions();
             setShowStudyOptionsModal(false);
             setStudyAction('restart');
@@ -1772,8 +1778,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 <input
                     type="number"
                     min="1"
-                    value={studyOptions.newCardsPerDay}
-                    onChange={(e) => setStudyOptions(prev => ({ ...prev, newCardsPerDay: parseInt(e.target.value) || 10 }))}
+                    value={studyOptions.newCardsPerDay ?? ''}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                            setStudyOptions(prev => ({ ...prev, newCardsPerDay: null }));
+                        } else {
+                            const numValue = parseInt(value, 10);
+                            if (!isNaN(numValue) && numValue >= 1) {
+                                setStudyOptions(prev => ({ ...prev, newCardsPerDay: numValue }));
+                            }
+                        }
+                    }}
+                    onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || isNaN(parseInt(value, 10)) || parseInt(value, 10) < 1) {
+                            setStudyOptions(prev => ({ ...prev, newCardsPerDay: 10 }));
+                        }
+                    }}
                 />
             </div>
             <div className="form-group">
