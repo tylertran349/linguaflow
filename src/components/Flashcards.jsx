@@ -93,6 +93,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [importDefinitionLanguage, setImportDefinitionLanguage] = useState('');
     const [duplicateHandling, setDuplicateHandling] = useState('keep-new'); // 'keep-existing', 'keep-new', 'keep-both'
     
+    // Import confirmation state
+    const [showDuplicateConfirmModal, setShowDuplicateConfirmModal] = useState(false);
+    const [pendingImportData, setPendingImportData] = useState(null); // { parsed, duplicateCount, duplicateTerms }
+    
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
     const [renderedCardCount, setRenderedCardCount] = useState(10);
@@ -394,7 +398,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         return parsed;
     };
 
-    // Handle import
+    // Handle import - checks for duplicates and shows confirmation if needed
     const handleImport = () => {
         if (!importText.trim()) return;
         
@@ -404,6 +408,68 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             return;
         }
         
+        // If "keep-new" is selected, check for duplicates and show confirmation
+        if (duplicateHandling === 'keep-new') {
+            // Check for duplicates
+            const existingTerms = new Map();
+            flashcards.forEach((card, index) => {
+                const normalizedTerm = card.term?.trim().toLowerCase() || '';
+                if (normalizedTerm) {
+                    if (!existingTerms.has(normalizedTerm)) {
+                        existingTerms.set(normalizedTerm, []);
+                    }
+                    existingTerms.get(normalizedTerm).push(index);
+                }
+            });
+            
+            const duplicateTerms = [];
+            parsed.forEach(newCard => {
+                const normalizedTerm = newCard.term?.trim().toLowerCase() || '';
+                if (normalizedTerm && existingTerms.has(normalizedTerm)) {
+                    const existingCard = flashcards[existingTerms.get(normalizedTerm)[0]];
+                    if (existingCard && !duplicateTerms.find(dt => dt.term.toLowerCase() === normalizedTerm)) {
+                        duplicateTerms.push({
+                            term: existingCard.term,
+                            existingDefinition: existingCard.definition,
+                            newDefinition: newCard.definition
+                        });
+                    }
+                }
+            });
+            
+            // If duplicates found, show confirmation modal
+            if (duplicateTerms.length > 0) {
+                setPendingImportData({
+                    parsed,
+                    duplicateCount: duplicateTerms.length,
+                    duplicateTerms: duplicateTerms.slice(0, 10) // Show first 10 for preview
+                });
+                setShowDuplicateConfirmModal(true);
+                return;
+            }
+        }
+        
+        // No duplicates or not "keep-new", proceed with import
+        performImport(parsed);
+    };
+
+    // Confirm and proceed with import
+    const confirmDuplicateImport = () => {
+        if (pendingImportData) {
+            performImport(pendingImportData.parsed);
+            setShowDuplicateConfirmModal(false);
+            setPendingImportData(null);
+        }
+    };
+
+    // Cancel duplicate import
+    const cancelDuplicateImport = () => {
+        setShowDuplicateConfirmModal(false);
+        setPendingImportData(null);
+    };
+
+    // Perform the actual import (called after confirmation or when no duplicates)
+    const performImport = (parsed) => {
         setFlashcards(prev => {
             const newCards = [];
             const existingTerms = new Map(); // Map of normalized term -> array of indices (handles multiple cards with same term)
@@ -1716,6 +1782,81 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             {loading ? 'Deleting...' : 'Delete'}
                         </button>
                         <button onClick={() => { setShowDeleteCardConfirmModal(false); setCardToDelete(null); }}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render duplicate confirmation modal
+    const renderDuplicateConfirmModal = () => {
+        if (!showDuplicateConfirmModal || !pendingImportData) return null;
+        
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                cancelDuplicateImport();
+            }
+        };
+        
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>Duplicate Terms Found</h3>
+                        <button onClick={cancelDuplicateImport} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>
+                            {pendingImportData.duplicateCount === 1 
+                                ? '1 duplicate term was found.' 
+                                : `${pendingImportData.duplicateCount} duplicate terms were found.`}
+                        </p>
+                        <p className="modal-hint">
+                            The definitions for these terms will be replaced with the new definitions from your import.
+                        </p>
+                        {pendingImportData.duplicateTerms.length > 0 && (
+                            <div style={{ marginTop: '16px', maxHeight: '300px', overflowY: 'auto' }}>
+                                <div style={{ 
+                                    padding: '12px', 
+                                    backgroundColor: 'var(--color-bg-secondary)', 
+                                    borderRadius: '4px',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {pendingImportData.duplicateTerms.map((dup, idx) => (
+                                        <div key={idx} style={{ marginBottom: idx < pendingImportData.duplicateTerms.length - 1 ? '12px' : '0' }}>
+                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{dup.term}</div>
+                                            <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '2px' }}>
+                                                Current: {dup.existingDefinition}
+                                            </div>
+                                            <div style={{ color: 'var(--color-green)', fontSize: '0.85rem' }}>
+                                                New: {dup.newDefinition}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {pendingImportData.duplicateCount > pendingImportData.duplicateTerms.length && (
+                                        <div style={{ 
+                                            marginTop: '8px', 
+                                            paddingTop: '8px', 
+                                            borderTop: '1px solid var(--color-border)',
+                                            color: 'var(--color-text-secondary)',
+                                            fontSize: '0.85rem'
+                                        }}>
+                                            ...and {pendingImportData.duplicateCount - pendingImportData.duplicateTerms.length} more
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="modal-actions">
+                        <button className="generate-button" onClick={confirmDuplicateImport}>
+                            Confirm
+                        </button>
+                        <button onClick={cancelDuplicateImport}>
                             Cancel
                         </button>
                     </div>
@@ -3511,6 +3652,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {renderDeleteConfirmModal()}
             {renderPermanentDeleteModal()}
             {renderDeleteCardConfirmModal()}
+            {renderDuplicateConfirmModal()}
             {renderExportModal()}
         </div>
     );
