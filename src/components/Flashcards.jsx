@@ -3478,6 +3478,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         
         const currentCard = cardsToStudy[currentCardIndex];
         const cardStatus = getCardStatus(currentCard);
+        const isUnstudied = !currentCard.lastReviewed;
         const showTerm = studyOptions.questionFormat === 'term';
         const question = showTerm ? currentCard.definition : currentCard.term;
         const answer = showTerm ? currentCard.term : currentCard.definition;
@@ -3683,6 +3684,22 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     </button>
                                 )}
                             </div>
+                            
+                            {currentQuestionType === 'written' && isUnstudied && !showAnswer && !showDontKnowAnswer && (
+                                <div className="answer-display" style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '4px' }}>
+                                    <p className="feedback-label correct" style={{ marginBottom: '8px' }}>
+                                        {showTerm ? 'Term' : 'Definition'}:
+                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>{answer}</span>
+                                        {answer && answerLang && (
+                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                <Volume2 size={24} color="var(--color-green)" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
     
                             {currentQuestionType === 'written' && !showAnswer && !showDontKnowAnswer && (
                                 <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
@@ -3884,7 +3901,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    {studyOptions.learningOptions.retypeAnswer && (
+                                                    {studyOptions.learningOptions.retypeAnswer && !isUnstudied && (
                                                         <div className="retype-answer-form">
                                                             <p>Type the correct answer to continue:</p>
                                                             <textarea
@@ -3947,14 +3964,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 )}
 
                 <div className="study-bottom-actions">
-                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer ? (
+                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer || (currentQuestionType === 'written' && isUnstudied && answerFeedback === 'correct' && showAnswer) ? (
                         <div className="grading-container">
-                            {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer) && (
+                            {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) && (
                                 <div className="grade-buttons">
                                     {FSRS_GRADES.map(item => {
                                         const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
                                         const isRetypeRequired = currentQuestionType === 'written' && 
                                             answerFeedback === 'incorrect' && 
+                                            !isUnstudied &&
                                             studyOptions.learningOptions.retypeAnswer && 
                                             !isRetypeCorrect;
                                         return (
@@ -3972,7 +3990,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     })}
                                 </div>
                             )}
-                            {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer)) && (
+                            {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied)) && (
                                 <button className="generate-button" onClick={handleRealSkip} disabled={isProcessingReview}>
                                     Skip
                                 </button>
