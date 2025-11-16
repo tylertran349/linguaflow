@@ -407,8 +407,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setFlashcards(prev => {
             const newCards = [];
             const existingTerms = new Map(); // Map of normalized term -> array of indices (handles multiple cards with same term)
-            const termsToReplace = new Map(); // Map of normalized term -> new card (for keep-new option)
-            const indicesToRemove = new Set(); // Set of indices to remove (for keep-new when replacing all duplicates)
+            const indicesToReplace = new Map(); // Map of index -> new card (for keep-new option, replaces in place)
+            const indicesToRemove = new Set(); // Set of indices to remove (for keep-new when there are multiple duplicates)
             
             // Build a map of existing terms (case-insensitive)
             // Store arrays of indices to handle multiple cards with the same term
@@ -436,37 +436,49 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 if (existingIndices && existingIndices.length > 0) {
                     // Duplicate found - handle based on user's choice
                     if (duplicateHandling === 'keep-existing') {
-                        // Skip the new card, keep all existing ones
+                        // Skip the new card, keep all existing ones (preserve positions)
                         return;
                     } else if (duplicateHandling === 'keep-new') {
-                        // Mark all existing cards with this term for removal
-                        existingIndices.forEach(idx => indicesToRemove.add(idx));
-                        // Store the new card to replace them (if same term appears multiple times in import, last one wins)
-                        termsToReplace.set(normalizedTerm, newCard);
+                        // Replace the first occurrence in place to preserve card numbering
+                        const firstIndex = existingIndices[0];
+                        indicesToReplace.set(firstIndex, newCard);
+                        
+                        // Mark remaining duplicates for removal (if there are multiple cards with same term)
+                        if (existingIndices.length > 1) {
+                            for (let i = 1; i < existingIndices.length; i++) {
+                                indicesToRemove.add(existingIndices[i]);
+                            }
+                        }
                     } else if (duplicateHandling === 'keep-both') {
-                        // Keep both - add the new card
+                        // Keep both - add the new card at the end (preserve existing positions)
                         newCards.push(newCard);
                     }
                 } else {
-                    // No duplicate - add the new card
+                    // No duplicate - add the new card at the end
                     newCards.push(newCard);
                 }
             });
             
-            // If we need to replace cards, create a new array with replacements
-            if (duplicateHandling === 'keep-new' && (indicesToRemove.size > 0 || termsToReplace.size > 0)) {
-                // Filter out cards to be removed and add replacement cards
-                const filteredPrev = prev.filter((card, index) => {
-                    // Remove card if it's marked for removal
+            // If we need to replace cards in place, do so while preserving positions
+            if (duplicateHandling === 'keep-new' && (indicesToReplace.size > 0 || indicesToRemove.size > 0)) {
+                // Create new array with replacements in place
+                const updatedPrev = prev.map((card, index) => {
+                    // Replace in place if marked for replacement
+                    if (indicesToReplace.has(index)) {
+                        return indicesToReplace.get(index);
+                    }
+                    return card;
+                });
+                
+                // Filter out cards marked for removal (duplicate cards after the first)
+                const filtered = updatedPrev.filter((card, index) => {
                     return !indicesToRemove.has(index);
                 });
                 
-                // Add replacement cards for each unique term that was replaced
-                const replacementCards = Array.from(termsToReplace.values());
-                
-                return [...filteredPrev, ...replacementCards, ...newCards];
+                // Add new non-duplicate cards at the end
+                return [...filtered, ...newCards];
             } else {
-                // For 'keep-existing' or 'keep-both', just add new cards
+                // For 'keep-existing' or 'keep-both', just add new cards at the end (preserve existing positions)
                 return [...prev, ...newCards];
             }
         });
