@@ -1,6 +1,6 @@
 // src/components/Flashcards.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search, RotateCcw } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search, RotateCcw, Download } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -161,6 +161,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Card deletion confirmation state
     const [showDeleteCardConfirmModal, setShowDeleteCardConfirmModal] = useState(false);
     const [cardToDelete, setCardToDelete] = useState(null);
+
+    // Export state
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportTermDefSeparator, setExportTermDefSeparator] = useState('tab'); // 'tab', 'comma', 'custom'
+    const [exportCustomTermDefSeparator, setExportCustomTermDefSeparator] = useState('');
+    const [exportRowSeparator, setExportRowSeparator] = useState('newline'); // 'newline', 'semicolon', 'custom'
+    const [exportCustomRowSeparator, setExportCustomRowSeparator] = useState('');
+    const [exportAlphabeticalOrder, setExportAlphabeticalOrder] = useState(false);
+    const [exportTextCopied, setExportTextCopied] = useState(false);
 
     // Fetch all sets
     const fetchSets = async () => {
@@ -467,6 +476,55 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setImportTermLanguage('');
         setImportDefinitionLanguage('');
         setDuplicateHandling('keep-new'); // Reset to default
+    };
+
+    // Generate export text based on current options
+    const generateExportText = () => {
+        if (!currentSet || !currentSet.flashcards || currentSet.flashcards.length === 0) {
+            return '';
+        }
+
+        // Determine term/definition separator
+        let termDefSep;
+        if (exportTermDefSeparator === 'tab') {
+            termDefSep = '\t';
+        } else if (exportTermDefSeparator === 'comma') {
+            termDefSep = ',';
+        } else { // custom
+            termDefSep = exportCustomTermDefSeparator || '\t';
+        }
+
+        // Determine row separator
+        let rowSep;
+        if (exportRowSeparator === 'newline') {
+            rowSep = '\n';
+        } else if (exportRowSeparator === 'semicolon') {
+            rowSep = ';';
+        } else { // custom
+            rowSep = exportCustomRowSeparator || '\n';
+        }
+
+        // Prepare cards for export
+        let cardsToExport = [...currentSet.flashcards];
+
+        // Sort alphabetically by term if option is enabled
+        if (exportAlphabeticalOrder) {
+            cardsToExport.sort((a, b) => {
+                const termA = (a.term || '').trim().toLowerCase();
+                const termB = (b.term || '').trim().toLowerCase();
+                return termA.localeCompare(termB);
+            });
+        }
+
+        // Generate export text
+        return cardsToExport
+            .map(card => {
+                const term = (card.term || '').trim();
+                const definition = (card.definition || '').trim();
+                return `${term}${termDefSep}${definition}`;
+            })
+            .filter(line => line.trim()) // Remove empty lines
+            .join(rowSep);
     };
 
     // Save set
@@ -1639,6 +1697,203 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         );
     };
 
+    // Render export modal
+    const renderExportModal = () => {
+        if (!showExportModal || !currentSet) return null;
+        
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowExportModal(false);
+                setExportTextCopied(false);
+            }
+        };
+
+        const handleClose = () => {
+            setShowExportModal(false);
+            setExportTextCopied(false);
+        };
+        
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>Export Flashcards</h3>
+                        <button onClick={handleClose} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="export-options-section">
+                            <div className="form-group">
+                                <label>Between Term and Definition:</label>
+                                <div className="radio-group">
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportTermDefSep"
+                                            value="tab"
+                                            checked={exportTermDefSeparator === 'tab'}
+                                            onChange={(e) => setExportTermDefSeparator(e.target.value)}
+                                        />
+                                        Tab
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportTermDefSep"
+                                            value="comma"
+                                            checked={exportTermDefSeparator === 'comma'}
+                                            onChange={(e) => setExportTermDefSeparator(e.target.value)}
+                                        />
+                                        Comma
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportTermDefSep"
+                                            value="custom"
+                                            checked={exportTermDefSeparator === 'custom'}
+                                            onChange={(e) => setExportTermDefSeparator(e.target.value)}
+                                        />
+                                        Custom:
+                                        <input
+                                            type="text"
+                                            value={exportCustomTermDefSeparator}
+                                            onChange={(e) => setExportCustomTermDefSeparator(e.target.value)}
+                                            placeholder="Enter separator"
+                                            className="custom-separator-input"
+                                            disabled={exportTermDefSeparator !== 'custom'}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Between Rows:</label>
+                                <div className="radio-group">
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportRowSep"
+                                            value="newline"
+                                            checked={exportRowSeparator === 'newline'}
+                                            onChange={(e) => setExportRowSeparator(e.target.value)}
+                                        />
+                                        New Line
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportRowSep"
+                                            value="semicolon"
+                                            checked={exportRowSeparator === 'semicolon'}
+                                            onChange={(e) => setExportRowSeparator(e.target.value)}
+                                        />
+                                        Semicolon
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="exportRowSep"
+                                            value="custom"
+                                            checked={exportRowSeparator === 'custom'}
+                                            onChange={(e) => setExportRowSeparator(e.target.value)}
+                                        />
+                                        Custom:
+                                        <input
+                                            type="text"
+                                            value={exportCustomRowSeparator}
+                                            onChange={(e) => setExportCustomRowSeparator(e.target.value)}
+                                            placeholder="Enter separator"
+                                            className="custom-separator-input"
+                                            disabled={exportRowSeparator !== 'custom'}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <div className="toggle-switch-container">
+                                    <span>List terms in alphabetical order</span>
+                                    <label className="toggle-switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={exportAlphabeticalOrder}
+                                            onChange={(e) => setExportAlphabeticalOrder(e.target.checked)}
+                                        />
+                                        <span className="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="form-group" style={{ marginTop: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label>Export Text (select all and copy):</label>
+                                <button
+                                    className="generate-button"
+                                    onClick={async () => {
+                                        const text = generateExportText();
+                                        try {
+                                            await navigator.clipboard.writeText(text);
+                                            setExportTextCopied(true);
+                                            setTimeout(() => setExportTextCopied(false), 2000);
+                                        } catch (err) {
+                                            // Fallback for older browsers
+                                            const textarea = document.createElement('textarea');
+                                            textarea.value = text;
+                                            textarea.style.position = 'fixed';
+                                            textarea.style.opacity = '0';
+                                            document.body.appendChild(textarea);
+                                            textarea.select();
+                                            try {
+                                                document.execCommand('copy');
+                                                setExportTextCopied(true);
+                                                setTimeout(() => setExportTextCopied(false), 2000);
+                                            } catch (e) {
+                                                setError('Failed to copy text');
+                                            }
+                                            document.body.removeChild(textarea);
+                                        }
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                                >
+                                    {exportTextCopied ? (
+                                        <>
+                                            <Check size={16} /> Copied!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download size={16} /> Copy
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                            <textarea
+                                readOnly
+                                value={generateExportText()}
+                                style={{
+                                    width: '100%',
+                                    minHeight: '200px',
+                                    padding: '12px',
+                                    fontFamily: 'monospace',
+                                    fontSize: '14px',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    resize: 'vertical'
+                                }}
+                                onClick={(e) => e.target.select()}
+                            />
+                        </div>
+                    </div>
+                    <div className="modal-actions">
+                        <button onClick={handleClose}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // Render study options modal
     const renderStudyOptionsModal = () => {
         const isCardsPerRoundInvalid = !studyOptions.cardsPerRound || studyOptions.cardsPerRound < 1;
@@ -2519,6 +2774,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <Edit2 size={18} /> Edit
                             </button>
                             <button 
+                                className="view-action-btn view-action-secondary"
+                                onClick={() => setShowExportModal(true)}
+                            >
+                                <Download size={18} /> Export
+                            </button>
+                            <button 
                                 className="view-action-btn view-action-close"
                                 onClick={() => setViewMode('sets')}
                             >
@@ -3223,6 +3484,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {renderDeleteConfirmModal()}
             {renderPermanentDeleteModal()}
             {renderDeleteCardConfirmModal()}
+            {renderExportModal()}
         </div>
     );
 }
