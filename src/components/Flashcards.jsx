@@ -91,6 +91,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [customRowSeparator, setCustomRowSeparator] = useState('');
     const [importTermLanguage, setImportTermLanguage] = useState('');
     const [importDefinitionLanguage, setImportDefinitionLanguage] = useState('');
+    const [duplicateHandling, setDuplicateHandling] = useState('keep-new'); // 'keep-existing', 'keep-new', 'keep-both'
     
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
@@ -394,11 +395,65 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             return;
         }
         
-        setFlashcards(prev => [...prev, ...parsed]);
+        setFlashcards(prev => {
+            const newCards = [];
+            const existingTerms = new Map(); // Map of normalized term -> card index
+            const cardsToReplace = new Map(); // Map of index -> new card (for keep-new option)
+            
+            // Build a map of existing terms (case-insensitive)
+            prev.forEach((card, index) => {
+                const normalizedTerm = card.term?.trim().toLowerCase() || '';
+                if (normalizedTerm) {
+                    existingTerms.set(normalizedTerm, index);
+                }
+            });
+            
+            // Process each parsed card
+            parsed.forEach(newCard => {
+                const normalizedTerm = newCard.term?.trim().toLowerCase() || '';
+                
+                if (!normalizedTerm) {
+                    // Skip cards without terms
+                    return;
+                }
+                
+                const existingIndex = existingTerms.get(normalizedTerm);
+                
+                if (existingIndex !== undefined) {
+                    // Duplicate found - handle based on user's choice
+                    if (duplicateHandling === 'keep-existing') {
+                        // Skip the new card, keep the existing one
+                        return;
+                    } else if (duplicateHandling === 'keep-new') {
+                        // Mark this card for replacement
+                        cardsToReplace.set(existingIndex, newCard);
+                    } else if (duplicateHandling === 'keep-both') {
+                        // Keep both - add the new card
+                        newCards.push(newCard);
+                    }
+                } else {
+                    // No duplicate - add the new card
+                    newCards.push(newCard);
+                }
+            });
+            
+            // If we need to replace cards, create a new array with replacements
+            if (duplicateHandling === 'keep-new' && cardsToReplace.size > 0) {
+                const updatedPrev = prev.map((card, index) => {
+                    return cardsToReplace.has(index) ? cardsToReplace.get(index) : card;
+                });
+                return [...updatedPrev, ...newCards];
+            } else {
+                // For 'keep-existing' or 'keep-both', just add new cards
+                return [...prev, ...newCards];
+            }
+        });
+        
         setImportText('');
         setShowImport(false);
         setImportTermLanguage('');
         setImportDefinitionLanguage('');
+        setDuplicateHandling('keep-new'); // Reset to default
     };
 
     // Save set
@@ -2220,6 +2275,41 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             ))}
                                         </select>
                                     </div>
+                                    <div className="import-option-group">
+                                        <label className="import-option-label">For Duplicate Terms:</label>
+                                        <div className="radio-group">
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    name="duplicateHandling"
+                                                    value="keep-new"
+                                                    checked={duplicateHandling === 'keep-new'}
+                                                    onChange={(e) => setDuplicateHandling(e.target.value)}
+                                                />
+                                                Keep new definition
+                                            </label>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    name="duplicateHandling"
+                                                    value="keep-existing"
+                                                    checked={duplicateHandling === 'keep-existing'}
+                                                    onChange={(e) => setDuplicateHandling(e.target.value)}
+                                                />
+                                                Keep existing definition
+                                            </label>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    name="duplicateHandling"
+                                                    value="keep-both"
+                                                    checked={duplicateHandling === 'keep-both'}
+                                                    onChange={(e) => setDuplicateHandling(e.target.value)}
+                                                />
+                                                Keep both term/definition combos
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                                 <textarea
                                     value={importText}
@@ -2238,6 +2328,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         setCustomRowSeparator('');
                                         setImportTermLanguage('');
                                         setImportDefinitionLanguage('');
+                                        setDuplicateHandling('keep-new');
                                     }}>
                                         Cancel
                                     </button>
