@@ -40,9 +40,9 @@ const defaultStudyOptions = {
     newCardsPerDay: 10,
     cardsPerRound: 10,
     newCardQuestionTypes: {
-        flashcards: true,
+        flashcards: false,
         multipleChoice: false,
-        written: false,
+        written: true,
         trueFalse: false
     },
     seenCardQuestionTypes: {
