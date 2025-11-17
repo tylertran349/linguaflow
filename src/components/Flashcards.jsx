@@ -913,6 +913,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             starred: false
         };
         
+        const newIndex = flashcards.length;
         setFlashcards(prev => [...prev, newCard]);
         
         // When adding a new card, expand the list if it's collapsed
@@ -920,7 +921,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setShowAllCreateEdit(true);
         }
         
-        setEditingCardIndex(flashcards.length);
+        setEditingCardIndex(newIndex);
+        
+        // Scroll to the newly added card after it's rendered
+        // Use requestAnimationFrame to wait for React to render, then try scrolling
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const cardElement = document.getElementById(`flashcard-${newIndex}`);
+                if (cardElement) {
+                    cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    // If card not found yet (due to progressive rendering), retry after a short delay
+                    setTimeout(() => {
+                        const retryElement = document.getElementById(`flashcard-${newIndex}`);
+                        if (retryElement) {
+                            retryElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 300);
+                }
+            });
+        });
     };
 
     // Update card
@@ -3136,7 +3156,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <div className="cards-list">
                                     {cardsToShow.map((card, index) => {
                                         return (
-                                        <div key={index} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
+                                        <div key={index} id={`flashcard-${index}`} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
                                             <div className="card-header">
                                                 <button onClick={() => toggleStar(index)} className={`star-button ${card.starred ? 'starred' : ''}`}>
                                                     <Star size={24} color="#ffdc62" fill={card.starred ? '#ffdc62' : 'none'} />
