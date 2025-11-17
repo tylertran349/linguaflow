@@ -3123,92 +3123,98 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         )}
                         
                         {flashcards.length === 0 ? (
-                            <p className="status-message">No flashcards yet. Add or import some cards.</p>
+                            <>
+                                <p className="status-message">No flashcards yet. Add or import some cards.</p>
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                                    <button onClick={addCard}>
+                                        <Plus size={18} /> Add Card
+                                    </button>
+                                </div>
+                            </>
                         ) : (
-                            <div className="cards-list">
-                                {cardsToShow.map((card, index) => {
-                                    return (
-                                    <div key={index} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
-                                        <div className="card-header">
-                                            <button onClick={() => toggleStar(index)} className={`star-button ${card.starred ? 'starred' : ''}`}>
-                                                <Star size={24} color="#ffdc62" fill={card.starred ? '#ffdc62' : 'none'} />
-                                            </button>
-                                            <span>Card {index + 1}</span>
-                                            <button onClick={() => deleteCard(index)} className="delete-card">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                        <div className="card-content">
-                                            <div className="card-field">
-                                                <label>Term</label>
-                                                <div className="field-with-tts">
-                                                    <textarea
-                                                        value={card.term}
-                                                        onChange={(e) => updateCard(index, 'term', e.target.value)}
-                                                        onInput={(e) => {
-                                                            e.target.style.height = 'auto';
-                                                            e.target.style.height = `${e.target.scrollHeight}px`;
-                                                        }}
-                                                        placeholder="Enter term"
-                                                        rows={1}
-                                                    />
-                                                    {card.term && card.termLanguage && (
-                                                        <button onClick={() => playTTS(card.term, card.termLanguage)} className="tts-button">
-                                                            <Volume2 size={24} color="var(--color-green)" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <select
-                                                    value={card.termLanguage || ''}
-                                                    onChange={(e) => updateCard(index, 'termLanguage', e.target.value || null)}
-                                                >
-                                                    <option value="">Select language</option>
-                                                    {supportedLanguages.map(lang => (
-                                                        <option key={lang.code} value={lang.code}>{lang.name}</option>
-                                                    ))}
-                                                </select>
+                            <>
+                                <div className="cards-list">
+                                    {cardsToShow.map((card, index) => {
+                                        return (
+                                        <div key={index} className={`card-item ${editingCardIndex === index ? 'editing' : ''}`}>
+                                            <div className="card-header">
+                                                <button onClick={() => toggleStar(index)} className={`star-button ${card.starred ? 'starred' : ''}`}>
+                                                    <Star size={24} color="#ffdc62" fill={card.starred ? '#ffdc62' : 'none'} />
+                                                </button>
+                                                <span>Card {index + 1}</span>
+                                                <button onClick={() => deleteCard(index)} className="delete-card">
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
-                                            <div className="card-field">
-                                                <label>Definition</label>
-                                                <div className="field-with-tts">
-                                                    <textarea
-                                                        value={card.definition}
-                                                        onChange={(e) => updateCard(index, 'definition', e.target.value)}
-                                                        onInput={(e) => {
-                                                            e.target.style.height = 'auto';
-                                                            e.target.style.height = `${e.target.scrollHeight}px`;
-                                                        }}
-                                                        placeholder="Enter definition"
-                                                        rows={1}
-                                                    />
-                                                    {card.definition && card.definitionLanguage && (
-                                                        <button onClick={() => playTTS(card.definition, card.definitionLanguage)} className="tts-button">
-                                                            <Volume2 size={24} color="var(--color-green)" />
-                                                        </button>
-                                                    )}
+                                            <div className="card-content">
+                                                <div className="card-field">
+                                                    <label>Term</label>
+                                                    <div className="field-with-tts">
+                                                        <textarea
+                                                            value={card.term}
+                                                            onChange={(e) => updateCard(index, 'term', e.target.value)}
+                                                            onInput={(e) => {
+                                                                e.target.style.height = 'auto';
+                                                                e.target.style.height = `${e.target.scrollHeight}px`;
+                                                            }}
+                                                            placeholder="Enter term"
+                                                            rows={1}
+                                                        />
+                                                        {card.term && card.termLanguage && (
+                                                            <button onClick={() => playTTS(card.term, card.termLanguage)} className="tts-button">
+                                                                <Volume2 size={24} color="var(--color-green)" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <select
+                                                        value={card.termLanguage || ''}
+                                                        onChange={(e) => updateCard(index, 'termLanguage', e.target.value || null)}
+                                                    >
+                                                        <option value="">Select language</option>
+                                                        {supportedLanguages.map(lang => (
+                                                            <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
-                                                <select
-                                                    value={card.definitionLanguage || ''}
-                                                    onChange={(e) => updateCard(index, 'definitionLanguage', e.target.value || null)}
-                                                >
-                                                    <option value="">Select language</option>
-                                                    {supportedLanguages.map(lang => (
-                                                        <option key={lang.code} value={lang.code}>{lang.name}</option>
-                                                    ))}
-                                                </select>
+                                                <div className="card-field">
+                                                    <label>Definition</label>
+                                                    <div className="field-with-tts">
+                                                        <textarea
+                                                            value={card.definition}
+                                                            onChange={(e) => updateCard(index, 'definition', e.target.value)}
+                                                            onInput={(e) => {
+                                                                e.target.style.height = 'auto';
+                                                                e.target.style.height = `${e.target.scrollHeight}px`;
+                                                            }}
+                                                            placeholder="Enter definition"
+                                                            rows={1}
+                                                        />
+                                                        {card.definition && card.definitionLanguage && (
+                                                            <button onClick={() => playTTS(card.definition, card.definitionLanguage)} className="tts-button">
+                                                                <Volume2 size={24} color="var(--color-green)" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <select
+                                                        value={card.definitionLanguage || ''}
+                                                        onChange={(e) => updateCard(index, 'definitionLanguage', e.target.value || null)}
+                                                    >
+                                                        <option value="">Select language</option>
+                                                        {supportedLanguages.map(lang => (
+                                                            <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )})}
-                            </div>
-                        )}
-                        
-                        {flashcards.length > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-                                <button onClick={addCard}>
-                                    <Plus size={18} /> Add Card
-                                </button>
-                            </div>
+                                    )})}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                                    <button onClick={addCard}>
+                                        <Plus size={18} /> Add Card
+                                    </button>
+                                </div>
+                            </>
                         )}
                         
                         {flashcards.length > 10 && !showAllCreateEdit && (
