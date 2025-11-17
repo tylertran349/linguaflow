@@ -1144,9 +1144,11 @@
     
     /* Remove aspect ratio on large screens when card contains retype/written form */
     .study-card:has(.retype-answer-form),
-    .study-card:has(.written-answer-feedback) {
+    .study-card:has(.written-answer-feedback),
+    .study-card:has(.answer-container.correct) {
         aspect-ratio: unset;
         min-height: 450px;
+        height: auto;
     }
 }
 
@@ -1239,6 +1241,8 @@
   padding: clamp(0.75rem, 2vw, 1.25rem) 0;
   gap: clamp(0.75rem, 2vw, 1.5rem);
   overflow: visible;
+  min-height: fit-content;
+  flex-shrink: 0;
 }
 
 .question-text {
@@ -2408,6 +2412,10 @@ input:checked + .slider:before {
     width: 100%;
 }
 
+.written-answer-form:not(:has(.written-answer-actions)) {
+    flex-direction: column;
+}
+
 .written-answer-actions {
     display: flex;
     align-items: center;
@@ -2421,6 +2429,15 @@ input:checked + .slider:before {
     border-radius: 8px;
     font-size: clamp(0.9rem, 2.25vw, 1.05rem);
     transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.written-answer-form:not(:has(.written-answer-actions)) .written-answer-input {
+    width: 100%;
+    flex-grow: 0;
+    resize: none;
+    overflow-y: hidden;
+    font-family: inherit;
 }
 
 .written-answer-input:focus {
@@ -2431,6 +2448,10 @@ input:checked + .slider:before {
 .written-answer-input.correct {
     border-color: var(--color-green);
     background-color: #f0fff4;
+}
+
+.written-answer-form:not(:has(.written-answer-actions)) .written-answer-input.correct {
+    background-color: #e8f5e9;
 }
 
 .written-answer-input.incorrect {
@@ -2468,6 +2489,8 @@ input:checked + .slider:before {
     align-items: center;
     width: 100%;
     gap: 0.5rem;
+    min-height: fit-content;
+    flex-shrink: 0;
 }
 
 .feedback-label {
@@ -2500,6 +2523,8 @@ input:checked + .slider:before {
     gap: clamp(0.5rem, 1.5vw, 0.75rem);
     line-height: 1.4;
     white-space: pre-wrap;
+    min-height: fit-content;
+    flex-wrap: wrap;
 }
 
 .answer-container.correct {
@@ -2685,6 +2710,12 @@ input:checked + .slider:before {
     .study-card-container {
         max-width: 900px;
         aspect-ratio: 6 / 4;
+    }
+    
+    /* Remove aspect ratio when card contains answer containers with multiple items */
+    .study-card-container:has(.answer-container.correct) {
+        aspect-ratio: unset;
+        height: auto;
     }
 }
 

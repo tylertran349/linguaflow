@@ -3553,6 +3553,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         // Compute valid answers once for this render
         const validAnswers = getValidAnswers();
         
+        // Check if written answer matches for unstudied cards
+        const isWrittenAnswerCorrect = isUnstudied && currentQuestionType === 'written' && writtenAnswer.trim() 
+            ? validAnswers.some(validAnswer => 
+                validAnswer.toLowerCase() === writtenAnswer.trim().toLowerCase()
+            )
+            : false;
+        
         const handleWrittenAnswerSubmit = (e) => {
             e.preventDefault();
             const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
@@ -3717,22 +3724,52 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             </div>
                             
                             {currentQuestionType === 'written' && isUnstudied && !showAnswer && !showDontKnowAnswer && (
-                                <div className="answer-display" style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '4px' }}>
-                                    <p className="feedback-label correct" style={{ marginBottom: '8px' }}>
-                                        {showTerm ? 'Term' : 'Definition'}:
-                                    </p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>{answer}</span>
-                                        {answer && answerLang && (
-                                            <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                <Volume2 size={24} color="var(--color-green)" />
-                                            </button>
-                                        )}
+                                <div style={{ marginTop: '16px', width: '100%' }}>
+                                    <div className="feedback-group">
+                                        <p className="feedback-label correct">{showTerm ? 'Term' : 'Definition'}:</p>
+                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                            {validAnswers.map((validAnswer, idx) => (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
+                                                    <span>{validAnswer}</span>
+                                                    {validAnswer && answerLang && (
+                                                        <button onClick={() => {
+                                                            // Find the language for this specific answer
+                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
+                                                                showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
+                                                            );
+                                                            const langToUse = showTerm 
+                                                                ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                            playTTS(validAnswer, langToUse);
+                                                        }} className="tts-button-large">
+                                                            <Volume2 size={24} color="var(--color-green)" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="written-answer-form" style={{ marginTop: '16px' }}>
+                                        <input
+                                            type="text"
+                                            value={writtenAnswer}
+                                            onChange={(e) => setWrittenAnswer(e.target.value)}
+                                            placeholder={showTerm ? "Type the term..." : "Type the definition..."}
+                                            className={`written-answer-input ${(() => {
+                                                if (!writtenAnswer.trim()) return '';
+                                                const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
+                                                const isCorrect = validAnswers.some(validAnswer => 
+                                                    validAnswer.toLowerCase() === normalizedUserAnswer
+                                                );
+                                                return isCorrect ? 'correct' : '';
+                                            })()}`}
+                                            autoFocus
+                                        />
                                     </div>
                                 </div>
                             )}
     
-                            {currentQuestionType === 'written' && !showAnswer && !showDontKnowAnswer && (
+                            {currentQuestionType === 'written' && !isUnstudied && !showAnswer && !showDontKnowAnswer && (
                                 <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
                                     <input
                                         type="text"
@@ -3850,7 +3887,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 </div>
                             )}
                             
-                            {showAnswer && (
+                            {showAnswer && !(currentQuestionType === 'written' && isUnstudied) && (
                                 <div className="study-answer">
                                     <hr />
                                     {currentQuestionType === 'trueFalse' ? (
@@ -3995,7 +4032,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 )}
 
                 <div className="study-bottom-actions">
-                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer || (currentQuestionType === 'written' && isUnstudied && answerFeedback === 'correct' && showAnswer) ? (
+                    {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer || (currentQuestionType === 'written' && isUnstudied && isWrittenAnswerCorrect) || (currentQuestionType === 'written' && !isUnstudied && answerFeedback === 'correct' && showAnswer) ? (
                         <div className="grading-container">
                             {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) && (
                                 <div className="grade-buttons">
