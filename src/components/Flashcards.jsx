@@ -3373,110 +3373,112 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     )}
                 </div>
 
-                {filteredCards.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-icon">
-                            <Search size={48} />
-                        </div>
-                        <p className="empty-state-message">
-                            {currentSet.flashcards.length > 0 ? 'No matching cards found.' : 'No flashcards in this set.'}
-                        </p>
-                        {viewSearchTerm && (
-                            <button 
-                                className="empty-state-action"
-                                onClick={() => setViewSearchTerm('')}
-                            >
-                                Clear search
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="grouped-cards-container">
-                        {groupOrder.map(groupName => {
-                            const cardsInGroup = groupedCards[groupName];
-                            if (cardsInGroup.length === 0) {
-                                return null;
-                            }
-                            return (
-                                <CollapsibleSection 
-                                    key={groupName} 
-                                    title={`${groupName} (${cardsInGroup.length})`} 
-                                    initialCollapsed={groupName !== firstGroupWithCards}
+                <div className="view-cards-scroll">
+                    {filteredCards.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-state-icon">
+                                <Search size={48} />
+                            </div>
+                            <p className="empty-state-message">
+                                {currentSet.flashcards.length > 0 ? 'No matching cards found.' : 'No flashcards in this set.'}
+                            </p>
+                            {viewSearchTerm && (
+                                <button 
+                                    className="empty-state-action"
+                                    onClick={() => setViewSearchTerm('')}
                                 >
-                                    <div className="cards-list-view">
-                                        {cardsInGroup.map((card, index) => (
-                                            <div key={index} className="card-item-view">
-                                                <div className="card-item-header">
-                                                    {card.starred && (
-                                                        <div className="card-star-indicator">
-                                                            <Star size={20} color="#ffdc62" fill="#ffdc62" />
+                                    Clear search
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="grouped-cards-container">
+                            {groupOrder.map(groupName => {
+                                const cardsInGroup = groupedCards[groupName];
+                                if (cardsInGroup.length === 0) {
+                                    return null;
+                                }
+                                return (
+                                    <CollapsibleSection 
+                                        key={groupName} 
+                                        title={`${groupName} (${cardsInGroup.length})`} 
+                                        initialCollapsed={groupName !== firstGroupWithCards}
+                                    >
+                                        <div className="cards-list-view">
+                                            {cardsInGroup.map((card, index) => (
+                                                <div key={index} className="card-item-view">
+                                                    <div className="card-item-header">
+                                                        {card.starred && (
+                                                            <div className="card-star-indicator">
+                                                                <Star size={20} color="#ffdc62" fill="#ffdc62" />
+                                                            </div>
+                                                        )}
+                                                        <div className="card-item-actions">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setCardToEdit(card);
+                                                                    setIsEditCardModalOpen(true);
+                                                                }}
+                                                                className="card-action-btn card-action-edit"
+                                                                aria-label="Edit card"
+                                                                title="Edit card"
+                                                            >
+                                                                <Edit2 size={20} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteCardClick(card)}
+                                                                className="card-action-btn card-action-delete"
+                                                                aria-label="Delete card"
+                                                                title="Delete card"
+                                                            >
+                                                                <Trash2 size={20} />
+                                                            </button>
                                                         </div>
-                                                    )}
-                                                    <div className="card-item-actions">
-                                                        <button
-                                                            onClick={() => {
-                                                                setCardToEdit(card);
-                                                                setIsEditCardModalOpen(true);
-                                                            }}
-                                                            className="card-action-btn card-action-edit"
-                                                            aria-label="Edit card"
-                                                            title="Edit card"
-                                                        >
-                                                            <Edit2 size={20} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteCardClick(card)}
-                                                            className="card-action-btn card-action-delete"
-                                                            aria-label="Delete card"
-                                                            title="Delete card"
-                                                        >
-                                                            <Trash2 size={20} />
-                                                        </button>
+                                                    </div>
+                                                    <div className="card-item-content">
+                                                        <div className="card-side card-term">
+                                                            <div className="card-label">Term</div>
+                                                            <div className="card-text-wrapper">
+                                                                <span className="card-text">{card.term}</span>
+                                                                {card.term && card.termLanguage && (
+                                                                    <button 
+                                                                        onClick={() => playTTS(card.term, card.termLanguage)} 
+                                                                        className="card-action-btn card-action-tts card-action-tts-inline"
+                                                                        aria-label="Play term audio"
+                                                                        title="Play audio"
+                                                                    >
+                                                                        <Volume2 size={20} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="card-divider"></div>
+                                                        <div className="card-side card-definition">
+                                                            <div className="card-label">Definition</div>
+                                                            <div className="card-text-wrapper">
+                                                                <span className="card-text">{card.definition}</span>
+                                                                {card.definition && card.definitionLanguage && (
+                                                                    <button 
+                                                                        onClick={() => playTTS(card.definition, card.definitionLanguage)} 
+                                                                        className="card-action-btn card-action-tts card-action-tts-inline"
+                                                                        aria-label="Play definition audio"
+                                                                        title="Play audio"
+                                                                    >
+                                                                        <Volume2 size={20} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="card-item-content">
-                                                    <div className="card-side card-term">
-                                                        <div className="card-label">Term</div>
-                                                        <div className="card-text-wrapper">
-                                                            <span className="card-text">{card.term}</span>
-                                                            {card.term && card.termLanguage && (
-                                                                <button 
-                                                                    onClick={() => playTTS(card.term, card.termLanguage)} 
-                                                                    className="card-action-btn card-action-tts card-action-tts-inline"
-                                                                    aria-label="Play term audio"
-                                                                    title="Play audio"
-                                                                >
-                                                                    <Volume2 size={20} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="card-divider"></div>
-                                                    <div className="card-side card-definition">
-                                                        <div className="card-label">Definition</div>
-                                                        <div className="card-text-wrapper">
-                                                            <span className="card-text">{card.definition}</span>
-                                                            {card.definition && card.definitionLanguage && (
-                                                                <button 
-                                                                    onClick={() => playTTS(card.definition, card.definitionLanguage)} 
-                                                                    className="card-action-btn card-action-tts card-action-tts-inline"
-                                                                    aria-label="Play definition audio"
-                                                                    title="Play audio"
-                                                                >
-                                                                    <Volume2 size={20} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-                            );
-                        })}
-                    </div>
-                )}
+                                            ))}
+                                        </div>
+                                    </CollapsibleSection>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         );
     };
