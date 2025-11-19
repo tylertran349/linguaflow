@@ -96,6 +96,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Import confirmation state
     const [showDuplicateConfirmModal, setShowDuplicateConfirmModal] = useState(false);
     const [pendingImportData, setPendingImportData] = useState(null); // { parsed, duplicateCount, duplicateTerms }
+    const [showAllDuplicates, setShowAllDuplicates] = useState(false);
     
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
@@ -448,8 +449,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setPendingImportData({
                     parsed,
                     duplicateCount: duplicateTerms.length,
-                    duplicateTerms: duplicateTerms.slice(0, 10) // Show first 10 for preview
+                    duplicateTerms: duplicateTerms // Store all duplicate terms
                 });
+                setShowAllDuplicates(false);
                 setShowDuplicateConfirmModal(true);
                 return;
             }
@@ -465,6 +467,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             performImport(pendingImportData.parsed);
             setShowDuplicateConfirmModal(false);
             setPendingImportData(null);
+            setShowAllDuplicates(false);
         }
     };
 
@@ -472,6 +475,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const cancelDuplicateImport = () => {
         setShowDuplicateConfirmModal(false);
         setPendingImportData(null);
+        setShowAllDuplicates(false);
     };
 
     // Perform the actual import (called after confirmation or when no duplicates)
@@ -2025,33 +2029,86 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             The definitions for these terms will be replaced with the new definitions from your import.
                         </p>
                         {pendingImportData.duplicateTerms.length > 0 && (
-                            <div style={{ marginTop: '16px', maxHeight: '300px', overflowY: 'auto' }}>
+                            <div style={{ marginTop: '16px' }}>
                                 <div style={{ 
+                                    maxHeight: '300px', 
+                                    overflowY: 'auto',
                                     padding: '12px', 
                                     backgroundColor: 'var(--color-bg-secondary)', 
                                     borderRadius: '4px',
                                     fontSize: '0.9rem'
                                 }}>
-                                    {pendingImportData.duplicateTerms.map((dup, idx) => (
-                                        <div key={idx} style={{ marginBottom: idx < pendingImportData.duplicateTerms.length - 1 ? '12px' : '0' }}>
-                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{dup.term}</div>
-                                            <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '2px' }}>
-                                                Current: {dup.existingDefinition}
+                                    {(showAllDuplicates ? pendingImportData.duplicateTerms : pendingImportData.duplicateTerms.slice(0, 10)).map((dup, idx) => {
+                                        const displayedDuplicates = showAllDuplicates ? pendingImportData.duplicateTerms : pendingImportData.duplicateTerms.slice(0, 10);
+                                        return (
+                                            <div key={idx} style={{ marginBottom: idx < displayedDuplicates.length - 1 ? '12px' : '0' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{dup.term}</div>
+                                                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '2px' }}>
+                                                    Current: {dup.existingDefinition}
+                                                </div>
+                                                <div style={{ color: 'var(--color-green)', fontSize: '0.85rem' }}>
+                                                    New: {dup.newDefinition}
+                                                </div>
                                             </div>
-                                            <div style={{ color: 'var(--color-green)', fontSize: '0.85rem' }}>
-                                                New: {dup.newDefinition}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {pendingImportData.duplicateCount > pendingImportData.duplicateTerms.length && (
+                                        );
+                                    })}
+                                    {pendingImportData.duplicateCount > 10 && !showAllDuplicates && (
                                         <div style={{ 
-                                            marginTop: '8px', 
-                                            paddingTop: '8px', 
+                                            marginTop: '12px', 
+                                            paddingTop: '12px', 
                                             borderTop: '1px solid var(--color-border)',
-                                            color: 'var(--color-text-secondary)',
-                                            fontSize: '0.85rem'
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px'
                                         }}>
-                                            ...and {pendingImportData.duplicateCount - pendingImportData.duplicateTerms.length} more
+                                            <div style={{ 
+                                                color: 'var(--color-text-secondary)',
+                                                fontSize: '0.85rem',
+                                                fontStyle: 'italic'
+                                            }}>
+                                                ...and {pendingImportData.duplicateCount - 10} more duplicate term{pendingImportData.duplicateCount - 10 !== 1 ? 's' : ''}
+                                            </div>
+                                            <button
+                                                onClick={() => setShowAllDuplicates(true)}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    backgroundColor: 'var(--color-green)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Show All {pendingImportData.duplicateCount} Duplicate Terms
+                                            </button>
+                                        </div>
+                                    )}
+                                    {showAllDuplicates && pendingImportData.duplicateCount > 10 && (
+                                        <div style={{ 
+                                            marginTop: '12px', 
+                                            paddingTop: '12px', 
+                                            borderTop: '1px solid var(--color-border)',
+                                            display: 'flex',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <button
+                                                onClick={() => setShowAllDuplicates(false)}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    backgroundColor: 'var(--color-bg-secondary)',
+                                                    color: 'var(--color-text)',
+                                                    border: '1px solid var(--color-border)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Show Less
+                                            </button>
                                         </div>
                                     )}
                                 </div>
