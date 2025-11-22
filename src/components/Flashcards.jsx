@@ -179,6 +179,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Batch keep state
     const [showBatchKeepModal, setShowBatchKeepModal] = useState(false);
     const [batchKeepTermsList, setBatchKeepTermsList] = useState(''); // Comma-separated list of terms to keep
+    const [keepStudiedCardsNotInList, setKeepStudiedCardsNotInList] = useState(true); // Toggle to keep studied cards not in list
     const [cardsToRemove, setCardsToRemove] = useState([]); // Cards that will be removed
     const [showAllCardsToRemove, setShowAllCardsToRemove] = useState(false);
 
@@ -1301,15 +1302,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
 
         // Find cards to remove:
-        // - Cards that have NOT been studied (no lastReviewed)
-        // - AND are NOT in the termsToKeep list
+        // - Cards that are NOT in the termsToKeep list
+        // - If keepStudiedCardsNotInList is true, keep studied cards even if not in list
+        // - If keepStudiedCardsNotInList is false, remove all cards not in list (studied or unstudied)
         const cardsToRemoveList = currentSet.flashcards.filter(card => {
-            // Never remove cards that have been studied
-            if (card.lastReviewed) {
-                return false;
-            }
-
-            // For new cards, check if term is in the keep list
             // Handle edge case: card with no term or empty term
             const cardTerm = (card.term || '').trim().toLowerCase();
             if (!cardTerm) {
@@ -1317,13 +1313,25 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 return false;
             }
             
-            return !termsToKeep.includes(cardTerm);
+            // If card is in the keep list, don't remove it
+            if (termsToKeep.includes(cardTerm)) {
+                return false;
+            }
+            
+            // Card is not in the keep list
+            // If toggle is ON (keepStudiedCardsNotInList = true), keep studied cards
+            if (keepStudiedCardsNotInList && card.lastReviewed) {
+                return false;
+            }
+            
+            // Remove card (either unstudied or studied with toggle OFF)
+            return true;
         });
 
         setCardsToRemove(cardsToRemoveList);
-    }, [currentSet, batchKeepTermsList]);
+    }, [currentSet, batchKeepTermsList, keepStudiedCardsNotInList]);
 
-    // Recalculate cards to remove when the terms list or current set changes
+    // Recalculate cards to remove when the terms list, toggle, or current set changes
     useEffect(() => {
         if (showBatchKeepModal && currentSet) {
             calculateCardsToRemove();
@@ -1331,9 +1339,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             // Set was deleted or unloaded, close the modal
             setShowBatchKeepModal(false);
             setBatchKeepTermsList('');
+            setKeepStudiedCardsNotInList(true);
             setCardsToRemove([]);
         }
-    }, [batchKeepTermsList, currentSet, showBatchKeepModal, calculateCardsToRemove]);
+    }, [batchKeepTermsList, keepStudiedCardsNotInList, currentSet, showBatchKeepModal, calculateCardsToRemove]);
 
     const handleStopStudying = () => {
         setViewMode('view');
@@ -1720,6 +1729,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             if (failCount === 0) {
                 setShowBatchKeepModal(false);
                 setBatchKeepTermsList('');
+                setKeepStudiedCardsNotInList(true);
                 setCardsToRemove([]);
                 setShowAllCardsToRemove(false);
             }
@@ -2335,6 +2345,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             if (e.target === e.currentTarget) {
                 setShowBatchKeepModal(false);
                 setBatchKeepTermsList('');
+                setKeepStudiedCardsNotInList(true);
                 setCardsToRemove([]);
                 setShowAllCardsToRemove(false);
             }
@@ -2345,6 +2356,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             if (loading) return;
             setShowBatchKeepModal(false);
             setBatchKeepTermsList('');
+            setKeepStudiedCardsNotInList(true);
             setCardsToRemove([]);
             setShowAllCardsToRemove(false);
         };
@@ -2364,7 +2376,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <strong>Terms to Keep (comma-separated):</strong>
                             </label>
                             <p className="modal-hint" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>
-                                Enter a comma-separated list of terms you want to KEEP. All NEW (unstudied) cards that are NOT in this list will be removed. Cards that have been studied will NEVER be removed, even if not in this list.
+                                Enter a comma-separated list of terms you want to KEEP. Cards that are NOT in this list will be removed based on the setting below.
                             </p>
                             <textarea
                                 value={batchKeepTermsList}
@@ -2384,6 +2396,31 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     resize: 'vertical'
                                 }}
                             />
+                        </div>
+                        
+                        <div className="form-group" style={{ marginTop: '20px' }}>
+                            <label>
+                                <strong>Keep studied cards not in list</strong>
+                            </label>
+                            <div className="toggle-switch-container" style={{ marginTop: '8px' }}>
+                                <span style={{ flex: 1 }}>
+                                    <p className="modal-hint" style={{ marginTop: '0', fontSize: '0.85rem', marginBottom: '8px' }}>
+                                        {keepStudiedCardsNotInList 
+                                            ? 'Studied cards that are not in your list will be kept. Only unstudied cards not in the list will be removed.'
+                                            : 'All cards (studied and unstudied) that are not in your list will be removed.'}
+                                    </p>
+                                </span>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={keepStudiedCardsNotInList}
+                                        onChange={(e) => {
+                                            setKeepStudiedCardsNotInList(e.target.checked);
+                                        }}
+                                    />
+                                    <span className="slider"></span>
+                                </label>
+                            </div>
                         </div>
                         
                         {cardsToRemove.length > 0 && (
@@ -2459,7 +2496,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 borderRadius: '4px',
                                 color: 'var(--color-text-secondary)'
                             }}>
-                                No cards will be removed. All new cards match terms in your list, or all cards have been studied.
+                                No cards will be removed. All cards match terms in your list.
                             </div>
                         )}
 
@@ -3392,6 +3429,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 className="view-action-btn view-action-secondary"
                                 onClick={() => {
                                     setBatchKeepTermsList('');
+                                    setKeepStudiedCardsNotInList(true);
                                     setCardsToRemove([]);
                                     setShowAllCardsToRemove(false);
                                     setShowBatchKeepModal(true);
