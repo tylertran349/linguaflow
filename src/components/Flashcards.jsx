@@ -95,8 +95,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     
     // Import confirmation state
     const [showDuplicateConfirmModal, setShowDuplicateConfirmModal] = useState(false);
-    const [pendingImportData, setPendingImportData] = useState(null); // { parsed, duplicateCount, duplicateTerms }
+    const [pendingImportData, setPendingImportData] = useState(null); // { parsed, duplicateCount, duplicateTerms, nonDuplicateCards, nonDuplicateCount }
     const [showAllDuplicates, setShowAllDuplicates] = useState(false);
+    const [showAllNonDuplicates, setShowAllNonDuplicates] = useState(false);
     
     // Create/Edit pagination
     const [showAllCreateEdit, setShowAllCreateEdit] = useState(false);
@@ -431,6 +432,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             });
             
             const duplicateTerms = [];
+            const nonDuplicateCards = [];
+            
             parsed.forEach(newCard => {
                 const normalizedTerm = newCard.term?.trim().toLowerCase() || '';
                 if (normalizedTerm && existingTerms.has(normalizedTerm)) {
@@ -442,6 +445,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             newDefinition: newCard.definition
                         });
                     }
+                } else if (normalizedTerm) {
+                    // This is a non-duplicate card
+                    nonDuplicateCards.push({
+                        term: newCard.term,
+                        definition: newCard.definition
+                    });
                 }
             });
             
@@ -450,9 +459,27 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setPendingImportData({
                     parsed,
                     duplicateCount: duplicateTerms.length,
-                    duplicateTerms: duplicateTerms // Store all duplicate terms
+                    duplicateTerms: duplicateTerms, // Store all duplicate terms
+                    nonDuplicateCards: nonDuplicateCards, // Store all non-duplicate cards
+                    nonDuplicateCount: nonDuplicateCards.length
                 });
                 setShowAllDuplicates(false);
+                setShowAllNonDuplicates(false);
+                setShowDuplicateConfirmModal(true);
+                return;
+            }
+            
+            // No duplicates but still show confirmation with non-duplicate cards if there are any
+            if (nonDuplicateCards.length > 0) {
+                setPendingImportData({
+                    parsed,
+                    duplicateCount: 0,
+                    duplicateTerms: [],
+                    nonDuplicateCards: nonDuplicateCards,
+                    nonDuplicateCount: nonDuplicateCards.length
+                });
+                setShowAllDuplicates(false);
+                setShowAllNonDuplicates(false);
                 setShowDuplicateConfirmModal(true);
                 return;
             }
@@ -469,6 +496,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setShowDuplicateConfirmModal(false);
             setPendingImportData(null);
             setShowAllDuplicates(false);
+            setShowAllNonDuplicates(false);
         }
     };
 
@@ -477,6 +505,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setShowDuplicateConfirmModal(false);
         setPendingImportData(null);
         setShowAllDuplicates(false);
+        setShowAllNonDuplicates(false);
     };
 
     // Perform the actual import (called after confirmation or when no duplicates)
@@ -2024,20 +2053,24 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             <div className="modal-backdrop" onClick={handleBackdropClick}>
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h3>Duplicate Terms Found</h3>
+                        <h3>{pendingImportData.duplicateCount > 0 ? 'Duplicate Terms Found' : 'Import Cards'}</h3>
                         <button onClick={cancelDuplicateImport} className="close-button">
                             <X size={20} />
                         </button>
                     </div>
                     <div className="modal-body">
-                        <p>
-                            {pendingImportData.duplicateCount === 1 
-                                ? '1 duplicate term was found.' 
-                                : `${pendingImportData.duplicateCount} duplicate terms were found.`}
-                        </p>
-                        <p className="modal-hint">
-                            The definitions for these terms will be replaced with the new definitions from your import.
-                        </p>
+                        {pendingImportData.duplicateCount > 0 && (
+                            <>
+                                <p>
+                                    {pendingImportData.duplicateCount === 1 
+                                        ? '1 duplicate term was found.' 
+                                        : `${pendingImportData.duplicateCount} duplicate terms were found.`}
+                                </p>
+                                <p className="modal-hint">
+                                    The definitions for these terms will be replaced with the new definitions from your import.
+                                </p>
+                            </>
+                        )}
                         {pendingImportData.duplicateTerms.length > 0 && (
                             <div style={{ marginTop: '16px' }}>
                                 <div style={{ 
@@ -2106,6 +2139,94 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         }}>
                                             <button
                                                 onClick={() => setShowAllDuplicates(false)}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    backgroundColor: 'var(--color-bg-secondary)',
+                                                    color: 'var(--color-text)',
+                                                    border: '1px solid var(--color-border)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Show Less
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {pendingImportData.nonDuplicateCount > 0 && (
+                            <div style={{ marginTop: '24px' }}>
+                                <p style={{ marginBottom: '12px', fontWeight: 'bold' }}>
+                                    {pendingImportData.nonDuplicateCount === 1 
+                                        ? '1 new card will be added:' 
+                                        : `${pendingImportData.nonDuplicateCount} new cards will be added:`}
+                                </p>
+                                <div style={{ 
+                                    maxHeight: '300px', 
+                                    overflowY: 'auto',
+                                    padding: '12px', 
+                                    backgroundColor: 'var(--color-bg-secondary)', 
+                                    borderRadius: '4px',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {(showAllNonDuplicates ? pendingImportData.nonDuplicateCards : pendingImportData.nonDuplicateCards.slice(0, 10)).map((card, idx) => {
+                                        const displayedCards = showAllNonDuplicates ? pendingImportData.nonDuplicateCards : pendingImportData.nonDuplicateCards.slice(0, 10);
+                                        return (
+                                            <div key={idx} style={{ marginBottom: idx < displayedCards.length - 1 ? '12px' : '0' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{card.term}</div>
+                                                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+                                                    {card.definition}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {pendingImportData.nonDuplicateCount > 10 && !showAllNonDuplicates && (
+                                        <div style={{ 
+                                            marginTop: '12px', 
+                                            paddingTop: '12px', 
+                                            borderTop: '1px solid var(--color-border)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <div style={{ 
+                                                color: 'var(--color-text-secondary)',
+                                                fontSize: '0.85rem',
+                                                fontStyle: 'italic'
+                                            }}>
+                                                ...and {pendingImportData.nonDuplicateCount - 10} more card{pendingImportData.nonDuplicateCount - 10 !== 1 ? 's' : ''}
+                                            </div>
+                                            <button
+                                                onClick={() => setShowAllNonDuplicates(true)}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    backgroundColor: 'var(--color-green)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Show All {pendingImportData.nonDuplicateCount} Cards
+                                            </button>
+                                        </div>
+                                    )}
+                                    {showAllNonDuplicates && pendingImportData.nonDuplicateCount > 10 && (
+                                        <div style={{ 
+                                            marginTop: '12px', 
+                                            paddingTop: '12px', 
+                                            borderTop: '1px solid var(--color-border)',
+                                            display: 'flex',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <button
+                                                onClick={() => setShowAllNonDuplicates(false)}
                                                 style={{
                                                     padding: '8px 16px',
                                                     backgroundColor: 'var(--color-bg-secondary)',
