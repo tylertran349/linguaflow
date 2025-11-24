@@ -1587,11 +1587,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
             
             if (answer && answerLang) {
-                // Small delay to ensure UI has updated
-                const timer = setTimeout(() => {
+                // Use requestAnimationFrame for immediate execution after DOM update
+                requestAnimationFrame(() => {
                     playTTS(answer, answerLang);
-                }, 100);
-                return () => clearTimeout(timer);
+                });
             }
         }
     }, [showDontKnowAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions]);
@@ -1625,11 +1624,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     
                     if (normalizedUserAnswer === normalizedCorrectAnswer && lastAutoplayedAnswerRef.current !== autoplayKey) {
                         lastAutoplayedAnswerRef.current = autoplayKey;
-                        // Small delay to ensure UI has updated
-                        const timer = setTimeout(() => {
+                        // Use requestAnimationFrame for immediate execution after DOM update
+                        requestAnimationFrame(() => {
                             playTTS(answer, answerLang);
-                        }, 100);
-                        return () => clearTimeout(timer);
+                        });
                     }
                 }
             }
