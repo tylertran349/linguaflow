@@ -76,7 +76,7 @@ const puterVoiceMap = {
 
 // --- NEW: Centralized function to stop all ongoing audio ---
 // This function ensures that any active audio source is stopped.
-const stopAllAudio = () => {
+export const stopAllAudio = () => {
   // Stop Web Speech API if it's speaking
   if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();

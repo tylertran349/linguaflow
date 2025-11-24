@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search, RotateCcw, Download } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { speakText } from '../services/ttsService';
+import { speakText, stopAllAudio } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/Flashcards.css';
 import { FSRS, Grade, FSRS_GRADES } from '../services/fsrsService';
@@ -59,7 +59,8 @@ const defaultStudyOptions = {
         excludeRange: { start: '', end: '' },
         retypeAnswer: true,
         soundEffects: true,
-        autoAdvance: false
+        autoAdvance: false,
+        autoplayCorrectAnswer: false
     }
 };
 
@@ -296,6 +297,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             console.log('Loaded study options from DB:', loadedOptions);
             console.log('Loaded soundEffects value:', loadedOptions.learningOptions?.soundEffects);
             console.log('Loaded autoAdvance value:', loadedOptions.learningOptions?.autoAdvance);
+            console.log('Loaded autoplayCorrectAnswer value:', loadedOptions.learningOptions?.autoplayCorrectAnswer);
             
             // Merge question types, but ensure at least one is enabled for each category
             const mergedNewCardTypes = {
@@ -336,8 +338,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         ...defaultStudyOptions.learningOptions.excludeRange,
                         ...(loadedOptions.learningOptions?.excludeRange || {}),
                     },
-                    soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
-                    autoAdvance: loadedOptions.learningOptions?.autoAdvance !== undefined ? loadedOptions.learningOptions.autoAdvance : defaultStudyOptions.learningOptions.autoAdvance,
+                    // Explicitly set boolean fields AFTER spread to ensure saved values override defaults
+                    // Handle both undefined and null as "not set"
+                    studyStarredOnly: (loadedOptions.learningOptions?.studyStarredOnly !== undefined && loadedOptions.learningOptions?.studyStarredOnly !== null)
+                        ? loadedOptions.learningOptions.studyStarredOnly 
+                        : defaultStudyOptions.learningOptions.studyStarredOnly,
+                    shuffle: (loadedOptions.learningOptions?.shuffle !== undefined && loadedOptions.learningOptions?.shuffle !== null)
+                        ? loadedOptions.learningOptions.shuffle 
+                        : defaultStudyOptions.learningOptions.shuffle,
+                    retypeAnswer: (loadedOptions.learningOptions?.retypeAnswer !== undefined && loadedOptions.learningOptions?.retypeAnswer !== null)
+                        ? loadedOptions.learningOptions.retypeAnswer 
+                        : defaultStudyOptions.learningOptions.retypeAnswer,
+                    soundEffects: (loadedOptions.learningOptions?.soundEffects !== undefined && loadedOptions.learningOptions?.soundEffects !== null)
+                        ? loadedOptions.learningOptions.soundEffects 
+                        : defaultStudyOptions.learningOptions.soundEffects,
+                    autoAdvance: (loadedOptions.learningOptions?.autoAdvance !== undefined && loadedOptions.learningOptions?.autoAdvance !== null)
+                        ? loadedOptions.learningOptions.autoAdvance 
+                        : defaultStudyOptions.learningOptions.autoAdvance,
+                    autoplayCorrectAnswer: (loadedOptions.learningOptions?.autoplayCorrectAnswer !== undefined && loadedOptions.learningOptions?.autoplayCorrectAnswer !== null)
+                        ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
+                        : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
                 },
             };
             console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
@@ -781,12 +801,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     excludeRange: studyOptions.learningOptions?.excludeRange ?? { start: '', end: '' },
                     retypeAnswer: studyOptions.learningOptions?.retypeAnswer ?? true,
                     soundEffects: studyOptions.learningOptions?.soundEffects ?? true,
-                    autoAdvance: studyOptions.learningOptions?.autoAdvance !== undefined ? studyOptions.learningOptions.autoAdvance : false,
+                    autoAdvance: studyOptions.learningOptions?.autoAdvance ?? false,
+                    autoplayCorrectAnswer: studyOptions.learningOptions?.autoplayCorrectAnswer !== undefined 
+                        ? Boolean(studyOptions.learningOptions.autoplayCorrectAnswer)
+                        : false,
                 }
             };
             
+            console.log('Saving study options - Current studyOptions state:', JSON.stringify(studyOptions, null, 2));
             console.log('Saving study options - soundEffects value:', optionsToSave.learningOptions.soundEffects);
             console.log('Saving study options - autoAdvance value:', optionsToSave.learningOptions.autoAdvance);
+            console.log('Saving study options - autoplayCorrectAnswer value:', optionsToSave.learningOptions.autoplayCorrectAnswer);
+            console.log('Saving study options - studyOptions.learningOptions?.autoplayCorrectAnswer:', studyOptions.learningOptions?.autoplayCorrectAnswer);
+            console.log('Saving study options - Full optionsToSave:', JSON.stringify(optionsToSave, null, 2));
 
             await retryUntilSuccess(async () => {
                 const token = await getToken();
@@ -803,9 +830,28 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 }
             }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
 
+            // Store the saved options before reloading
+            const savedOptions = optionsToSave;
+            
             // After saving user-specific options, we need to reload the main set
             // to see the merged view of the data.
             await loadSet(currentSet._id);
+            
+            // After reload, restore the saved user-specific options to ensure they're preserved
+            // This handles the case where the backend might not immediately include user-data in the set response
+            setStudyOptions(prev => ({
+                ...prev,
+                learningOptions: {
+                    ...prev.learningOptions,
+                    // Preserve the values we just saved
+                    autoplayCorrectAnswer: savedOptions.learningOptions.autoplayCorrectAnswer,
+                    autoAdvance: savedOptions.learningOptions.autoAdvance,
+                    soundEffects: savedOptions.learningOptions.soundEffects,
+                    retypeAnswer: savedOptions.learningOptions.retypeAnswer,
+                    studyStarredOnly: savedOptions.learningOptions.studyStarredOnly,
+                    shuffle: savedOptions.learningOptions.shuffle,
+                }
+            }));
         } catch (err) {
             setError(err.message);
         } finally {
@@ -1391,6 +1437,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Memoized handler for flashcard flip to prevent unnecessary re-renders
     const handleCardFlip = useCallback(() => {
+        // Stop any ongoing TTS audio when flipping the card
+        stopAllAudio();
         if (!showAnswer) {
             setHasFlippedOnce(true);
         }
@@ -1401,6 +1449,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const handleReviewDecision = async (grade) => {
         if (isProcessingReviewRef.current) return;
         isProcessingReviewRef.current = true;
+        
+        // Stop any ongoing TTS audio when advancing to the next card
+        stopAllAudio();
         
         setIsProcessingReview(true);
         try {
@@ -1448,8 +1499,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
+            // Preserve current studyOptions before reloading to prevent losing user-specific settings
+            const preservedOptions = { ...studyOptions };
+            
             // Await loadSet to ensure currentSet is updated with the new grade before any new study round starts
             await loadSet(currentSet._id);
+            
+            // Restore user-specific options that might not be included in the main set response
+            setStudyOptions(prev => ({
+                ...prev,
+                learningOptions: {
+                    ...prev.learningOptions,
+                    // Preserve the values from before reloading
+                    autoplayCorrectAnswer: preservedOptions.learningOptions?.autoplayCorrectAnswer,
+                    autoAdvance: preservedOptions.learningOptions?.autoAdvance,
+                    soundEffects: preservedOptions.learningOptions?.soundEffects,
+                    retypeAnswer: preservedOptions.learningOptions?.retypeAnswer,
+                    studyStarredOnly: preservedOptions.learningOptions?.studyStarredOnly,
+                    shuffle: preservedOptions.learningOptions?.shuffle,
+                }
+            }));
         } catch (err) {
             setError(err.message);
         } finally {
@@ -1502,7 +1571,85 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [showDontKnowAnswer, currentQuestionType, answerFeedback, showAnswer, isRetypeCorrect, studyOptions, isProcessingReview]);
 
+    // Autoplay correct answer when "Don't know" is clicked
+    useEffect(() => {
+        if (
+            viewMode === 'study' &&
+            showDontKnowAnswer &&
+            currentQuestionType === 'written' &&
+            studyOptions.learningOptions?.autoplayCorrectAnswer &&
+            cardsToStudy.length > 0 &&
+            currentCardIndex < cardsToStudy.length
+        ) {
+            const currentCard = cardsToStudy[currentCardIndex];
+            const showTerm = studyOptions.questionFormat === 'term';
+            const answer = showTerm ? currentCard.term : currentCard.definition;
+            const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
+            
+            if (answer && answerLang) {
+                // Small delay to ensure UI has updated
+                const timer = setTimeout(() => {
+                    playTTS(answer, answerLang);
+                }, 100);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [showDontKnowAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions]);
+
+    // Autoplay correct answer for unstudied written questions when user types correct answer
+    const lastAutoplayedAnswerRef = useRef(null);
+    useEffect(() => {
+        if (
+            viewMode === 'study' &&
+            currentQuestionType === 'written' &&
+            studyOptions.learningOptions?.autoplayCorrectAnswer &&
+            cardsToStudy.length > 0 &&
+            currentCardIndex < cardsToStudy.length &&
+            writtenAnswer.trim()
+        ) {
+            const currentCard = cardsToStudy[currentCardIndex];
+            const isUnstudied = !currentCard.lastReviewed;
+            
+            if (isUnstudied) {
+                const showTerm = studyOptions.questionFormat === 'term';
+                const answer = showTerm ? currentCard.term : currentCard.definition;
+                const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
+                
+                // Check if the written answer matches any valid answer
+                if (answer && answerLang && currentSet) {
+                    const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
+                    const normalizedCorrectAnswer = answer.trim().toLowerCase();
+                    
+                    // Only autoplay once per card/answer combination
+                    const autoplayKey = `${currentCard._id || currentCardIndex}-${normalizedCorrectAnswer}`;
+                    
+                    if (normalizedUserAnswer === normalizedCorrectAnswer && lastAutoplayedAnswerRef.current !== autoplayKey) {
+                        lastAutoplayedAnswerRef.current = autoplayKey;
+                        // Small delay to ensure UI has updated
+                        const timer = setTimeout(() => {
+                            playTTS(answer, answerLang);
+                        }, 100);
+                        return () => clearTimeout(timer);
+                    }
+                }
+            }
+        }
+        // Reset ref when card changes
+        if (cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+            const currentCard = cardsToStudy[currentCardIndex];
+            const showTerm = studyOptions.questionFormat === 'term';
+            const answer = showTerm ? currentCard.term : currentCard.definition;
+            const autoplayKey = `${currentCard._id || currentCardIndex}-${answer?.trim().toLowerCase() || ''}`;
+            if (lastAutoplayedAnswerRef.current && !lastAutoplayedAnswerRef.current.startsWith(`${currentCard._id || currentCardIndex}-`)) {
+                lastAutoplayedAnswerRef.current = null;
+            }
+        }
+    }, [writtenAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions, currentSet]);
+
     const handleSkip = () => {
+        // Stop any ongoing TTS audio when skipping a card
+        stopAllAudio();
+        
         if (currentQuestionType === 'written') {
             setShowDontKnowAnswer(true);
             return;
@@ -2772,8 +2919,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             ...defaultStudyOptions.learningOptions.excludeRange,
                             ...(loadedOptions.learningOptions?.excludeRange || {}),
                         },
-                        soundEffects: loadedOptions.learningOptions?.soundEffects ?? defaultStudyOptions.learningOptions.soundEffects,
-                        autoAdvance: loadedOptions.learningOptions?.autoAdvance !== undefined ? loadedOptions.learningOptions.autoAdvance : defaultStudyOptions.learningOptions.autoAdvance,
+                        soundEffects: (loadedOptions.learningOptions?.soundEffects !== undefined && loadedOptions.learningOptions?.soundEffects !== null)
+                            ? loadedOptions.learningOptions.soundEffects 
+                            : defaultStudyOptions.learningOptions.soundEffects,
+                        autoAdvance: (loadedOptions.learningOptions?.autoAdvance !== undefined && loadedOptions.learningOptions?.autoAdvance !== null)
+                            ? loadedOptions.learningOptions.autoAdvance 
+                            : defaultStudyOptions.learningOptions.autoAdvance,
+                        autoplayCorrectAnswer: (loadedOptions.learningOptions?.autoplayCorrectAnswer !== undefined && loadedOptions.learningOptions?.autoplayCorrectAnswer !== null)
+                            ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
+                            : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
                     },
                 };
                 setStudyOptions(mergedOptions);
@@ -3039,6 +3193,23 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 type="checkbox"
                                 checked={studyOptions.learningOptions?.autoAdvance ?? false}
                                 onChange={(e) => setStudyOptions(prev => ({ ...prev, learningOptions: { ...prev.learningOptions, autoAdvance: e.target.checked } }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Autoplay correct answer after answering</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.learningOptions?.autoplayCorrectAnswer ?? false}
+                                onChange={(e) => setStudyOptions(prev => ({ 
+                                    ...prev, 
+                                    learningOptions: { 
+                                        ...(prev.learningOptions || defaultStudyOptions.learningOptions), 
+                                        autoplayCorrectAnswer: e.target.checked 
+                                    } 
+                                }))}
                             />
                             <span className="slider"></span>
                         </label>
@@ -3792,6 +3963,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 playErrorSound();
                 setIsRetypeCorrect(false);
             }
+            // Autoplay correct answer if enabled
+            if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
+                playTTS(answer, answerLang);
+            }
         };
 
         const handleMcqAnswer = (selectedOption) => {
@@ -3804,6 +3979,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             } else {
                 playErrorSound();
             }
+            // Autoplay correct answer if enabled
+            if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
+                playTTS(answer, answerLang);
+            }
         };
 
         const handleTrueFalseAnswer = (userAnswer) => {
@@ -3815,6 +3994,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 playSuccessSound();
             } else {
                 playErrorSound();
+            }
+            // Autoplay correct answer if enabled
+            if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
+                playTTS(answer, answerLang);
             }
         };
 
