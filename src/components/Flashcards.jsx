@@ -4347,42 +4347,46 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 const categorized = categorizeAnswers(writtenAnswer);
                                                 const hasMultipleAnswers = validAnswers.length > 1;
                                                 
+                                                // Get the actual answer text the user typed (case-preserved)
+                                                const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
+                                                const actualUserAnswer = normalizedUserAnswer ? validAnswers.find(va => 
+                                                    va.trim().toLowerCase() === normalizedUserAnswer
+                                                ) : null;
+                                                
                                                 return (
                                                     <div className="feedback-group">
                                                         <p className="feedback-label correct">You got it right!</p>
+                                                        {/* Always show the user's typed answer when correct */}
+                                                        {actualUserAnswer && (
+                                                            <div style={{ marginTop: '12px' }}>
+                                                                <p className="feedback-label" style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
+                                                                    Answer you provided:
+                                                                </p>
+                                                                <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <span>{actualUserAnswer}</span>
+                                                                        {actualUserAnswer && (() => {
+                                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
+                                                                                showTerm ? card.term?.trim() === actualUserAnswer : card.definition?.trim() === actualUserAnswer
+                                                                            );
+                                                                            const langToUse = showTerm 
+                                                                                ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                            return langToUse ? (
+                                                                                <button onClick={() => playTTS(actualUserAnswer, langToUse)} className="tts-button-large">
+                                                                                    <Volume2 size={24} color="var(--color-green)" />
+                                                                                </button>
+                                                                            ) : null;
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        
                                                         {hasMultipleAnswers && (
                                                             <>
-                                                                {/* User's written answer */}
-                                                                {categorized.userAnswer.length > 0 && (
-                                                                    <div style={{ marginTop: '12px' }}>
-                                                                        <p className="feedback-label" style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
-                                                                            Answer you provided:
-                                                                        </p>
-                                                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                                                            {categorized.userAnswer.map((userAns, idx) => {
-                                                                                const cardWithAnswer = currentSet?.flashcards.find(card => 
-                                                                                    showTerm ? card.term?.trim() === userAns : card.definition?.trim() === userAns
-                                                                                );
-                                                                                const langToUse = showTerm 
-                                                                                    ? (cardWithAnswer?.termLanguage || answerLang)
-                                                                                    : (cardWithAnswer?.definitionLanguage || answerLang);
-                                                                                return (
-                                                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                        <span>{userAns}</span>
-                                                                                        {userAns && langToUse && (
-                                                                                            <button onClick={() => playTTS(userAns, langToUse)} className="tts-button-large">
-                                                                                                <Volume2 size={24} color="var(--color-green)" />
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                {/* Primary answer (term associated with flashcard) */}
-                                                                {hasMultipleAnswers && (
+                                                                {/* Primary answer (term associated with flashcard) - only show if different from user's answer */}
+                                                                {actualUserAnswer && actualUserAnswer.trim().toLowerCase() !== categorized.primaryAnswer[0]?.trim().toLowerCase() && (
                                                                     <div style={{ marginTop: '12px' }}>
                                                                         <p className="feedback-label" style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
                                                                             Answer for this flashcard:
