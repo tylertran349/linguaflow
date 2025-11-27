@@ -125,6 +125,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
     const handleReviewDecisionRef = useRef(null);
+    const writtenAnswerTextareaRef = useRef(null);
 
     // State for the new study round logic
     const [isRoundComplete, setIsRoundComplete] = useState(false);
@@ -1597,6 +1598,11 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
 
     // Autoplay correct answer for unstudied written questions when user types correct answer
     const lastAutoplayedAnswerRef = useRef(null);
+    const adjustTextareaHeight = useCallback((textarea) => {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }, []);
     useEffect(() => {
         if (
             viewMode === 'study' &&
@@ -1643,6 +1649,35 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             }
         }
     }, [writtenAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions, currentSet]);
+
+    useEffect(() => {
+        const textarea = writtenAnswerTextareaRef.current;
+        if (!textarea) return;
+
+        const currentCard = cardsToStudy[currentCardIndex];
+        const isUnstudied = currentCard ? !currentCard.lastReviewed : true;
+
+        if (
+            viewMode === 'study' &&
+            currentQuestionType === 'written' &&
+            currentCard &&
+            !isUnstudied &&
+            !showAnswer &&
+            !showDontKnowAnswer
+        ) {
+            adjustTextareaHeight(textarea);
+        } else {
+            textarea.style.height = 'auto';
+        }
+    }, [
+        viewMode,
+        currentQuestionType,
+        cardsToStudy,
+        currentCardIndex,
+        showAnswer,
+        showDontKnowAnswer,
+        adjustTextareaHeight
+    ]);
 
     const handleSkip = () => {
         // Stop any ongoing TTS audio when skipping a card
@@ -3991,7 +4026,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             : false;
         
         const handleWrittenAnswerSubmit = (e) => {
-            e.preventDefault();
+            if (e) {
+                e.preventDefault();
+            }
             const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
             const isCorrect = validAnswers.some(validAnswer => 
                 validAnswer.toLowerCase() === normalizedUserAnswer
@@ -4007,6 +4044,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             // Autoplay correct answer if enabled
             if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
                 playTTS(answer, answerLang);
+            }
+        };
+
+        const handleWrittenAnswerKeyDown = (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleWrittenAnswerSubmit(event);
             }
         };
 
@@ -4213,13 +4257,21 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     
                             {currentQuestionType === 'written' && !isUnstudied && !showAnswer && !showDontKnowAnswer && (
                                 <form onSubmit={handleWrittenAnswerSubmit} className="written-answer-form">
-                                    <input
-                                        type="text"
+                                    <textarea
+                                        ref={writtenAnswerTextareaRef}
                                         value={writtenAnswer}
                                         onChange={(e) => setWrittenAnswer(e.target.value)}
-                                        placeholder={showTerm ? "Type the term..." : "Type the definition..."}
+                                        onKeyDown={handleWrittenAnswerKeyDown}
+                                        onInput={(e) => adjustTextareaHeight(e.target)}
+                                        placeholder={
+                                            showTerm
+                                                ? "Type the term... (press Shift + Enter for a newline)"
+                                                : "Type the definition... (press Shift + Enter for a newline)"
+                                        }
                                         className={`written-answer-input ${answerFeedback ? (answerFeedback === 'correct' ? 'correct' : 'incorrect') : ''}`}
                                         autoFocus
+                                        rows={1}
+                                        style={{ resize: 'none', overflow: 'hidden' }}
                                     />
                                     <div className="written-answer-actions">
                                         <button type="button" className="skip-button" onClick={handleSkip}>Don't know</button>
