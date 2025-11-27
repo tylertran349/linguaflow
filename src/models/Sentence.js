@@ -10,13 +10,15 @@ const sentenceSchema = new mongoose.Schema({
     reviewDueDate: { type: Date, default: () => new Date(), index: true },
     starred: { type: Boolean, default: false, index: true },
     
-    // FSRS (Free Spaced Repetition Scheduler) state fields
+    // FSRS-6 (Free Spaced Repetition Scheduler) state fields
     stability: { type: Number, default: null }, // Time in days for R to decay from 1 to 0.9
     difficulty: { type: Number, default: null }, // How hard it is to recall (1-10)
     lastReviewed: { type: Date, default: null }, // When the card was last reviewed
     nextReviewDate: { type: Date, default: null }, // When the card should next be reviewed
     interval: { type: Number, default: null }, // Minutes until next review
-    reviewCount: { type: Number, default: 0 }, // Number of times this card has been reviewed
+    lapses: { type: Number, default: 0 }, // Number of times the card was forgotten
+    reps: { type: Number, default: 0 }, // Number of times the card has been reviewed
+    reviewCount: { type: Number, default: 0 }, // Number of times this card has been reviewed (kept for backward compatibility)
 });
 
 // Create a compound index to ensure a user doesn't save the exact same sentence twice

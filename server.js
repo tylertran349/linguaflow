@@ -221,9 +221,9 @@ app.get('/api/sentences/review', ClerkExpressRequireAuth(), async (req, res) => 
             starred: true
         });
 
-        // Filter sentences that are due for review using FSRS algorithm
+        // Filter sentences that are due for review using FSRS-6 algorithm
         const sentencesToReview = allSentences.filter(sentence => {
-            // If no FSRS state exists, consider it due (first review)
+            // If no FSRS-6 state exists, consider it due (first review)
             if (!sentence.stability || !sentence.difficulty) {
                 return true;
             }
@@ -320,13 +320,25 @@ app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, r
             return res.status(404).json({ message: 'Sentence not found.' });
         }
 
-        // Calculate next review using FSRS algorithm
+        // Calculate next review using FSRS-6 algorithm
         const fsrs = new FSRS();
         const fsrsUpdate = fsrs.schedule(sentence, grade);
         
-        // Update the sentence with new FSRS state
+        // Calculate interval in minutes from now to next review date
+        const now = new Date();
+        const nextReviewDate = new Date(fsrsUpdate.reviewDate);
+        const intervalMinutes = Math.max(0, Math.round((nextReviewDate.getTime() - now.getTime()) / (1000 * 60)));
+        
+        // Update the sentence with new FSRS-6 state
+        // Map reviewDate to nextReviewDate to match the Sentence schema
         await Sentence.findByIdAndUpdate(sentenceId, {
-            ...fsrsUpdate,
+            stability: fsrsUpdate.stability,
+            difficulty: fsrsUpdate.difficulty,
+            lastReviewed: fsrsUpdate.lastReviewed,
+            nextReviewDate: fsrsUpdate.reviewDate, // Map reviewDate to nextReviewDate
+            interval: intervalMinutes,
+            lapses: fsrsUpdate.lapses,
+            reps: fsrsUpdate.reps,
             reviewCount: (sentence.reviewCount || 0) + 1,
             // Keep the old reviewDueDate for backward compatibility
             reviewDueDate: fsrsUpdate.reviewDate
@@ -335,7 +347,7 @@ app.put('/api/sentences/update-review', ClerkExpressRequireAuth(), async (req, r
         res.json({ 
             message: 'Review updated successfully.',
             nextReviewDate: fsrsUpdate.reviewDate,
-            interval: fsrsUpdate.interval
+            interval: intervalMinutes
         });
     } catch (error) {
         console.error("Error updating review:", error);

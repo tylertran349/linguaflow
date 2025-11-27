@@ -1,6 +1,7 @@
+// FSRS-6 default parameters (21 parameters)
 export const W = [
-  0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192, 1.01925,
-  1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621,
+  0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796, 1.4835,
+  0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542
 ];
 
 export const Grade = {
@@ -17,15 +18,29 @@ export const FSRS_GRADES = [
     { grade: Grade.Easy, label: 'Easy', description: 'Mastered' }
 ];
 
-const F = 19.0 / 81.0;
-const C = -0.5;
-
+// FSRS-6 retrievability formula: R(t, S) = (1 + factor * t/S)^(-w[20])
+// where factor = 0.9^(-1/w[20]) - 1 to ensure R(S, S) = 90%
+// Derivation: R(S, S) = (1 + factor)^(-w[20]) = 0.9
+//              => 1 + factor = 0.9^(-1/w[20])
+//              => factor = 0.9^(-1/w[20]) - 1
 export function retrievability(t, s) {
-  return Math.pow(1.0 + F * (t / s), C);
+  if (s <= 0) return 0;
+  const w20 = W[20];
+  const factor = Math.pow(0.9, -1.0 / w20) - 1.0;
+  return Math.pow(1.0 + factor * (t / s), -w20);
 }
 
+// Inverse of retrievability formula to calculate interval
+// R = (1 + factor * t/S)^(-w[20])
+// => (1 + factor * t/S) = R^(-1/w[20])
+// => factor * t/S = R^(-1/w[20]) - 1
+// => t = S * (R^(-1/w[20]) - 1) / factor
 export function interval(r_d, s) {
-  return (s / F) * (Math.pow(r_d, 1.0 / C) - 1.0);
+  if (s <= 0) return 1;
+  const w20 = W[20];
+  const factor = Math.pow(0.9, -1.0 / w20) - 1.0;
+  const r_inv = Math.pow(r_d, -1.0 / w20);
+  return (s / factor) * (r_inv - 1.0);
 }
 
 export function s_0(g) {
@@ -41,6 +56,16 @@ export function s_0(g) {
     default:
       throw new Error("Invalid grade");
   }
+}
+
+// FSRS-6: Stability update for same-day review
+// S' = S * e^(w[17] * (G - 3 + w[18]) * S^(-w[19]))
+function s_sameDay(s, g) {
+  const w17 = W[17];
+  const w18 = W[18];
+  const w19 = W[19];
+  const exponent = w17 * (g - 3 + w18) * Math.pow(s, -w19);
+  return s * Math.exp(exponent);
 }
 
 function s_success(d, s, r, g) {
@@ -63,7 +88,14 @@ function s_fail(d, s, r) {
   return Math.min(new_s, s);
 }
 
-export function updateStability(d, s, r, g) {
+export function updateStability(d, s, r, g, t) {
+  // FSRS-6: Use same-day review formula if reviewed within 1 day
+  // The formula S' = S * e^(w[17] * (G - 3 + w[18]) * S^(-w[19])) applies to all grades
+  // The constraint S_Inc >= 1 when G >= 3 ensures stability increases for Good/Easy
+  if (t < 1.0) {
+    return s_sameDay(s, g);
+  }
+  
   if (g === Grade.Forgot) {
     return s_fail(d, s, r);
   } else {
@@ -95,7 +127,7 @@ export function updateDifficulty(d, g) {
 
 export class FSRS {
     constructor() {
-        this.r_d = 0.9;
+        this.r_d = 0.9; // Target retrievability (90%)
     }
 
     schedule(card, grade) {
@@ -114,7 +146,8 @@ export class FSRS {
             const elapsedDays = (now.getTime() - new Date(card.lastReviewed).getTime()) / (1000 * 60 * 60 * 24);
             const t = Math.max(0, elapsedDays);
             const r = retrievability(t, card.stability);
-            s = updateStability(card.difficulty, card.stability, r, grade);
+            // Pass elapsed time (t) for same-day review detection
+            s = updateStability(card.difficulty, card.stability, r, grade, t);
             d = updateDifficulty(card.difficulty, grade);
         }
 
