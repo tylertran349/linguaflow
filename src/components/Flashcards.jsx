@@ -4050,6 +4050,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         const handleWrittenAnswerKeyDown = (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
+                if (isUnstudied) {
+                    return;
+                }
                 handleWrittenAnswerSubmit(event);
             }
         };
@@ -4083,6 +4086,15 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             // Autoplay correct answer if enabled
             if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
                 playTTS(answer, answerLang);
+            }
+        };
+
+        const handleRetypeKeyDown = (event, isCorrect) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                if (isCorrect) {
+                    handleReviewDecision(Grade.Forgot);
+                }
             }
         };
 
@@ -4236,11 +4248,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         </div>
                                     </div>
                                     <div className="written-answer-form" style={{ marginTop: '16px' }}>
-                                        <input
-                                            type="text"
+                                        <textarea
                                             value={writtenAnswer}
                                             onChange={(e) => setWrittenAnswer(e.target.value)}
-                                            placeholder={showTerm ? "Type the term..." : "Type the definition..."}
+                                            onKeyDown={handleWrittenAnswerKeyDown}
+                                            onInput={(e) => adjustTextareaHeight(e.target)}
+                                            placeholder={
+                                                showTerm
+                                                    ? "Type the term... (press Shift + Enter for a newline)"
+                                                    : "Type the definition... (press Shift + Enter for a newline)"
+                                            }
                                             className={`written-answer-input ${(() => {
                                                 if (!writtenAnswer.trim()) return '';
                                                 const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
@@ -4250,6 +4267,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                 return isCorrect ? 'correct' : '';
                                             })()}`}
                                             autoFocus
+                                            rows={1}
+                                            style={{ resize: 'none', overflow: 'hidden' }}
                                         />
                                     </div>
                                 </div>
@@ -4317,11 +4336,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                             );
                                             setIsDontKnowRetypeCorrect(isCorrect);
                                         }}
+                                        onKeyDown={(e) => handleRetypeKeyDown(e, isDontKnowRetypeCorrect)}
                                         onInput={(e) => {
                                             e.target.style.height = 'auto';
                                             e.target.style.height = `${e.target.scrollHeight}px`;
                                         }}
-                                        placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
+                                        placeholder={showTerm ? "Retype the term... (press Shift + Enter for a newline)" : "Retype the definition... (press Shift + Enter for a newline)"}
                                         className={`retype-answer-input ${isDontKnowRetypeCorrect ? 'correct' : (dontKnowInputValue.trim() ? 'incorrect' : '')}`}
                                         autoFocus
                                         rows={1}
@@ -4555,7 +4575,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                         {studyOptions.learningOptions.retypeAnswer && !isUnstudied && (
                                                             <div className="retype-answer-form">
                                                                 <p>Type the correct answer to continue:</p>
-                                                                <textarea
+                                        <textarea
                                                                     value={retypeInputValue}
                                                                     onChange={(e) => {
                                                                         setRetypeInputValue(e.target.value);
@@ -4565,11 +4585,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                         );
                                                                         setIsRetypeCorrect(isCorrect);
                                                                     }}
+                                            onKeyDown={(e) => handleRetypeKeyDown(e, isRetypeCorrect)}
                                                                     onInput={(e) => {
                                                                         e.target.style.height = 'auto';
                                                                         e.target.style.height = `${e.target.scrollHeight}px`;
                                                                     }}
-                                                                    placeholder={showTerm ? "Retype the term..." : "Retype the definition..."}
+                                            placeholder={showTerm ? "Retype the term... (press Shift + Enter for a newline)" : "Retype the definition... (press Shift + Enter for a newline)"}
                                                                     className={`retype-answer-input ${isRetypeCorrect ? 'correct' : (retypeInputValue.trim() ? 'incorrect' : '')}`}
                                                                     autoFocus
                                                                     rows={1}
