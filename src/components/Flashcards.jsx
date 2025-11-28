@@ -229,47 +229,39 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [viewMode, isSignedIn]);
 
-    // Initial load with retry for up to ~20 seconds
+    // Initial load with retry until successful
     useEffect(() => {
         if (!isSignedIn || hasLoadedOnce) return;
 
         let isActive = true;
-        const maxDurationMs = 20000;
         const retryDelayMs = 3000;
-        const startTime = Date.now();
+        let retryTimeoutId = null;
 
         const attempt = async () => {
+            if (!isActive) return;
             const success = await fetchSets();
             if (!isActive) return;
             if (success) {
-                return; // hasLoadedOnce will be set in fetchSets
+                return; // hasLoadedOnce will be set in fetchSets, which will trigger effect cleanup
+            }
+            // If not successful and still active, schedule next retry
+            if (isActive) {
+                retryTimeoutId = setTimeout(() => {
+                    if (isActive) {
+                        attempt();
+                    }
+                }, retryDelayMs);
             }
         };
 
         // First attempt immediately
         attempt();
 
-        const id = setInterval(() => {
-            if (!isActive) return;
-            const elapsed = Date.now() - startTime;
-            if (hasLoadedOnce) {
-                clearInterval(id);
-                return;
-            }
-            if (elapsed >= maxDurationMs) {
-                clearInterval(id);
-                if (!hasLoadedOnce) {
-                    setError('Unable to load flashcard sets. Please refresh the page.');
-                    setLoading(false);
-                }
-                return;
-            }
-            attempt();
-        }, retryDelayMs);
-
         return () => {
             isActive = false;
-            clearInterval(id);
+            if (retryTimeoutId) {
+                clearTimeout(retryTimeoutId);
+            }
         };
     }, [isSignedIn, hasLoadedOnce]);
 
@@ -1429,7 +1421,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const handleKeepStudying = async () => {
         if (!currentSet) return;
         // Reload the set to ensure we have the latest card data with updated grades
-        const freshSet = await loadSet(currentSet._id);
+        // Retry indefinitely until successful
+        const freshSet = await retryUntilSuccess(async () => {
+            const result = await loadSet(currentSet._id);
+            if (!result) {
+                throw new Error('Failed to load flashcard set');
+            }
+            return result;
+        }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
         // Pass the fresh set data directly to startStudy to avoid stale state
         if (freshSet) {
             startStudy(freshSet);
