@@ -1095,8 +1095,12 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         ).length;
 
         // Calculate how many new cards can still be shown today
-        const newCardsPerDay = studyOptions.newCardsPerDay ?? 10;
+        // Ensure newCardsPerDay is valid (at least 1, or 0 to disable new cards)
+        const newCardsPerDay = Math.max(0, studyOptions.newCardsPerDay ?? 10);
         const remainingNewCardsToday = Math.max(0, newCardsPerDay - newCardsReviewedToday);
+
+        // Ensure cardsPerRound is valid (at least 1)
+        const cardsPerRound = Math.max(1, studyOptions.cardsPerRound ?? 10);
 
         const { studyRangeOnly, excludeRange } = studyOptions.learningOptions;
         let cards;
@@ -1118,12 +1122,18 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 rangeNewCards.sort(() => Math.random() - 0.5);
             }
             
-            // Prioritize review cards, then add new cards up to the limit
-            const rangeCardsForRound = rangeReviewCards.slice(0, studyOptions.cardsPerRound);
-            const rangeRemainingSlots = studyOptions.cardsPerRound - rangeCardsForRound.length;
+            // Reserve at least one slot for a new card if available and within daily limit
+            const hasNewCardsAvailable = rangeNewCards.length > 0 && remainingNewCardsToday > 0;
+            const reservedNewCardSlots = hasNewCardsAvailable ? 1 : 0;
+            const maxReviewCards = Math.max(0, cardsPerRound - reservedNewCardSlots);
             
-            if (rangeRemainingSlots > 0 && remainingNewCardsToday > 0) {
-                const rangeNewCardsToAdd = Math.min(rangeRemainingSlots, remainingNewCardsToday);
+            // Prioritize review cards, but leave room for at least one new card
+            const rangeCardsForRound = rangeReviewCards.slice(0, maxReviewCards);
+            const rangeRemainingSlots = cardsPerRound - rangeCardsForRound.length;
+            
+            // Add new cards: at least one if reserved, up to remaining slots and daily limit
+            if (rangeRemainingSlots > 0 && remainingNewCardsToday > 0 && rangeNewCards.length > 0) {
+                const rangeNewCardsToAdd = Math.min(rangeRemainingSlots, remainingNewCardsToday, rangeNewCards.length);
                 rangeCardsForRound.push(...rangeNewCards.slice(0, rangeNewCardsToAdd));
             }
             
@@ -1158,14 +1168,19 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 newCards.sort(() => Math.random() - 0.5);
             }
 
-            // Prioritize review cards, then fill the round with new cards
-            // But limit new cards based on newCardsPerDay
-            const cardsForRound = reviewCards.slice(0, studyOptions.cardsPerRound);
-            const remainingSlots = studyOptions.cardsPerRound - cardsForRound.length;
+            // Reserve at least one slot for a new card if available and within daily limit
+            const hasNewCardsAvailable = newCards.length > 0 && remainingNewCardsToday > 0;
+            const reservedNewCardSlots = hasNewCardsAvailable ? 1 : 0;
+            const maxReviewCards = Math.max(0, cardsPerRound - reservedNewCardSlots);
 
-            if (remainingSlots > 0 && remainingNewCardsToday > 0) {
+            // Prioritize review cards, but leave room for at least one new card
+            const cardsForRound = reviewCards.slice(0, maxReviewCards);
+            const remainingSlots = cardsPerRound - cardsForRound.length;
+
+            // Add new cards: at least one if reserved, up to remaining slots and daily limit
+            if (remainingSlots > 0 && remainingNewCardsToday > 0 && newCards.length > 0) {
                 // Limit new cards to both remaining slots AND remaining new cards today
-                const newCardsToAdd = Math.min(remainingSlots, remainingNewCardsToday);
+                const newCardsToAdd = Math.min(remainingSlots, remainingNewCardsToday, newCards.length);
                 cardsForRound.push(...newCards.slice(0, newCardsToAdd));
             }
 
