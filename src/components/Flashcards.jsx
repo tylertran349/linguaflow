@@ -1,6 +1,6 @@
 // src/components/Flashcards.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, Eye, EyeOff, ChevronDown, ChevronUp, Search, RotateCcw, Download } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, ChevronDown, ChevronUp, Search, RotateCcw, Download } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText, stopAllAudio } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -2014,21 +2014,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 </div>
                 <div className="sets-grid">
                     {sets.map(set => (
-                        <div key={set._id} className="set-card">
+                        <div 
+                            key={set._id} 
+                            className="set-card"
+                            onClick={() => { loadSet(set._id); setViewMode('view'); }}
+                        >
                             <div className="set-card-header">
                                 <h3>{set.title}</h3>
-                                <div className="set-card-actions">
-                                    {set.isPublic ? <Eye size={18} /> : <EyeOff size={18} />}
-                                    <button onClick={() => { loadSet(set._id); setViewMode('view'); }}>
-                                        <Play size={18} />
-                                    </button>
-                                    <button onClick={() => { loadSet(set._id); setViewMode('edit'); }}>
-                                        <Edit2 size={18} />
-                                    </button>
-                                    <button onClick={() => handleDeleteSet(set._id)}>
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
                             </div>
                             <p className="set-description">{set.description || 'No description'}</p>
                             <p className="set-meta">{set.flashcards?.length || 0} cards</p>
@@ -3763,6 +3755,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 onClick={() => setShowExportModal(true)}
                             >
                                 <Download size={18} /> Export
+                            </button>
+                            <button 
+                                className="view-action-btn view-action-secondary"
+                                onClick={() => handleDeleteSet(currentSet._id)}
+                                style={{ color: 'var(--color-red)' }}
+                            >
+                                <Trash2 size={18} /> Move to Trash
                             </button>
                             <button 
                                 className="view-action-btn view-action-secondary"
