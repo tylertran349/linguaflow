@@ -121,6 +121,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     const [showDontKnowAnswer, setShowDontKnowAnswer] = useState(false);
     const [dontKnowInputValue, setDontKnowInputValue] = useState('');
     const [isDontKnowRetypeCorrect, setIsDontKnowRetypeCorrect] = useState(false);
+    const [primaryAnswerRetypeValue, setPrimaryAnswerRetypeValue] = useState('');
+    const [isPrimaryAnswerRetypeCorrect, setIsPrimaryAnswerRetypeCorrect] = useState(false);
 
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
@@ -1270,6 +1272,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setShowDontKnowAnswer(false);
         setDontKnowInputValue('');
         setIsDontKnowRetypeCorrect(false);
+        setPrimaryAnswerRetypeValue('');
+        setIsPrimaryAnswerRetypeCorrect(false);
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
@@ -1511,6 +1515,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                 setShowDontKnowAnswer(false);
                 setDontKnowInputValue('');
                 setIsDontKnowRetypeCorrect(false);
+                setPrimaryAnswerRetypeValue('');
+                setIsPrimaryAnswerRetypeCorrect(false);
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
@@ -1555,6 +1561,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         setIsRetypeCorrect(false);
         setDontKnowInputValue('');
         setIsDontKnowRetypeCorrect(false);
+        setPrimaryAnswerRetypeValue('');
+        setIsPrimaryAnswerRetypeCorrect(false);
     }, [viewMode, currentCardIndex, cardsToStudy.length]);
 
     // Auto-advance after correct retype in "Don't know" scenario
@@ -1721,6 +1729,8 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             setShowDontKnowAnswer(false);
             setDontKnowInputValue('');
             setIsDontKnowRetypeCorrect(false);
+            setPrimaryAnswerRetypeValue('');
+            setIsPrimaryAnswerRetypeCorrect(false);
             setCurrentQuestionType(newCards[nextIndex].questionType);
         }
     };
@@ -4495,6 +4505,39 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                         </div>
                                                                     </div>
                                                                 )}
+                                                                
+                                                                {/* Retype form for alternative term answers - appears at the bottom */}
+                                                                {actualUserAnswer && actualUserAnswer.trim().toLowerCase() !== categorized.primaryAnswer[0]?.trim().toLowerCase() && (
+                                                                    <div className="retype-answer-form" style={{ marginTop: '16px' }}>
+                                                                        <p>Type the answer for this flashcard to continue:</p>
+                                                                        <textarea
+                                                                            value={primaryAnswerRetypeValue}
+                                                                            onChange={(e) => {
+                                                                                setPrimaryAnswerRetypeValue(e.target.value);
+                                                                                const normalizedUserAnswer = e.target.value.trim().toLowerCase();
+                                                                                const normalizedPrimaryAnswer = categorized.primaryAnswer[0]?.trim().toLowerCase() || '';
+                                                                                setIsPrimaryAnswerRetypeCorrect(normalizedUserAnswer === normalizedPrimaryAnswer);
+                                                                            }}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                    e.preventDefault();
+                                                                                    if (isPrimaryAnswerRetypeCorrect) {
+                                                                                        // Allow Enter to proceed, but don't auto-advance
+                                                                                    }
+                                                                                }
+                                                                            }}
+                                                                            onInput={(e) => {
+                                                                                e.target.style.height = 'auto';
+                                                                                e.target.style.height = `${e.target.scrollHeight}px`;
+                                                                            }}
+                                                                            placeholder={showTerm ? "Retype the term for this flashcard... (press Shift + Enter for a newline)" : "Retype the definition for this flashcard... (press Shift + Enter for a newline)"}
+                                                                            className={`retype-answer-input ${isPrimaryAnswerRetypeCorrect ? 'correct' : (primaryAnswerRetypeValue.trim() ? 'incorrect' : '')}`}
+                                                                            autoFocus
+                                                                            rows={1}
+                                                                            style={{ resize: 'none', overflow: 'hidden' }}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                             </>
                                                         )}
                                                     </div>
@@ -4605,18 +4648,32 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 <div className="grade-buttons">
                                     {FSRS_GRADES.map(item => {
                                         const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
-                                        const isRetypeRequired = currentQuestionType === 'written' && 
+                                        
+                                        // Check if user answered with alternative term (correct but different from primary)
+                                        const answeredWithAlternativeTerm = currentQuestionType === 'written' && 
+                                            answerFeedback === 'correct' && 
+                                            !isUnstudied &&
+                                            writtenAnswer.trim().toLowerCase() !== answer.trim().toLowerCase();
+                                        
+                                        // Check if retype is required for incorrect answers
+                                        const isRetypeRequiredForIncorrect = currentQuestionType === 'written' && 
                                             answerFeedback === 'incorrect' && 
                                             !isUnstudied &&
                                             studyOptions.learningOptions.retypeAnswer && 
                                             !isRetypeCorrect;
+                                        
+                                        // Check if primary answer retype is required for alternative term answers
+                                        const isPrimaryAnswerRetypeRequired = answeredWithAlternativeTerm && !isPrimaryAnswerRetypeCorrect;
+                                        
+                                        const isRetypeRequired = isRetypeRequiredForIncorrect || isPrimaryAnswerRetypeRequired;
+                                        
                                         return (
                                             <button
                                                 key={item.grade}
                                                 className={`decision-button ${gradeName}`}
                                                 onClick={() => handleReviewDecision(item.grade)}
                                                 disabled={isProcessingReview || isRetypeRequired}
-                                                title={isRetypeRequired ? 'Please type the correct answer above to continue' : ''}
+                                                title={isRetypeRequired ? (isPrimaryAnswerRetypeRequired ? 'Please type the answer for this flashcard above to continue' : 'Please type the correct answer above to continue') : ''}
                                             >
                                                 <div className="grade-icon">{gradeIcons[item.grade]}</div>
                                                 <div className="grade-label">{item.label}</div>
