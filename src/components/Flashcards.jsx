@@ -4239,25 +4239,14 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                     <div className="feedback-group">
                                         <p className="feedback-label correct">{showTerm ? 'Term' : 'Definition'}:</p>
                                         <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                            {validAnswers.map((validAnswer, idx) => (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
-                                                    <span>{validAnswer}</span>
-                                                    {validAnswer && answerLang && (
-                                                        <button onClick={() => {
-                                                            // Find the language for this specific answer
-                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
-                                                                showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
-                                                            );
-                                                            const langToUse = showTerm 
-                                                                ? (cardWithAnswer?.termLanguage || answerLang)
-                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
-                                                            playTTS(validAnswer, langToUse);
-                                                        }} className="tts-button-large">
-                                                            <Volume2 size={24} color="var(--color-green)" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span>{answer}</span>
+                                                {answer && answerLang && (
+                                                    <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                        <Volume2 size={24} color="var(--color-green)" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="written-answer-form" style={{ marginTop: '16px' }}>
@@ -4315,27 +4304,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             {currentQuestionType === 'written' && showDontKnowAnswer && (
                                 <div className="retype-answer-form">
                                     <div className="feedback-group">
-                                        <p className="feedback-label correct">You didn't know the answer, so here {validAnswers.length === 1 ? 'is the correct answer' : 'are the correct answers'}:</p>
+                                        <p className="feedback-label correct">You didn't know the answer, so here is the correct answer for this flashcard:</p>
                                         <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                            {validAnswers.map((validAnswer, idx) => (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < validAnswers.length - 1 ? '8px' : '0' }}>
-                                                    <span>{validAnswer}</span>
-                                                    {validAnswer && answerLang && (
-                                                        <button onClick={() => {
-                                                            // Find the language for this specific answer
-                                                            const cardWithAnswer = currentSet?.flashcards.find(card => 
-                                                                showTerm ? card.term?.trim() === validAnswer : card.definition?.trim() === validAnswer
-                                                            );
-                                                            const langToUse = showTerm 
-                                                                ? (cardWithAnswer?.termLanguage || answerLang)
-                                                                : (cardWithAnswer?.definitionLanguage || answerLang);
-                                                            playTTS(validAnswer, langToUse);
-                                                        }} className="tts-button-large">
-                                                            <Volume2 size={24} color="var(--color-green)" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span>{answer}</span>
+                                                {answer && answerLang && (
+                                                    <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                        <Volume2 size={24} color="var(--color-green)" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <p>Type the correct answer to continue:</p>
@@ -4542,7 +4520,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                             <p className="feedback-label correct">
                                                                 {writtenAnswer.trim() 
                                                                     ? 'Answer for this flashcard:'
-                                                                    : `You skipped this, but here ${validAnswers.length === 1 ? 'is the answer for this flashcard' : 'are the correct answers'}:`}
+                                                                    : 'You skipped this, but here is the answer for this flashcard:'}
                                                             </p>
                                                             <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -4555,35 +4533,6 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        
-                                                        {/* Remaining correct answers */}
-                                                        {categorized.remainingAnswers.length > 0 && (
-                                                            <div className="feedback-group" style={{ marginTop: '12px' }}>
-                                                                <p className="feedback-label correct">
-                                                                    Other correct answers:
-                                                                </p>
-                                                                <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                                                    {categorized.remainingAnswers.map((remainingAns, idx) => {
-                                                                        const cardWithAnswer = currentSet?.flashcards.find(card => 
-                                                                            showTerm ? card.term?.trim() === remainingAns : card.definition?.trim() === remainingAns
-                                                                        );
-                                                                        const langToUse = showTerm 
-                                                                            ? (cardWithAnswer?.termLanguage || answerLang)
-                                                                            : (cardWithAnswer?.definitionLanguage || answerLang);
-                                                                        return (
-                                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < categorized.remainingAnswers.length - 1 ? '8px' : '0' }}>
-                                                                                <span>{remainingAns}</span>
-                                                                                {remainingAns && langToUse && (
-                                                                                    <button onClick={() => playTTS(remainingAns, langToUse)} className="tts-button-large">
-                                                                                        <Volume2 size={24} color="var(--color-green)" />
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                         
                                                         {studyOptions.learningOptions.retypeAnswer && !isUnstudied && (
                                                             <div className="retype-answer-form">
