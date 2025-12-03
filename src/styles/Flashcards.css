@@ -1121,6 +1121,51 @@
 @media (max-width: 768px) {
     .flashcards-study {
         gap: 0.875rem;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Keep header and progress visible - don't shrink */
+    .study-header,
+    .study-progress {
+        flex-shrink: 0;
+    }
+    
+    /* Constrain study card height on small screens to keep header visible */
+    .study-card {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 180px);
+        overflow: hidden;
+    }
+    
+    /* Keep card header and question visible - don't shrink */
+    .card-header-row,
+    .study-question {
+        flex-shrink: 0;
+    }
+    
+    /* Make answer feedback section scrollable when it has many answers */
+    .written-answer-feedback {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Make "Other correct answers" container scrollable on small screens when it has many items */
+    .answer-container.correct {
+        max-height: 150px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Add explicit spacing for flashcard question type on mobile */
@@ -1130,6 +1175,7 @@
     
     .study-bottom-actions {
         margin-top: 0;
+        flex-shrink: 0;
     }
 }
 
