@@ -39,6 +39,14 @@
   gap: var(--spacing-6);
 }
 
+/* Mobile: Remove overflow from flashcards-sets-list to use parent scrollbar */
+@media (max-width: 767px) {
+  .flashcards-sets-list {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
 .sets-header {
   display: flex;
   justify-content: space-between;
@@ -147,6 +155,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
+}
+
+/* Mobile: Remove overflow from flashcards-create-edit to use parent scrollbar */
+@media (max-width: 767px) {
+  .flashcards-create-edit {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 .flashcards-create-edit textarea {
@@ -353,6 +369,14 @@
   max-height: 600px;
   overflow-y: auto;
   padding-right: var(--spacing-2);
+}
+
+/* Mobile: Remove overflow from cards-list to use parent scrollbar */
+@media (max-width: 767px) {
+  .cards-list {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 .card-item {
@@ -563,6 +587,15 @@
     border: 1px solid #e2e8f0;
 }
 
+/* Mobile: Remove height constraints from flashcards-view to use parent scrollbar */
+@media (max-width: 767px) {
+  .flashcards-view {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 .view-header {
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 16px 16px 0 0;
@@ -745,17 +778,25 @@
     -webkit-overflow-scrolling: touch;
 }
 
+/* Mobile: Remove overflow from view-cards-scroll to use parent scrollbar */
+@media (max-width: 767px) {
+  .view-cards-scroll {
+    overflow-y: visible;
+    min-height: auto;
+  }
+}
+
 @media (max-width: 900px), (max-height: 720px) {
     .flashcards-view {
         width: 100%;
         max-width: none;
-        height: calc(100vh - 2rem);
+        height: auto;
         max-height: none;
         border-radius: 0;
         border: none;
         box-shadow: none;
         padding: 0;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .view-header {
@@ -1121,9 +1162,9 @@
 @media (max-width: 768px) {
     .flashcards-study {
         gap: 0.875rem;
-        height: 100vh;
-        max-height: 100vh;
-        overflow-y: auto;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
         overflow-x: hidden;
         display: flex;
         flex-direction: column;
@@ -1585,6 +1626,8 @@
     .flashcards-container {
         padding: calc(var(--spacing-4) + 12px) var(--spacing-2) var(--spacing-2) var(--spacing-2); /* Extra top padding to prevent overlap with fixed header */
         gap: var(--spacing-4);
+        overflow: visible; /* Remove any overflow to use parent scrollbar */
+        min-height: auto; /* Allow natural height */
     }
 
     .flashcards-sets-list,

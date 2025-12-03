@@ -458,9 +458,10 @@ textarea {
   }
 
   .learning-container {
-    padding: var(--spacing-16) var(--spacing-5) var(--spacing-5);
+    padding: 0 var(--spacing-5) var(--spacing-5);
     margin-top: 0;
     min-height: 100%;
+    align-items: flex-start; /* Start content from top instead of centering */
   }
 
   .hamburger-menu {
@@ -541,9 +542,10 @@ textarea {
   }
 
   .learning-container {
-    padding: var(--spacing-16) var(--spacing-4) var(--spacing-4);
+    padding: 0 var(--spacing-4) var(--spacing-4);
     min-height: 100%;
     margin-top: 0;
+    align-items: flex-start; /* Start content from top instead of centering */
   }
 
   .hamburger-menu {
@@ -635,7 +637,8 @@ textarea {
   .learning-container {
     margin-top: 0;
     min-height: 100%;
-    padding: var(--spacing-16) var(--spacing-3) var(--spacing-3);
+    padding: 0 var(--spacing-3) var(--spacing-3);
+    align-items: flex-start; /* Start content from top instead of centering */
   }
 
   .hamburger-menu {
