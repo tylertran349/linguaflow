@@ -17,6 +17,12 @@ const flashcardSchema = new mongoose.Schema({
     nextReviewDate: { type: Date, default: null },
     interval: { type: Number, default: null },
     lastGrade: { type: Number, default: null },
+    
+    // Example sentences generated for this flashcard
+    exampleSentences: { type: [{
+        sentence: { type: String, required: true },
+        translation: { type: String, required: true }
+    }], default: [] }
 });
 
 const flashcardSetSchema = new mongoose.Schema({
@@ -58,7 +64,10 @@ const flashcardSetSchema = new mongoose.Schema({
             retypeAnswer: { type: Boolean, default: true },
             soundEffects: { type: Boolean, default: true },
             autoAdvance: { type: Boolean, default: false }
-        }
+        },
+        // AI settings for generating example sentences
+        exampleSentenceModel: { type: String, enum: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'], default: 'gemini-2.5-flash' },
+        exampleSentenceTemperature: { type: Number, default: 2.0 }
     },
     
     createdAt: { type: Date, default: Date.now },

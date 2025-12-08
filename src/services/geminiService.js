@@ -1807,3 +1807,141 @@ export const fetchResponseFeedback = async (apiKey, settings, question, userResp
     throw new Error("Failed to get feedback. The model may be unavailable or the content may have been blocked.");
   }
 };
+
+export const fetchExampleSentences = async (apiKey, model, temperature, term, definition, termLanguage, definitionLanguage) => {
+  // Input validation
+  if (!apiKey || typeof apiKey !== 'string') {
+    throw new Error('Invalid API key provided');
+  }
+  
+  if (!model || typeof model !== 'string') {
+    throw new Error('Invalid model specified');
+  }
+  
+  if (typeof temperature !== 'number' || temperature < 0 || temperature > 2) {
+    throw new Error('Temperature must be a number between 0 and 2');
+  }
+  
+  if (!term || typeof term !== 'string') {
+    throw new Error('Term must be provided as a string');
+  }
+  
+  if (!definition || typeof definition !== 'string') {
+    throw new Error('Definition must be provided as a string');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  
+  const geminiModel = genAI.getGenerativeModel({
+    model: model,
+    generationConfig: {
+      temperature: temperature,
+    }
+  });
+
+  const prompt = `
+    You are an expert language tutor. Generate example sentences for a flashcard.
+    
+    **Term:** "${term}"
+    **Definition:** "${definition}"
+    **Term Language:** ${termLanguage || 'Unknown'}
+    **Definition Language:** ${definitionLanguage || 'Unknown'}
+    
+    Your task is to generate diverse example sentences that demonstrate all possible uses of the term and its definition.
+    Consider all possible parts of speech that the term could be used as in a sentence (noun, verb, adjective, adverb, etc.).
+    
+    **Requirements:**
+    1. Generate 5-8 example sentences that showcase different uses of the term
+    2. Each sentence should use the term naturally in context
+    3. Cover different grammatical contexts (subject, object, modifier, etc.)
+    4. Include sentences that demonstrate the definition in various ways
+    5. Each sentence should be in ${termLanguage || 'the target language'}
+    6. Provide a natural translation of each sentence in ${definitionLanguage || 'the definition language'}
+    
+    **Output Format:**
+    Return a JSON array of objects. Each object must have:
+    - "sentence": The example sentence using the term (in ${termLanguage || 'the target language'})
+    - "translation": The translation of the sentence (in ${definitionLanguage || 'the definition language'})
+    
+    Example format:
+    [
+      {
+        "sentence": "Example sentence with the term",
+        "translation": "Translation of the example sentence"
+      },
+      {
+        "sentence": "Another example sentence",
+        "translation": "Another translation"
+      }
+    ]
+    
+    Return ONLY the JSON array, nothing else. Do not include markdown code blocks or any other text.
+  `;
+
+  try {
+    const result = await geminiModel.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Clean up the response text and extract JSON
+    let jsonString = text.trim();
+    
+    // Remove various markdown code block formats
+    jsonString = jsonString.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+    
+    // Remove any leading/trailing whitespace or quotes
+    jsonString = jsonString.trim();
+    
+    // Handle cases where the response might be wrapped in quotes
+    if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
+      try {
+        jsonString = JSON.parse(jsonString);
+      } catch (e) {
+        // If parsing as string fails, continue with original
+      }
+    }
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error('JSON parsing failed:', parseError);
+      console.error('Raw response:', text);
+      console.error('Cleaned JSON string:', jsonString);
+      throw new Error(`Failed to parse API response as JSON. Please check the console for details. Response: ${text.substring(0, 200)}...`);
+    }
+
+    if (!Array.isArray(parsedData)) {
+      console.error('API response was not an array:', parsedData);
+      throw new Error("API response was not a valid JSON array. Expected array format.");
+    }
+    
+    // Validate that each item has sentence and translation
+    const validatedData = parsedData
+      .map((item, index) => {
+        if (!item || typeof item !== 'object') {
+          throw new Error(`Invalid item at index ${index}: not an object`);
+        }
+        if (!item.sentence || typeof item.sentence !== 'string') {
+          throw new Error(`Invalid item at index ${index}: missing or invalid sentence field`);
+        }
+        if (!item.translation || typeof item.translation !== 'string') {
+          throw new Error(`Invalid item at index ${index}: missing or invalid translation field`);
+        }
+        return {
+          sentence: item.sentence.trim(),
+          translation: item.translation.trim()
+        };
+      })
+      .filter(item => item.sentence.length > 0 && item.translation.length > 0); // Filter out empty sentences
+    
+    if (validatedData.length === 0) {
+      throw new Error('No valid example sentences were generated. Please try again.');
+    }
+    
+    return validatedData;
+  } catch (error) {
+    console.error("Error fetching example sentences from Gemini:", error);
+    throw new Error("Failed to generate example sentences. The model may be unavailable or the content may have been blocked.");
+  }
+};

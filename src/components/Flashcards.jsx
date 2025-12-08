@@ -8,6 +8,7 @@ import '../styles/Flashcards.css';
 import { FSRS, Grade, FSRS_GRADES } from '../services/fsrsService';
 import EditCardModal from './EditCardModal';
 import CollapsibleSection from './CollapsibleSection';
+import { fetchExampleSentences } from '../services/geminiService';
 
 const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
@@ -61,10 +62,12 @@ const defaultStudyOptions = {
         soundEffects: true,
         autoAdvance: false,
         autoplayCorrectAnswer: false
-    }
+    },
+    exampleSentenceModel: 'gemini-2.5-flash',
+    exampleSentenceTemperature: 2.0
 };
 
-function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
+function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings, isRetryingSave }) {
     const { isSignedIn } = useUser();
     const { getToken } = useAuth();
     
@@ -135,6 +138,13 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
     // Edit card modal state
     const [isEditCardModalOpen, setIsEditCardModalOpen] = useState(false);
     const [cardToEdit, setCardToEdit] = useState(null);
+
+    // Example sentences modal state
+    const [showExampleSentencesModal, setShowExampleSentencesModal] = useState(false);
+    const [cardForExampleSentences, setCardForExampleSentences] = useState(null);
+    const [exampleSentences, setExampleSentences] = useState([]);
+    const [isGeneratingSentences, setIsGeneratingSentences] = useState(false);
+    const [exampleSentencesError, setExampleSentencesError] = useState(null);
 
     const getCardStatus = (card) => {
         if (!card.lastReviewed) {
@@ -354,6 +364,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
                         : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
                 },
+                exampleSentenceModel: loadedOptions.exampleSentenceModel || defaultStudyOptions.exampleSentenceModel,
+                exampleSentenceTemperature: (loadedOptions.exampleSentenceTemperature !== undefined && loadedOptions.exampleSentenceTemperature !== null)
+                    ? loadedOptions.exampleSentenceTemperature
+                    : defaultStudyOptions.exampleSentenceTemperature,
             };
             console.log('Merged soundEffects value:', mergedOptions.learningOptions.soundEffects);
             setStudyOptions(mergedOptions);
@@ -800,7 +814,9 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     autoplayCorrectAnswer: studyOptions.learningOptions?.autoplayCorrectAnswer !== undefined 
                         ? Boolean(studyOptions.learningOptions.autoplayCorrectAnswer)
                         : false,
-                }
+                },
+                exampleSentenceModel: studyOptions.exampleSentenceModel ?? 'gemini-2.5-flash',
+                exampleSentenceTemperature: studyOptions.exampleSentenceTemperature ?? 2.0
             };
             
             console.log('Saving study options - Current studyOptions state:', JSON.stringify(studyOptions, null, 2));
@@ -845,12 +861,236 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                     retypeAnswer: savedOptions.learningOptions.retypeAnswer,
                     studyStarredOnly: savedOptions.learningOptions.studyStarredOnly,
                     shuffle: savedOptions.learningOptions.shuffle,
-                }
+                },
+                exampleSentenceModel: savedOptions.exampleSentenceModel,
+                exampleSentenceTemperature: savedOptions.exampleSentenceTemperature
             }));
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Helper function to highlight the term in a sentence
+    const highlightTermInSentence = (sentence, term) => {
+        if (!sentence || !term) return sentence;
+        
+        // Trim the term to avoid matching issues with whitespace
+        const trimmedTerm = term.trim();
+        if (!trimmedTerm) return sentence;
+        
+        // Escape special regex characters in the term
+        const escapedTerm = trimmedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // Create a regex that matches the term (case-insensitive)
+        // Use word boundaries to match whole words, but also allow punctuation after the term
+        const regex = new RegExp(`\\b(${escapedTerm})\\b`, 'gi');
+        
+        // Split the sentence and wrap matches in spans
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+        let keyCounter = 0; // Use counter for unique keys instead of match.index
+        
+        while ((match = regex.exec(sentence)) !== null) {
+            // Add text before the match
+            if (match.index > lastIndex) {
+                parts.push(sentence.substring(lastIndex, match.index));
+            }
+            
+            // Add the highlighted match with unique key
+            parts.push(
+                <span key={`highlight-${keyCounter++}`} style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>
+                    {match[0]}
+                </span>
+            );
+            
+            lastIndex = regex.lastIndex;
+        }
+        
+        // Add remaining text after the last match
+        if (lastIndex < sentence.length) {
+            parts.push(sentence.substring(lastIndex));
+        }
+        
+        // If no matches found, return the original sentence
+        if (parts.length === 0) {
+            return sentence;
+        }
+        
+        return parts;
+    };
+
+    // Handle opening example sentences modal
+    const handleShowExampleSentences = (card) => {
+        if (!card || !currentSet) return;
+        
+        // Find the card in the current set to get the latest data including exampleSentences
+        const cardInSet = currentSet.flashcards.find(c => 
+            c._id?.toString() === card._id?.toString() || 
+            (c.term === card.term && c.definition === card.definition)
+        );
+        
+        const cardToUse = cardInSet || card;
+        setCardForExampleSentences(cardToUse);
+        setExampleSentences(cardToUse.exampleSentences || []);
+        setExampleSentencesError(null);
+        setIsGeneratingSentences(false); // Reset generating state when opening modal
+        setShowExampleSentencesModal(true);
+    };
+
+    // Generate example sentences for a flashcard
+    const handleGenerateExampleSentences = async (card) => {
+        if (!card || !geminiApiKey) {
+            setExampleSentencesError('API key is missing. Please configure your Gemini API key in settings.');
+            if (onApiKeyMissing) {
+                onApiKeyMissing();
+            }
+            return;
+        }
+
+        if (!card.term || !card.definition) {
+            setExampleSentencesError('Card is missing term or definition. Cannot generate example sentences.');
+            return;
+        }
+
+        setIsGeneratingSentences(true);
+        setExampleSentencesError(null);
+        // Clear old sentences immediately when regenerating
+        if (exampleSentences.length > 0) {
+            setExampleSentences([]);
+        }
+
+        try {
+            const model = studyOptions.exampleSentenceModel || 'gemini-2.5-flash';
+            const temperature = studyOptions.exampleSentenceTemperature ?? 2.0;
+
+            const sentences = await fetchExampleSentences(
+                geminiApiKey,
+                model,
+                temperature,
+                card.term.trim(),
+                card.definition.trim(),
+                card.termLanguage || null,
+                card.definitionLanguage || null
+            );
+
+            // Validate that we got sentences
+            if (!Array.isArray(sentences) || sentences.length === 0) {
+                throw new Error('No example sentences were generated. Please try again.');
+            }
+
+            // Validate each sentence has required fields
+            const validSentences = sentences.filter(s => 
+                s && 
+                typeof s.sentence === 'string' && s.sentence.trim() && 
+                typeof s.translation === 'string' && s.translation.trim()
+            );
+
+            if (validSentences.length === 0) {
+                throw new Error('Generated sentences are invalid. Please try again.');
+            }
+
+            // Save the generated sentences to the database
+            await saveExampleSentences(card, validSentences);
+            setExampleSentences(validSentences);
+        } catch (err) {
+            console.error('Error generating example sentences:', err);
+            setExampleSentencesError(err.message || 'Failed to generate example sentences. Please try again.');
+            // Don't clear existing sentences on error if we have them
+            if (exampleSentences.length === 0) {
+                setExampleSentences([]);
+            }
+        } finally {
+            setIsGeneratingSentences(false);
+        }
+    };
+
+    // Save example sentences to database
+    const saveExampleSentences = async (card, sentences) => {
+        if (!currentSet || !card) return;
+
+        try {
+            // Find the card index in the set - use a more robust matching approach
+            const cardIndex = currentSet.flashcards.findIndex(c => {
+                // First try to match by _id if both have it
+                if (c._id && card._id) {
+                    return c._id.toString() === card._id.toString();
+                }
+                // Fall back to matching by term and definition (case-insensitive, trimmed)
+                const cTerm = (c.term || '').trim().toLowerCase();
+                const cDef = (c.definition || '').trim().toLowerCase();
+                const cardTerm = (card.term || '').trim().toLowerCase();
+                const cardDef = (card.definition || '').trim().toLowerCase();
+                return cTerm === cardTerm && cDef === cardDef;
+            });
+
+            if (cardIndex === -1) {
+                throw new Error('Card not found in set');
+            }
+
+            // Update only the specific flashcard using the single-card endpoint
+            await retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/cards/${cardIndex}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ exampleSentences: sentences })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text().catch(() => 'Unknown error');
+                    throw new Error(`Failed to save example sentences: ${errorText}`);
+                }
+            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+
+            // Reload the set to get updated data
+            const updatedSet = await loadSet(currentSet._id);
+            
+            // Update cardsToStudy if we're in study mode to sync the current card
+            if (viewMode === 'study' && updatedSet && cardsToStudy.length > 0) {
+                const updatedCardsToStudy = cardsToStudy.map(studyCard => {
+                    // Match the card that was updated
+                    const isMatch = (studyCard._id && card._id && studyCard._id.toString() === card._id.toString()) ||
+                        ((studyCard.term || '').trim().toLowerCase() === (card.term || '').trim().toLowerCase() &&
+                         (studyCard.definition || '').trim().toLowerCase() === (card.definition || '').trim().toLowerCase());
+                    
+                    if (isMatch) {
+                        // Find the updated card in the set
+                        const updatedCard = updatedSet.flashcards.find(c => {
+                            if (c._id && card._id) {
+                                return c._id.toString() === card._id.toString();
+                            }
+                            return (c.term || '').trim().toLowerCase() === (card.term || '').trim().toLowerCase() &&
+                                   (c.definition || '').trim().toLowerCase() === (card.definition || '').trim().toLowerCase();
+                        });
+                        return updatedCard ? { ...studyCard, exampleSentences: updatedCard.exampleSentences || [] } : studyCard;
+                    }
+                    return studyCard;
+                });
+                setCardsToStudy(updatedCardsToStudy);
+            }
+            
+            // Update the card in modal state if it's still the same card
+            if (cardForExampleSentences && updatedSet) {
+                const updatedCard = updatedSet.flashcards.find(c => {
+                    if (c._id && cardForExampleSentences._id) {
+                        return c._id.toString() === cardForExampleSentences._id.toString();
+                    }
+                    return (c.term || '').trim().toLowerCase() === (cardForExampleSentences.term || '').trim().toLowerCase() &&
+                           (c.definition || '').trim().toLowerCase() === (cardForExampleSentences.definition || '').trim().toLowerCase();
+                });
+                if (updatedCard) {
+                    setCardForExampleSentences(updatedCard);
+                    setExampleSentences(updatedCard.exampleSentences || []);
+                }
+            }
+        } catch (err) {
+            console.error('Error saving example sentences:', err);
+            throw err;
         }
     };
 
@@ -1594,6 +1834,46 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         }
     }, [showDontKnowAnswer, currentQuestionType, answerFeedback, showAnswer, isRetypeCorrect, studyOptions, isProcessingReview]);
 
+    // Sync example sentences in modal when set is reloaded
+    useEffect(() => {
+        if (showExampleSentencesModal && cardForExampleSentences && currentSet && !isGeneratingSentences) {
+            // Find the card in the current set to get the latest data
+            const cardInSet = currentSet.flashcards.find(c => {
+                if (c._id && cardForExampleSentences._id) {
+                    return c._id.toString() === cardForExampleSentences._id.toString();
+                }
+                const cTerm = (c.term || '').trim().toLowerCase();
+                const cDef = (c.definition || '').trim().toLowerCase();
+                const cardTerm = (cardForExampleSentences.term || '').trim().toLowerCase();
+                const cardDef = (cardForExampleSentences.definition || '').trim().toLowerCase();
+                return cTerm === cardTerm && cDef === cardDef;
+            });
+            
+            if (cardInSet) {
+                // Update the card reference to get latest data
+                setCardForExampleSentences(cardInSet);
+                
+                // Update sentences if they exist and are different (only if not currently generating)
+                if (cardInSet.exampleSentences && Array.isArray(cardInSet.exampleSentences) && cardInSet.exampleSentences.length > 0) {
+                    const currentSentencesStr = JSON.stringify(exampleSentences || []);
+                    const newSentencesStr = JSON.stringify(cardInSet.exampleSentences);
+                    if (currentSentencesStr !== newSentencesStr) {
+                        setExampleSentences(cardInSet.exampleSentences);
+                    }
+                } else if (exampleSentences && exampleSentences.length > 0 && !isGeneratingSentences) {
+                    // If card no longer has sentences but we have them in state, clear them (unless generating)
+                    setExampleSentences([]);
+                }
+            } else {
+                // Card not found - might have been deleted, close modal
+                setShowExampleSentencesModal(false);
+                setCardForExampleSentences(null);
+                setExampleSentencesError('Card not found. It may have been deleted.');
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentSet?._id, currentSet?.flashcards?.length, showExampleSentencesModal, cardForExampleSentences?._id, isGeneratingSentences]);
+
     // Autoplay correct answer when "Don't know" is clicked
     useEffect(() => {
         if (
@@ -2027,7 +2307,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <div 
                             key={set._id} 
                             className="set-card"
-                            onClick={() => { loadSet(set._id); setViewMode('view'); }}
+                            onClick={async () => { 
+                                await retryUntilSuccess(async () => {
+                                    const result = await loadSet(set._id);
+                                    if (!result) {
+                                        throw new Error('Failed to fetch flashcard set');
+                                    }
+                                    return result;
+                                }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+                                setViewMode('view'); 
+                            }}
                         >
                             <div className="set-card-header">
                                 <h3>{set.title}</h3>
@@ -2978,6 +3267,10 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                             ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
                             : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
                     },
+                    exampleSentenceModel: loadedOptions.exampleSentenceModel || defaultStudyOptions.exampleSentenceModel,
+                    exampleSentenceTemperature: (loadedOptions.exampleSentenceTemperature !== undefined && loadedOptions.exampleSentenceTemperature !== null)
+                        ? loadedOptions.exampleSentenceTemperature
+                        : defaultStudyOptions.exampleSentenceTemperature,
                 };
                 setStudyOptions(mergedOptions);
             }
@@ -3338,6 +3631,41 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         End must be greater than or equal to start.
                     </p>
                 )}
+            </div>
+            <div className="form-group">
+                <label>Example Sentences AI Settings</label>
+                <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>AI Model</label>
+                    <select
+                        value={studyOptions.exampleSentenceModel || 'gemini-2.5-flash'}
+                        onChange={(e) => setStudyOptions(prev => ({ ...prev, exampleSentenceModel: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                    >
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Default)</option>
+                        <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                        <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                    </select>
+                </div>
+                <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Temperature (0.0 - 2.0)</label>
+                    <input
+                        type="number"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={studyOptions.exampleSentenceTemperature ?? 2.0}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0 && value <= 2) {
+                                setStudyOptions(prev => ({ ...prev, exampleSentenceTemperature: value }));
+                            }
+                        }}
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                    />
+                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                        Higher values make output more creative. Default: 2.0
+                    </p>
+                </div>
             </div>
         </div>
         );
@@ -3750,7 +4078,16 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                         <div className="view-actions">
                             <button 
                                 className="view-action-btn view-action-primary"
-                                onClick={async () => { await loadSet(currentSet._id); setStudyAction('start'); }}
+                                onClick={async () => { 
+                                    await retryUntilSuccess(async () => {
+                                        const result = await loadSet(currentSet._id);
+                                        if (!result) {
+                                            throw new Error('Failed to fetch flashcard set');
+                                        }
+                                        return result;
+                                    }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+                                    setStudyAction('start'); 
+                                }}
                             >
                                 <Play size={18} /> Study
                             </button>
@@ -4215,6 +4552,20 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                         )}
                                     </div>
                                 </div>
+                                {/* Show example sentences text - at bottom of flashcard back */}
+                                <div style={{ marginTop: '16px', textAlign: 'center', paddingBottom: '16px' }}>
+                                    <span 
+                                        onClick={(e) => { e.stopPropagation(); handleShowExampleSentences(currentCard); }}
+                                        style={{ 
+                                            color: 'var(--color-green)', 
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Show example sentences
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4638,10 +4989,26 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
                                 </button>
                             )}
                         </div>
+                        
+                        {/* Show example sentences text - at bottom of study-card */}
+                        <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                            <span 
+                                onClick={() => handleShowExampleSentences(currentCard)}
+                                style={{ 
+                                    color: 'var(--color-green)', 
+                                    cursor: 'pointer',
+                                    fontSize: '1rem',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Show example sentences
+                            </span>
+                        </div>
                     </div>
                 )}
 
                 <div className="study-bottom-actions">
+
                     {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer || (currentQuestionType === 'written' && isUnstudied && isWrittenAnswerCorrect) || (currentQuestionType === 'written' && !isUnstudied && answerFeedback === 'correct' && showAnswer) ? (
                         <div className="grading-container">
                             {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) && (
@@ -4694,6 +5061,175 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
         );
     };
 
+    // Render example sentences modal
+    const renderExampleSentencesModal = () => {
+        if (!showExampleSentencesModal || !cardForExampleSentences || !currentSet) return null;
+
+        // Find the card in the current set to get the latest data including exampleSentences
+        const cardInSet = currentSet.flashcards.find(c => {
+            // First try to match by _id if both have it
+            if (c._id && cardForExampleSentences._id) {
+                return c._id.toString() === cardForExampleSentences._id.toString();
+            }
+            // Fall back to matching by term and definition (case-insensitive, trimmed)
+            const cTerm = (c.term || '').trim().toLowerCase();
+            const cDef = (c.definition || '').trim().toLowerCase();
+            const cardTerm = (cardForExampleSentences.term || '').trim().toLowerCase();
+            const cardDef = (cardForExampleSentences.definition || '').trim().toLowerCase();
+            return cTerm === cardTerm && cDef === cardDef;
+        });
+        const cardToUse = cardInSet || cardForExampleSentences;
+        
+        // If card not found in set, show error and allow closing
+        if (!cardInSet && currentSet && currentSet.flashcards.length > 0) {
+            return (
+                <div className="modal-backdrop" onClick={handleBackdropClick}>
+                    <div className="modal-content" style={{ maxWidth: '800px' }}>
+                        <div className="modal-header">
+                            <h3>Example Sentences</h3>
+                            <button onClick={handleClose} className="close-button">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div style={{ 
+                                padding: '12px', 
+                                backgroundColor: 'var(--color-red)', 
+                                color: 'white', 
+                                borderRadius: '4px',
+                                marginBottom: '16px'
+                            }}>
+                                Card not found in set. The card may have been deleted or modified.
+                            </div>
+                        </div>
+                        <div className="modal-actions">
+                            <button onClick={handleClose}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowExampleSentencesModal(false);
+                setCardForExampleSentences(null);
+                setExampleSentencesError(null);
+                setIsGeneratingSentences(false); // Reset generating state when closing modal
+            }
+        };
+
+        const handleClose = () => {
+            setShowExampleSentencesModal(false);
+            setCardForExampleSentences(null);
+            setExampleSentencesError(null);
+            setIsGeneratingSentences(false); // Reset generating state when closing modal
+        };
+
+        const handleRegenerate = async () => {
+            await handleGenerateExampleSentences(cardToUse);
+        };
+
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content" style={{ maxWidth: '800px', maxHeight: '80vh', overflowY: 'auto' }}>
+                    <div className="modal-header">
+                        <h3>Example Sentences</h3>
+                        <button onClick={handleClose} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div style={{ marginBottom: '16px' }}>
+                            <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Term: {cardToUse.term}</p>
+                            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '16px' }}>Definition: {cardToUse.definition}</p>
+                        </div>
+
+                        {exampleSentencesError && (
+                            <div style={{ 
+                                padding: '12px', 
+                                backgroundColor: 'var(--color-red)', 
+                                color: 'white', 
+                                borderRadius: '4px',
+                                marginBottom: '16px'
+                            }}>
+                                {exampleSentencesError}
+                            </div>
+                        )}
+
+                        {isGeneratingSentences ? (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>
+                                <p>Generating example sentences...</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginTop: '8px' }}>
+                                    This may take a few moments...
+                                </p>
+                            </div>
+                        ) : exampleSentences.length > 0 ? (
+                            <div>
+                                {exampleSentences.map((item, index) => (
+                                    <div 
+                                        key={index} 
+                                        style={{ 
+                                            marginBottom: '20px', 
+                                            padding: '16px', 
+                                            backgroundColor: 'var(--color-bg-secondary)', 
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--color-border)'
+                                        }}
+                                    >
+                                        <p style={{ 
+                                            fontWeight: 'bold', 
+                                            marginBottom: '8px',
+                                            fontSize: '1.1rem',
+                                            lineHeight: '1.5'
+                                        }}>
+                                            {item.sentence && cardToUse.term 
+                                                ? highlightTermInSentence(item.sentence, cardToUse.term)
+                                                : item.sentence || 'No sentence'}
+                                        </p>
+                                        <p style={{ 
+                                            color: 'var(--color-text-secondary)',
+                                            fontStyle: 'italic',
+                                            marginBottom: 0
+                                        }}>
+                                            {item.translation}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>
+                                <p style={{ marginBottom: '16px', color: 'var(--color-text-secondary)' }}>
+                                    No example sentences generated yet. Click the button below to generate some.
+                                </p>
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                            <button 
+                                className="generate-button" 
+                                onClick={handleRegenerate}
+                                disabled={isGeneratingSentences || !geminiApiKey}
+                                title={!geminiApiKey ? 'API key is missing. Please configure your Gemini API key in settings.' : ''}
+                            >
+                                {isGeneratingSentences 
+                                    ? 'Generating...' 
+                                    : exampleSentences.length > 0 
+                                        ? 'Regenerate Sentences' 
+                                        : 'Generate Sentences'}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="modal-actions">
+                        <button onClick={handleClose}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     if (!isSignedIn) {
         return (
             <div className="initial-state-container">
@@ -4707,6 +5243,7 @@ function Flashcards({ settings, onApiKeyMissing, isSavingSettings, isRetryingSav
             {error && <div className="error-banner">{error}</div>}
             
             {viewMode === 'study' && showStudyOptionsModal && renderStudyOptionsModal()}
+            {viewMode === 'study' && renderExampleSentencesModal()}
             <EditCardModal 
                 isOpen={isEditCardModalOpen}
                 onClose={() => {

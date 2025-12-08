@@ -35,7 +35,10 @@ const userFlashcardSetDataSchema = new mongoose.Schema({
             soundEffects: { type: Boolean, default: true },
             autoAdvance: { type: Boolean, default: false },
             autoplayCorrectAnswer: { type: Boolean, default: false }
-        }
+        },
+        // AI settings for generating example sentences
+        exampleSentenceModel: { type: String, enum: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'], default: 'gemini-2.5-flash' },
+        exampleSentenceTemperature: { type: Number, default: 2.0 }
     },
     lastStudied: { type: Date, default: Date.now }
 });

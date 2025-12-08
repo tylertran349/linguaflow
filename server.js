@@ -908,6 +908,7 @@ app.put('/api/flashcards/sets/:setId/cards/:cardIndex', ClerkExpressRequireAuth(
         if (cardUpdates.starred !== undefined) cardToUpdate.starred = cardUpdates.starred;
         if (cardUpdates.termLanguage !== undefined) cardToUpdate.termLanguage = cardUpdates.termLanguage;
         if (cardUpdates.definitionLanguage !== undefined) cardToUpdate.definitionLanguage = cardUpdates.definitionLanguage;
+        if (cardUpdates.exampleSentences !== undefined) cardToUpdate.exampleSentences = cardUpdates.exampleSentences;
         
         set.updatedAt = Date.now();
         await set.save();

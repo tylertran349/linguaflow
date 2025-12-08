@@ -342,7 +342,7 @@ function LinguaFlowApp() {
       case 'sentence-generator':
         return <SentenceDisplay geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'flashcards':
-        return <Flashcards settings={settings} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
+        return <Flashcards settings={settings} geminiApiKey={geminiApiKey} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'unscramble-words':
         return <UnscrambleWords geminiApiKey={geminiApiKey} settings={settings} topic={topic} onApiKeyMissing={handleOpenSettings} isSavingSettings={isSavingSettings} isRetryingSave={isRetryingSave}/>;
       case 'read-and-respond':
