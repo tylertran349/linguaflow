@@ -5061,6 +5061,52 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         );
     };
 
+    // Render sentence with speaker icon after last punctuation
+    const renderSentenceWithSpeaker = (sentence, term, languageCode) => {
+        if (!sentence) return 'No sentence';
+        
+        // Find the last punctuation mark position
+        const punctuationRegex = /[.!?。！？:;：；,，]/g;
+        let lastPunctIndex = -1;
+        let lastPunctChar = '';
+        let match;
+        
+        while ((match = punctuationRegex.exec(sentence)) !== null) {
+            lastPunctIndex = match.index;
+            lastPunctChar = match[0];
+        }
+        
+        // Split the sentence at the last punctuation
+        const beforePunct = lastPunctIndex !== -1 ? sentence.substring(0, lastPunctIndex) : sentence;
+        const afterPunct = lastPunctIndex !== -1 ? sentence.substring(lastPunctIndex + 1) : '';
+        
+        // Generate highlighted content for before and after punctuation
+        const beforePunctHighlighted = term ? highlightTermInSentence(beforePunct, term) : beforePunct;
+        const afterPunctHighlighted = afterPunct && term ? highlightTermInSentence(afterPunct, term) : (afterPunct || null);
+        
+        return (
+            <>
+                {beforePunctHighlighted}
+                {lastPunctIndex !== -1 && lastPunctChar}
+                {languageCode && (
+                    <>
+                        {' '}
+                        <button 
+                            onClick={() => playTTS(sentence, languageCode)} 
+                            className="tts-button"
+                            style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: '4px' }}
+                            title="Play example sentence audio"
+                            aria-label="Play example sentence audio"
+                        >
+                            <Volume2 size={22} color="var(--color-green)" />
+                        </button>
+                    </>
+                )}
+                {afterPunctHighlighted}
+            </>
+        );
+    };
+
     // Render example sentences modal
     const renderExampleSentencesModal = () => {
         if (!showExampleSentencesModal || !cardForExampleSentences || !currentSet) return null;
@@ -5079,6 +5125,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             return cTerm === cardTerm && cDef === cardDef;
         });
         const cardToUse = cardInSet || cardForExampleSentences;
+        const exampleSentenceLanguage = cardToUse.termLanguage || (settings?.targetLanguage ? getLanguageCode(settings.targetLanguage) : null);
         
         // If card not found in set, show error and allow closing
         if (!cardInSet && currentSet && currentSet.flashcards.length > 0) {
@@ -5183,9 +5230,13 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                             fontSize: '1.1rem',
                                             lineHeight: '1.5'
                                         }}>
-                                            {item.sentence && cardToUse.term 
-                                                ? highlightTermInSentence(item.sentence, cardToUse.term)
-                                                : item.sentence || 'No sentence'}
+                                            {item.sentence 
+                                                ? renderSentenceWithSpeaker(
+                                                    item.sentence,
+                                                    cardToUse.term,
+                                                    exampleSentenceLanguage
+                                                )
+                                                : 'No sentence'}
                                         </p>
                                         <p style={{ 
                                             color: 'var(--color-text-secondary)',
