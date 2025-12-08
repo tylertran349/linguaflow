@@ -4297,6 +4297,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         const answer = showTerm ? currentCard.term : currentCard.definition;
         const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
         const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
+        // Whether the learner has revealed the answer (flipped or explicitly shown)
+        const hasRevealedAnswer = showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce);
         
         // Get all valid answers for the current question
         // If questionFormat is 'term', find all terms with the same definition
@@ -4553,19 +4555,21 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     </div>
                                 </div>
                                 {/* Show example sentences text - at bottom of flashcard back */}
-                                <div style={{ marginTop: '16px', textAlign: 'center', paddingBottom: '16px' }}>
-                                    <span 
-                                        onClick={(e) => { e.stopPropagation(); handleShowExampleSentences(currentCard); }}
-                                        style={{ 
-                                            color: 'var(--color-green)', 
-                                            cursor: 'pointer',
-                                            fontSize: '1rem',
-                                            fontWeight: '600'
-                                        }}
-                                    >
-                                        Show example sentences
-                                    </span>
-                                </div>
+                                {hasRevealedAnswer && (
+                                    <div style={{ marginTop: '16px', textAlign: 'center', paddingBottom: '16px' }}>
+                                        <span 
+                                            onClick={(e) => { e.stopPropagation(); handleShowExampleSentences(currentCard); }}
+                                            style={{ 
+                                                color: 'var(--color-green)', 
+                                                cursor: 'pointer',
+                                                fontSize: '1rem',
+                                                fontWeight: '600'
+                                            }}
+                                        >
+                                            Show example sentences
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -4991,19 +4995,21 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         </div>
                         
                         {/* Show example sentences text - at bottom of study-card */}
-                        <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                            <span 
-                                onClick={() => handleShowExampleSentences(currentCard)}
-                                style={{ 
-                                    color: 'var(--color-green)', 
-                                    cursor: 'pointer',
-                                    fontSize: '1rem',
-                                    fontWeight: '600'
-                                }}
-                            >
-                                Show example sentences
-                            </span>
-                        </div>
+                        {hasRevealedAnswer && (
+                            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                <span 
+                                    onClick={() => handleShowExampleSentences(currentCard)}
+                                    style={{ 
+                                        color: 'var(--color-green)', 
+                                        cursor: 'pointer',
+                                        fontSize: '1rem',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    Show example sentences
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
 
