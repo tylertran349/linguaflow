@@ -1368,10 +1368,14 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             // Still apply newCardsPerDay limit even in range mode
             const rangeReviewCards = rangeCards.filter(card => card.lastReviewed);
             const rangeNewCards = rangeCards.filter(card => !card.lastReviewed);
+
+            // Sort review cards by most overdue (earliest nextReviewDate first; missing date treated as most overdue)
+            const getDueTime = (card) => card.nextReviewDate ? new Date(card.nextReviewDate).getTime() : 0;
+            rangeReviewCards.sort((a, b) => getDueTime(a) - getDueTime(b));
             
             // Shuffle if enabled
             if (studyOptions.learningOptions.shuffle) {
-                rangeReviewCards.sort(() => Math.random() - 0.5);
+                // Keep review order prioritized by due date; shuffle only new cards
                 rangeNewCards.sort(() => Math.random() - 0.5);
             }
             
@@ -1419,9 +1423,13 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             let reviewCards = dueCards.filter(card => card.lastReviewed);
             let newCards = dueCards.filter(card => !card.lastReviewed);
 
+            // Sort review cards by most overdue (earliest nextReviewDate first; missing date treated as most overdue)
+            const getDueTime = (card) => card.nextReviewDate ? new Date(card.nextReviewDate).getTime() : 0;
+            reviewCards.sort((a, b) => getDueTime(a) - getDueTime(b));
+
             // Shuffle before picking if the option is enabled
             if (studyOptions.learningOptions.shuffle) {
-                reviewCards.sort(() => Math.random() - 0.5);
+                // Keep review order prioritized by due date; shuffle only new cards
                 newCards.sort(() => Math.random() - 0.5);
             }
 
