@@ -1762,24 +1762,28 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             
             // Preserve current studyOptions before reloading to prevent losing user-specific settings
             const preservedOptions = { ...studyOptions };
-            
-            // Await loadSet to ensure currentSet is updated with the new grade before any new study round starts
-            await loadSet(currentSet._id);
-            
-            // Restore user-specific options that might not be included in the main set response
-            setStudyOptions(prev => ({
-                ...prev,
-                learningOptions: {
-                    ...prev.learningOptions,
-                    // Preserve the values from before reloading
-                    autoplayCorrectAnswer: preservedOptions.learningOptions?.autoplayCorrectAnswer,
-                    autoAdvance: preservedOptions.learningOptions?.autoAdvance,
-                    soundEffects: preservedOptions.learningOptions?.soundEffects,
-                    retypeAnswer: preservedOptions.learningOptions?.retypeAnswer,
-                    studyStarredOnly: preservedOptions.learningOptions?.studyStarredOnly,
-                    shuffle: preservedOptions.learningOptions?.shuffle,
+
+            // Refresh the set in the background so grading buttons don't stay disabled
+            // while we wait for the reload. We still merge user-specific options once it finishes.
+            (async () => {
+                try {
+                    await loadSet(currentSet._id);
+                    setStudyOptions(prev => ({
+                        ...prev,
+                        learningOptions: {
+                            ...prev.learningOptions,
+                            autoplayCorrectAnswer: preservedOptions.learningOptions?.autoplayCorrectAnswer,
+                            autoAdvance: preservedOptions.learningOptions?.autoAdvance,
+                            soundEffects: preservedOptions.learningOptions?.soundEffects,
+                            retypeAnswer: preservedOptions.learningOptions?.retypeAnswer,
+                            studyStarredOnly: preservedOptions.learningOptions?.studyStarredOnly,
+                            shuffle: preservedOptions.learningOptions?.shuffle,
+                        }
+                    }));
+                } catch (err) {
+                    console.error('Error refreshing set after review:', err);
                 }
-            }));
+            })();
         } catch (err) {
             setError(err.message);
         } finally {
