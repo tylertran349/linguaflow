@@ -40,7 +40,10 @@ const userFlashcardSetDataSchema = new mongoose.Schema({
         exampleSentenceModel: { type: String, enum: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'], default: 'gemini-2.5-flash' },
         exampleSentenceTemperature: { type: Number, default: 2.0 }
     },
-    lastStudied: { type: Date, default: Date.now }
+    lastStudied: { type: Date, default: Date.now },
+    // Daily new cards counter
+    newCardsShownToday: { type: Number, default: 0 },
+    newCardsShownDate: { type: Date, default: Date.now } // Track which day the counter is for
 });
 
 // Create a compound index to ensure a user has only one data document per set

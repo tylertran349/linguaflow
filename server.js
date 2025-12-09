@@ -633,6 +633,132 @@ app.put('/api/flashcards/sets/:setId/user-data', ClerkExpressRequireAuth(), asyn
     }
 });
 
+// --- GET/UPDATE NEW CARDS SHOWN COUNTER FOR A SET ---
+app.post('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+        const { count } = req.body; // Number of new cards being shown
+
+        if (typeof count !== 'number' || count < 0 || !Number.isInteger(count)) {
+            return res.status(400).json({ message: 'Invalid count. Must be a non-negative integer.' });
+        }
+
+        if (count === 0) {
+            // No-op, but still return current counter
+            const userData = await UserFlashcardSetData.findOne({ userId, setId });
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (!userData) {
+                return res.json({ 
+                    newCardsShownToday: 0,
+                    newCardsShownDate: today
+                });
+            }
+
+            const counterDate = new Date(userData.newCardsShownDate);
+            counterDate.setHours(0, 0, 0, 0);
+            
+            if (counterDate.getTime() !== today.getTime()) {
+                return res.json({ 
+                    newCardsShownToday: 0,
+                    newCardsShownDate: today
+                });
+            }
+
+            return res.json({ 
+                newCardsShownToday: userData.newCardsShownToday,
+                newCardsShownDate: userData.newCardsShownDate
+            });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+
+        // Use atomic findOneAndUpdate to prevent race conditions
+        // First, ensure user data exists and reset counter if it's a new day
+        let userData = await UserFlashcardSetData.findOne({ userId, setId });
+        
+        if (!userData) {
+            // Create new user data
+            userData = new UserFlashcardSetData({
+                userId,
+                setId,
+                newCardsShownToday: count,
+                newCardsShownDate: today
+            });
+            await userData.save();
+        } else {
+            // Check if counter needs reset (different day)
+            const counterDate = new Date(userData.newCardsShownDate);
+            counterDate.setHours(0, 0, 0, 0);
+            
+            if (counterDate.getTime() !== today.getTime()) {
+                // Reset counter for new day
+                userData.newCardsShownToday = count;
+                userData.newCardsShownDate = today;
+            } else {
+                // Atomically increment counter
+                userData.newCardsShownToday = (userData.newCardsShownToday || 0) + count;
+            }
+            
+            await userData.save();
+        }
+
+        res.json({ 
+            newCardsShownToday: userData.newCardsShownToday,
+            newCardsShownDate: userData.newCardsShownDate
+        });
+
+    } catch (error) {
+        console.error("Error updating new cards shown counter:", error);
+        res.status(500).json({ message: 'Failed to update new cards shown counter.' });
+    }
+});
+
+// --- GET NEW CARDS SHOWN COUNTER FOR A SET ---
+app.get('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth(), async (req, res) => {
+    try {
+        const userId = req.auth.userId;
+        const { setId } = req.params;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+
+        let userData = await UserFlashcardSetData.findOne({ userId, setId });
+        
+        if (!userData) {
+            // Return default if no user data exists
+            return res.json({ 
+                newCardsShownToday: 0,
+                newCardsShownDate: today
+            });
+        }
+
+        // Check if the counter date is today
+        const counterDate = new Date(userData.newCardsShownDate);
+        counterDate.setHours(0, 0, 0, 0);
+        
+        if (counterDate.getTime() !== today.getTime()) {
+            // Counter is for a different day, return 0
+            return res.json({ 
+                newCardsShownToday: 0,
+                newCardsShownDate: today
+            });
+        }
+
+        res.json({ 
+            newCardsShownToday: userData.newCardsShownToday,
+            newCardsShownDate: userData.newCardsShownDate
+        });
+
+    } catch (error) {
+        console.error("Error fetching new cards shown counter:", error);
+        res.status(500).json({ message: 'Failed to fetch new cards shown counter.' });
+    }
+});
+
 // --- CREATE A NEW FLASHCARD SET ---
 app.post('/api/flashcards/sets', ClerkExpressRequireAuth(), async (req, res) => {
     try {

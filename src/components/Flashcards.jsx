@@ -126,6 +126,11 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const [isDontKnowRetypeCorrect, setIsDontKnowRetypeCorrect] = useState(false);
     const [primaryAnswerRetypeValue, setPrimaryAnswerRetypeValue] = useState('');
     const [isPrimaryAnswerRetypeCorrect, setIsPrimaryAnswerRetypeCorrect] = useState(false);
+    
+    // Track which new cards have already been counted for the daily limit
+    const [countedNewCardIds, setCountedNewCardIds] = useState(new Set());
+    // Ref to track counted cards synchronously (prevents race conditions)
+    const countedNewCardIdsRef = useRef(new Set());
 
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
@@ -1312,34 +1317,36 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     };
 
     // Start studying
-    const startStudy = useCallback((setToUse = null) => {
+    const startStudy = useCallback(async (setToUse = null) => {
         const set = setToUse || currentSet;
         if (!set) return;
         
         setError(null);
 
-        // Helper to check if a date is today (same day, ignoring time)
-        const isToday = (date) => {
-            if (!date) return false;
-            const d = new Date(date);
-            const today = new Date();
-            return d.getFullYear() === today.getFullYear() &&
-                   d.getMonth() === today.getMonth() &&
-                   d.getDate() === today.getDate();
-        };
-
-        // Count how many new cards have been reviewed today
-        // A card was "new" when reviewed if it was its first review (reps === 1) and reviewed today
-        const newCardsReviewedToday = set.flashcards.filter(card => 
-            card.lastReviewed && 
-            isToday(card.lastReviewed) && 
-            card.reps === 1
-        ).length;
+        // Fetch the current new cards shown counter from the database
+        let newCardsShownToday = 0;
+        try {
+            const token = await getToken();
+            const counterResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${set._id}/new-cards-shown`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (counterResponse.ok) {
+                const counterData = await counterResponse.json();
+                // Safely extract counter value, defaulting to 0 if invalid
+                const counterValue = typeof counterData?.newCardsShownToday === 'number' 
+                    ? Math.max(0, counterData.newCardsShownToday) 
+                    : 0;
+                newCardsShownToday = counterValue;
+            }
+        } catch (err) {
+            console.warn('Failed to fetch new cards counter, using 0:', err);
+            // Continue with 0 if fetch fails - this allows the session to proceed
+        }
 
         // Calculate how many new cards can still be shown today
         // Ensure newCardsPerDay is valid (at least 1, or 0 to disable new cards)
         const newCardsPerDay = Math.max(0, studyOptions.newCardsPerDay ?? 10);
-        const remainingNewCardsToday = Math.max(0, newCardsPerDay - newCardsReviewedToday);
+        const remainingNewCardsToday = Math.max(0, newCardsPerDay - newCardsShownToday);
 
         // Ensure cardsPerRound is valid (at least 1)
         const cardsPerRound = Math.max(1, studyOptions.cardsPerRound ?? 10);
@@ -1514,6 +1521,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setIsDontKnowRetypeCorrect(false);
         setPrimaryAnswerRetypeValue('');
         setIsPrimaryAnswerRetypeCorrect(false);
+        // Reset counted cards when starting a new study session
+        countedNewCardIdsRef.current = new Set();
+        setCountedNewCardIds(new Set());
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
@@ -1524,7 +1534,10 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     useEffect(() => {
         if (studyAction) {
             setStudyAction(null);
-            startStudy();
+            startStudy().catch(err => {
+                console.error('Error starting study:', err);
+                setError('Failed to start study session');
+            });
         }
     }, [studyAction, startStudy]);
 
@@ -1690,7 +1703,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
         // Pass the fresh set data directly to startStudy to avoid stale state
         if (freshSet) {
-            startStudy(freshSet);
+            await startStudy(freshSet);
         }
     };
 
@@ -1700,9 +1713,16 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         stopAllAudio();
         if (!showAnswer) {
             setHasFlippedOnce(true);
+            // Increment counter when user flips a new card for the first time
+            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+                const currentCard = cardsToStudy[currentCardIndex];
+                if (currentCard) {
+                    incrementNewCardCounter(currentCard);
+                }
+            }
         }
         setShowAnswer(prev => !prev);
-    }, [showAnswer]);
+    }, [showAnswer, viewMode, cardsToStudy, currentCardIndex, incrementNewCardCounter]);
 
     // Handle review decision
     const handleReviewDecision = async (grade) => {
@@ -1809,6 +1829,54 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setIsPrimaryAnswerRetypeCorrect(false);
     }, [viewMode, currentCardIndex, cardsToStudy.length]);
 
+    // Helper function to increment counter for a new card when user interacts with it
+    const incrementNewCardCounter = useCallback(async (card) => {
+        if (!card || !currentSet) return;
+        
+        // Check if this is a new card (not reviewed yet)
+        const isNewCard = !card.lastReviewed;
+        if (!isNewCard) return;
+
+        // Generate a unique identifier for this card
+        // Use _id if available, otherwise fall back to term+definition
+        const cardId = card._id?.toString() || 
+            `${(card.term || '').trim()}_${(card.definition || '').trim()}`;
+
+        // Check if we've already counted this card (synchronous check using ref)
+        if (countedNewCardIdsRef.current.has(cardId)) {
+            return; // Already counted, skip increment
+        }
+
+        // Mark as counted immediately (synchronously) to prevent race conditions
+        countedNewCardIdsRef.current.add(cardId);
+        setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+
+        // Increment the counter in the database
+        try {
+            const token = await getToken();
+            const incrementResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/new-cards-shown`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ count: 1 })
+            });
+            if (!incrementResponse.ok) {
+                // If increment failed, remove from counted set so it can be retried
+                countedNewCardIdsRef.current.delete(cardId);
+                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+                console.warn('Failed to update new cards counter:', await incrementResponse.text());
+            }
+        } catch (err) {
+            // If increment failed, remove from counted set so it can be retried
+            countedNewCardIdsRef.current.delete(cardId);
+            setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+            console.warn('Failed to update new cards counter:', err);
+            // Continue even if counter update fails
+        }
+    }, [currentSet]);
+
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {
         if (showDontKnowAnswer && isDontKnowRetypeCorrect && !isProcessingReview && studyOptions.learningOptions?.autoAdvance !== false) {
@@ -1903,6 +1971,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     }, [showDontKnowAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions]);
 
     // Autoplay correct answer for unstudied written questions when user types correct answer
+    // Also increment counter when user answers unstudied written question correctly
     const lastAutoplayedAnswerRef = useRef(null);
     const adjustTextareaHeight = useCallback((textarea) => {
         if (!textarea) return;
@@ -1913,7 +1982,6 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         if (
             viewMode === 'study' &&
             currentQuestionType === 'written' &&
-            studyOptions.learningOptions?.autoplayCorrectAnswer &&
             cardsToStudy.length > 0 &&
             currentCardIndex < cardsToStudy.length &&
             writtenAnswer.trim()
@@ -1921,25 +1989,52 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             const currentCard = cardsToStudy[currentCardIndex];
             const isUnstudied = !currentCard.lastReviewed;
             
-            if (isUnstudied) {
+            if (isUnstudied && currentSet) {
                 const showTerm = studyOptions.questionFormat === 'term';
                 const answer = showTerm ? currentCard.term : currentCard.definition;
                 const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
                 
                 // Check if the written answer matches any valid answer
-                if (answer && answerLang && currentSet) {
-                    const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
-                    const normalizedCorrectAnswer = answer.trim().toLowerCase();
-                    
-                    // Only autoplay once per card/answer combination
-                    const autoplayKey = `${currentCard._id || currentCardIndex}-${normalizedCorrectAnswer}`;
-                    
-                    if (normalizedUserAnswer === normalizedCorrectAnswer && lastAutoplayedAnswerRef.current !== autoplayKey) {
-                        lastAutoplayedAnswerRef.current = autoplayKey;
-                        // Use requestAnimationFrame for immediate execution after DOM update
-                        requestAnimationFrame(() => {
-                            playTTS(answer, answerLang);
+                if (answer) {
+                    // Get all valid answers for this question
+                    const validAnswers = [];
+                    const normalizedQuestion = (showTerm ? currentCard.definition : currentCard.term)?.trim().toLowerCase() || '';
+                    if (normalizedQuestion) {
+                        currentSet.flashcards.forEach(card => {
+                            if (showTerm) {
+                                const cardDefinition = card.definition?.trim().toLowerCase() || '';
+                                if (cardDefinition === normalizedQuestion && card.term) {
+                                    validAnswers.push(card.term.trim());
+                                }
+                            } else {
+                                const cardTerm = card.term?.trim().toLowerCase() || '';
+                                if (cardTerm === normalizedQuestion && card.definition) {
+                                    validAnswers.push(card.definition.trim());
+                                }
+                            }
                         });
+                    }
+                    if (validAnswers.length === 0) {
+                        validAnswers.push(answer.trim());
+                    }
+                    
+                    const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
+                    const isCorrect = validAnswers.some(va => va.toLowerCase() === normalizedUserAnswer);
+                    
+                    if (isCorrect) {
+                        // Increment counter when user answers correctly
+                        incrementNewCardCounter(currentCard);
+                        
+                        // Autoplay if enabled
+                        if (studyOptions.learningOptions?.autoplayCorrectAnswer && answerLang) {
+                            const autoplayKey = `${currentCard._id || currentCardIndex}-${answer.trim().toLowerCase()}`;
+                            if (lastAutoplayedAnswerRef.current !== autoplayKey) {
+                                lastAutoplayedAnswerRef.current = autoplayKey;
+                                requestAnimationFrame(() => {
+                                    playTTS(answer, answerLang);
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -1954,7 +2049,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 lastAutoplayedAnswerRef.current = null;
             }
         }
-    }, [writtenAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions, currentSet]);
+    }, [writtenAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions, currentSet, incrementNewCardCounter]);
 
     useEffect(() => {
         const textarea = writtenAnswerTextareaRef.current;
@@ -1990,6 +2085,13 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         stopAllAudio();
         
         if (currentQuestionType === 'written') {
+            // Increment counter when user clicks "Don't know" for a new card
+            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+                const currentCard = cardsToStudy[currentCardIndex];
+                if (currentCard) {
+                    incrementNewCardCounter(currentCard);
+                }
+            }
             setShowDontKnowAnswer(true);
             return;
         }
@@ -4396,6 +4498,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             if (e) {
                 e.preventDefault();
             }
+            // Increment counter when user answers a new card
+            incrementNewCardCounter(currentCard);
+            
             const normalizedUserAnswer = writtenAnswer.trim().toLowerCase();
             const isCorrect = validAnswers.some(validAnswer => 
                 validAnswer.toLowerCase() === normalizedUserAnswer
@@ -4425,6 +4530,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         };
 
         const handleMcqAnswer = (selectedOption) => {
+            // Increment counter when user answers a new card
+            incrementNewCardCounter(currentCard);
+            
             setWrittenAnswer(selectedOption); // Re-use writtenAnswer state for the selected option
             const isCorrect = selectedOption.trim() === answer.trim();
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
@@ -4442,6 +4550,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
         const handleTrueFalseAnswer = (userAnswer) => {
             const currentCard = cardsToStudy[currentCardIndex];
+            // Increment counter when user answers a new card
+            incrementNewCardCounter(currentCard);
+            
             const isCorrect = userAnswer === currentCard.isTrueFalseCorrect;
             setAnswerFeedback(isCorrect ? 'correct' : 'incorrect');
             setShowAnswer(true);
@@ -4993,7 +5104,11 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         
                         <div className="study-actions">
                             {!showAnswer && currentQuestionType !== 'written' && currentQuestionType !== 'trueFalse' && (
-                                <button className="show-answer-button" onClick={() => setShowAnswer(true)}>
+                                <button className="show-answer-button" onClick={() => {
+                                    // Increment counter when user clicks "Show Answer" for a new card
+                                    incrementNewCardCounter(currentCard);
+                                    setShowAnswer(true);
+                                }}>
                                     Show Answer
                                 </button>
                             )}
