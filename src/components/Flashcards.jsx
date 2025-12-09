@@ -1839,8 +1839,25 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
         // Generate a unique identifier for this card
         // Use _id if available, otherwise fall back to term+definition
-        const cardId = card._id?.toString() || 
-            `${(card.term || '').trim()}_${(card.definition || '').trim()}`;
+        // If no _id and both term/definition are empty, generate a unique ID based on card content hash
+        let cardId = card._id?.toString();
+        if (!cardId) {
+            const term = (card.term || '').trim();
+            const definition = (card.definition || '').trim();
+            if (term || definition) {
+                cardId = `${term}_${definition}`;
+            } else {
+                // Fallback: use a hash of available card properties for truly empty cards
+                // This is extremely rare but prevents errors
+                const cardHash = JSON.stringify({
+                    term: card.term,
+                    definition: card.definition,
+                    termLanguage: card.termLanguage,
+                    definitionLanguage: card.definitionLanguage
+                });
+                cardId = `empty_${cardHash.length}_${cardHash.slice(0, 20)}`;
+            }
+        }
 
         // Check if we've already counted this card (synchronous check using ref)
         if (countedNewCardIdsRef.current.has(cardId)) {
@@ -1854,6 +1871,14 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         // Increment the counter in the database
         try {
             const token = await getToken();
+            if (!token) {
+                // If we can't get a token, remove from counted set so it can be retried
+                countedNewCardIdsRef.current.delete(cardId);
+                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+                console.warn('Failed to get authentication token for new cards counter');
+                return;
+            }
+            
             const incrementResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/new-cards-shown`, {
                 method: 'POST',
                 headers: {
@@ -1875,7 +1900,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             console.warn('Failed to update new cards counter:', err);
             // Continue even if counter update fails
         }
-    }, [currentSet]);
+    }, [currentSet, getToken]);
 
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {

@@ -695,7 +695,7 @@ app.post('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth(
             counterDate.setHours(0, 0, 0, 0);
             
             if (counterDate.getTime() !== today.getTime()) {
-                // Reset counter for new day
+                // Reset counter to 0 for new day, then add the new count
                 userData.newCardsShownToday = count;
                 userData.newCardsShownDate = today;
             } else {
@@ -741,7 +741,10 @@ app.get('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth()
         counterDate.setHours(0, 0, 0, 0);
         
         if (counterDate.getTime() !== today.getTime()) {
-            // Counter is for a different day, return 0
+            // Counter is for a different day, reset it in the database and return 0
+            userData.newCardsShownToday = 0;
+            userData.newCardsShownDate = today;
+            await userData.save();
             return res.json({ 
                 newCardsShownToday: 0,
                 newCardsShownDate: today
