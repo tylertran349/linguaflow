@@ -4298,7 +4298,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
         const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
         // Whether the learner has revealed the answer (flipped or explicitly shown)
-        const hasRevealedAnswer = showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce);
+        // For unstudied cards, always show the link; for studied cards, only after revealing answer
+        const hasRevealedAnswer = isUnstudied || showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce);
         
         // Get all valid answers for the current question
         // If questionFormat is 'term', find all terms with the same definition
