@@ -1707,6 +1707,79 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         }
     };
 
+    // Helper function to increment counter for a new card when user interacts with it
+    const incrementNewCardCounter = useCallback(async (card) => {
+        if (!card || !currentSet) return;
+        
+        // Check if this is a new card (not reviewed yet)
+        const isNewCard = !card.lastReviewed;
+        if (!isNewCard) return;
+
+        // Generate a unique identifier for this card
+        // Use _id if available, otherwise fall back to term+definition
+        // If no _id and both term/definition are empty, generate a unique ID based on card content hash
+        let cardId = card._id?.toString();
+        if (!cardId) {
+            const term = (card.term || '').trim();
+            const definition = (card.definition || '').trim();
+            if (term || definition) {
+                cardId = `${term}_${definition}`;
+            } else {
+                // Fallback: use a hash of available card properties for truly empty cards
+                // This is extremely rare but prevents errors
+                const cardHash = JSON.stringify({
+                    term: card.term,
+                    definition: card.definition,
+                    termLanguage: card.termLanguage,
+                    definitionLanguage: card.definitionLanguage
+                });
+                cardId = `empty_${cardHash.length}_${cardHash.slice(0, 20)}`;
+            }
+        }
+
+        // Check if we've already counted this card (synchronous check using ref)
+        if (countedNewCardIdsRef.current.has(cardId)) {
+            return; // Already counted, skip increment
+        }
+
+        // Mark as counted immediately (synchronously) to prevent race conditions
+        countedNewCardIdsRef.current.add(cardId);
+        setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+
+        // Increment the counter in the database
+        try {
+            const token = await getToken();
+            if (!token) {
+                // If we can't get a token, remove from counted set so it can be retried
+                countedNewCardIdsRef.current.delete(cardId);
+                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+                console.warn('Failed to get authentication token for new cards counter');
+                return;
+            }
+            
+            const incrementResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/new-cards-shown`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ count: 1 })
+            });
+            if (!incrementResponse.ok) {
+                // If increment failed, remove from counted set so it can be retried
+                countedNewCardIdsRef.current.delete(cardId);
+                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+                console.warn('Failed to update new cards counter:', await incrementResponse.text());
+            }
+        } catch (err) {
+            // If increment failed, remove from counted set so it can be retried
+            countedNewCardIdsRef.current.delete(cardId);
+            setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
+            console.warn('Failed to update new cards counter:', err);
+            // Continue even if counter update fails
+        }
+    }, [currentSet, getToken]);
+
     // Memoized handler for flashcard flip to prevent unnecessary re-renders
     const handleCardFlip = useCallback(() => {
         // Stop any ongoing TTS audio when flipping the card
@@ -1828,79 +1901,6 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setPrimaryAnswerRetypeValue('');
         setIsPrimaryAnswerRetypeCorrect(false);
     }, [viewMode, currentCardIndex, cardsToStudy.length]);
-
-    // Helper function to increment counter for a new card when user interacts with it
-    const incrementNewCardCounter = useCallback(async (card) => {
-        if (!card || !currentSet) return;
-        
-        // Check if this is a new card (not reviewed yet)
-        const isNewCard = !card.lastReviewed;
-        if (!isNewCard) return;
-
-        // Generate a unique identifier for this card
-        // Use _id if available, otherwise fall back to term+definition
-        // If no _id and both term/definition are empty, generate a unique ID based on card content hash
-        let cardId = card._id?.toString();
-        if (!cardId) {
-            const term = (card.term || '').trim();
-            const definition = (card.definition || '').trim();
-            if (term || definition) {
-                cardId = `${term}_${definition}`;
-            } else {
-                // Fallback: use a hash of available card properties for truly empty cards
-                // This is extremely rare but prevents errors
-                const cardHash = JSON.stringify({
-                    term: card.term,
-                    definition: card.definition,
-                    termLanguage: card.termLanguage,
-                    definitionLanguage: card.definitionLanguage
-                });
-                cardId = `empty_${cardHash.length}_${cardHash.slice(0, 20)}`;
-            }
-        }
-
-        // Check if we've already counted this card (synchronous check using ref)
-        if (countedNewCardIdsRef.current.has(cardId)) {
-            return; // Already counted, skip increment
-        }
-
-        // Mark as counted immediately (synchronously) to prevent race conditions
-        countedNewCardIdsRef.current.add(cardId);
-        setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
-
-        // Increment the counter in the database
-        try {
-            const token = await getToken();
-            if (!token) {
-                // If we can't get a token, remove from counted set so it can be retried
-                countedNewCardIdsRef.current.delete(cardId);
-                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
-                console.warn('Failed to get authentication token for new cards counter');
-                return;
-            }
-            
-            const incrementResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/new-cards-shown`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ count: 1 })
-            });
-            if (!incrementResponse.ok) {
-                // If increment failed, remove from counted set so it can be retried
-                countedNewCardIdsRef.current.delete(cardId);
-                setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
-                console.warn('Failed to update new cards counter:', await incrementResponse.text());
-            }
-        } catch (err) {
-            // If increment failed, remove from counted set so it can be retried
-            countedNewCardIdsRef.current.delete(cardId);
-            setCountedNewCardIds(new Set(countedNewCardIdsRef.current));
-            console.warn('Failed to update new cards counter:', err);
-            // Continue even if counter update fails
-        }
-    }, [currentSet, getToken]);
 
     // Auto-advance after correct retype in "Don't know" scenario
     useEffect(() => {
