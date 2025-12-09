@@ -1359,7 +1359,11 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
         if (!isNaN(rangeStart) && !isNaN(rangeEnd) && rangeStart > 0 && rangeEnd >= rangeStart) {
             // "Study only" range is active, so we ignore due dates and other filters on the card pool.
-            const rangeCards = set.flashcards.slice(rangeStart - 1, rangeEnd);
+            let rangeCards = set.flashcards.slice(rangeStart - 1, rangeEnd);
+            // Apply starred filter first so the guarantee is based on the filtered pool
+            if (studyOptions.learningOptions.studyStarredOnly) {
+                rangeCards = rangeCards.filter(card => card.starred);
+            }
             
             // Still apply newCardsPerDay limit even in range mode
             const rangeReviewCards = rangeCards.filter(card => card.lastReviewed);
@@ -1371,22 +1375,21 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 rangeNewCards.sort(() => Math.random() - 0.5);
             }
             
-            // Reserve at least one slot for a new card if available and within daily limit
-            const hasNewCardsAvailable = rangeNewCards.length > 0 && remainingNewCardsToday > 0;
-            const reservedNewCardSlots = hasNewCardsAvailable ? 1 : 0;
-            const maxReviewCards = Math.max(0, cardsPerRound - reservedNewCardSlots);
-            
-            // Prioritize review cards, but leave room for at least one new card
-            const rangeCardsForRound = rangeReviewCards.slice(0, maxReviewCards);
-            const rangeRemainingSlots = cardsPerRound - rangeCardsForRound.length;
-            
-            // Add new cards: at least one if reserved, up to remaining slots and daily limit
-            if (rangeRemainingSlots > 0 && remainingNewCardsToday > 0 && rangeNewCards.length > 0) {
-                const rangeNewCardsToAdd = Math.min(rangeRemainingSlots, remainingNewCardsToday, rangeNewCards.length);
-                rangeCardsForRound.push(...rangeNewCards.slice(0, rangeNewCardsToAdd));
-            }
-            
-            cards = rangeCardsForRound;
+            // Guarantee at least one new card (when available and under the daily limit)
+            const hasRangeNewAvailable = rangeNewCards.length > 0 && remainingNewCardsToday > 0;
+            const minNewRequired = hasRangeNewAvailable ? 1 : 0;
+
+            // Prioritize review cards but leave the required space for new ones
+            const maxReviewCards = Math.max(0, cardsPerRound - minNewRequired);
+            const selectedReview = rangeReviewCards.slice(0, maxReviewCards);
+
+            // Fill the remaining slots with new cards (and ensure the minimum new requirement)
+            const remainingSlots = Math.max(0, cardsPerRound - selectedReview.length);
+            const allowedNew = Math.min(remainingNewCardsToday, rangeNewCards.length);
+            const newToAdd = Math.min(allowedNew, Math.max(minNewRequired, remainingSlots));
+            const selectedNew = rangeNewCards.slice(0, newToAdd);
+
+            cards = [...selectedReview, ...selectedNew];
         } else {
             // No "study only" range, so we start with all cards and filter them down.
             let cardPool = [...set.flashcards];
@@ -1403,9 +1406,14 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             
             // Filter for due cards
             const now = new Date();
-            const dueCards = cardPool.filter(card => 
+            let dueCards = cardPool.filter(card => 
                 !card.nextReviewDate || new Date(card.nextReviewDate) <= now
             );
+
+            // Apply starred-only filter before picking cards so guarantees respect it
+            if (studyOptions.learningOptions.studyStarredOnly) {
+                dueCards = dueCards.filter(card => card.starred);
+            }
 
             // Separate new cards from review cards
             let reviewCards = dueCards.filter(card => card.lastReviewed);
@@ -1417,28 +1425,21 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 newCards.sort(() => Math.random() - 0.5);
             }
 
-            // Reserve at least one slot for a new card if available and within daily limit
+            // Guarantee at least one new card (when available and under the daily limit)
             const hasNewCardsAvailable = newCards.length > 0 && remainingNewCardsToday > 0;
-            const reservedNewCardSlots = hasNewCardsAvailable ? 1 : 0;
-            const maxReviewCards = Math.max(0, cardsPerRound - reservedNewCardSlots);
+            const minNewRequired = hasNewCardsAvailable ? 1 : 0;
 
-            // Prioritize review cards, but leave room for at least one new card
-            const cardsForRound = reviewCards.slice(0, maxReviewCards);
-            const remainingSlots = cardsPerRound - cardsForRound.length;
+            // Prioritize review cards but leave space for required new ones
+            const maxReviewCards = Math.max(0, cardsPerRound - minNewRequired);
+            const selectedReview = reviewCards.slice(0, maxReviewCards);
 
-            // Add new cards: at least one if reserved, up to remaining slots and daily limit
-            if (remainingSlots > 0 && remainingNewCardsToday > 0 && newCards.length > 0) {
-                // Limit new cards to both remaining slots AND remaining new cards today
-                const newCardsToAdd = Math.min(remainingSlots, remainingNewCardsToday, newCards.length);
-                cardsForRound.push(...newCards.slice(0, newCardsToAdd));
-            }
+            // Fill the remaining slots with new cards (and ensure the minimum new requirement)
+            const remainingSlots = Math.max(0, cardsPerRound - selectedReview.length);
+            const allowedNew = Math.min(remainingNewCardsToday, newCards.length);
+            const newToAdd = Math.min(allowedNew, Math.max(minNewRequired, remainingSlots));
+            const selectedNew = newCards.slice(0, newToAdd);
 
-            cards = cardsForRound;
-        }
-        
-        // Filter by starred only if option is enabled
-        if (studyOptions.learningOptions.studyStarredOnly) {
-            cards = cards.filter(card => card.starred);
+            cards = [...selectedReview, ...selectedNew];
         }
         
         if (studyOptions.learningOptions.shuffle) {
