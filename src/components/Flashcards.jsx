@@ -4852,6 +4852,20 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                         autoFocus
                                         rows={1}
                                     />
+                                    {/* Always show example sentences link above the Next button in the "Don't know" flow */}
+                                    <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                        <span 
+                                            onClick={() => handleShowExampleSentences(currentCard)}
+                                            style={{ 
+                                                color: 'var(--color-green)', 
+                                                cursor: 'pointer',
+                                                fontSize: '1rem',
+                                                fontWeight: '600'
+                                            }}
+                                        >
+                                            Show example sentences
+                                        </span>
+                                    </div>
                                     {isDontKnowRetypeCorrect && studyOptions.learningOptions?.autoAdvance === false && (
                                         <div className="retype-answer-actions" style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
                                             <button 
@@ -5085,7 +5099,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                                         {studyOptions.learningOptions.retypeAnswer && !isUnstudied && (
                                                             <div className="retype-answer-form">
                                                                 <p>Type the correct answer to continue:</p>
-                                        <textarea
+                                                                <textarea
                                                                     value={retypeInputValue}
                                                                     onChange={(e) => {
                                                                         setRetypeInputValue(e.target.value);
@@ -5095,16 +5109,30 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                                                         );
                                                                         setIsRetypeCorrect(isCorrect);
                                                                     }}
-                                            onKeyDown={(e) => handleRetypeKeyDown(e, isRetypeCorrect)}
+                                                                    onKeyDown={(e) => handleRetypeKeyDown(e, isRetypeCorrect)}
                                                                     onInput={(e) => {
                                                                         e.target.style.height = 'auto';
                                                                         e.target.style.height = `${e.target.scrollHeight}px`;
                                                                     }}
-                                            placeholder={showTerm ? "Retype the term... (press Shift + Enter for a newline)" : "Retype the definition... (press Shift + Enter for a newline)"}
+                                                                    placeholder={showTerm ? "Retype the term... (press Shift + Enter for a newline)" : "Retype the definition... (press Shift + Enter for a newline)"}
                                                                     className={`retype-answer-input ${isRetypeCorrect ? 'correct' : (retypeInputValue.trim() ? 'incorrect' : '')}`}
                                                                     autoFocus
                                                                     rows={1}
                                                                 />
+                                                                {/* Always show example sentences link above the Next button when retyping after an incorrect answer */}
+                                                                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                                                    <span 
+                                                                        onClick={() => handleShowExampleSentences(currentCard)}
+                                                                        style={{ 
+                                                                            color: 'var(--color-green)', 
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '1rem',
+                                                                            fontWeight: '600'
+                                                                        }}
+                                                                    >
+                                                                        Show example sentences
+                                                                    </span>
+                                                                </div>
                                                                 {isRetypeCorrect && studyOptions.learningOptions?.autoAdvance === false && (
                                                                     <div className="retype-answer-actions" style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
                                                                         <button 
@@ -5149,7 +5177,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         </div>
                         
                         {/* Show example sentences text - at bottom of study-card */}
-                        {hasRevealedAnswer && (
+                        {hasRevealedAnswer && !showDontKnowAnswer && (
                             <div style={{ marginTop: '16px', textAlign: 'center' }}>
                                 <span 
                                     onClick={() => handleShowExampleSentences(currentCard)}
