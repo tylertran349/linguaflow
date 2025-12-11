@@ -1,6 +1,6 @@
 // src/components/Flashcards.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, ChevronDown, ChevronUp, Search, RotateCcw, Download } from 'lucide-react';
+import { Volume2, Star, X, AlertTriangle, Check, Crown, Plus, Edit2, Trash2, Play, Settings, ChevronDown, ChevronUp, Search, RotateCcw, Download, BookOpen } from 'lucide-react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText, stopAllAudio } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
@@ -3932,6 +3932,14 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                                         )}
                                                         <div className="card-item-actions">
                                                             <button
+                                                                onClick={() => handleShowExampleSentences(card)}
+                                                                className="card-action-btn card-action-tts"
+                                                                aria-label="View example sentences"
+                                                                title="View example sentences"
+                                                            >
+                                                                <BookOpen size={20} />
+                                                            </button>
+                                                            <button
                                                                 onClick={() => {
                                                                     setCardToEdit(card);
                                                                     setIsEditCardModalOpen(true);
@@ -5079,7 +5087,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             {error && <div className="error-banner">{error}</div>}
             
             {viewMode === 'study' && showStudyOptionsModal && renderStudyOptionsModal()}
-            {viewMode === 'study' && renderExampleSentencesModal()}
+            {(viewMode === 'study' || viewMode === 'view') && renderExampleSentencesModal()}
             <EditCardModal 
                 isOpen={isEditCardModalOpen}
                 onClose={() => {
