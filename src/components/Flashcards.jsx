@@ -4782,12 +4782,12 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         </div>
                         
                         {/* Show example sentences text - at bottom of study-card */}
-                        {hasRevealedAnswer && !showDontKnowAnswer && (
+                        {hasRevealedAnswer && !showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && studyOptions.learningOptions.retypeAnswer && !isUnstudied) && (
                             <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                                <span 
+                                <span
                                     onClick={() => handleShowExampleSentences(currentCard)}
-                                    style={{ 
-                                        color: 'var(--color-green)', 
+                                    style={{
+                                        color: 'var(--color-green)',
                                         cursor: 'pointer',
                                         fontSize: '1rem',
                                         fontWeight: '600'
