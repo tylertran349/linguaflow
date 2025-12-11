@@ -688,27 +688,30 @@
 }
 
 .view-action-secondary {
-    background: white;
+    background: #fefefe;
     color: var(--color-dark-grey);
-    border: 1px solid var(--color-light-grey);
+    border: 1px solid #e5e7eb;
 }
 
 .view-action-secondary:hover:not(:disabled) {
     background: var(--color-light-grey);
     border-color: #bdc3c7;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .view-action-close {
-    background: var(--color-light-grey);
+    background: transparent;
     color: var(--color-grey);
-    padding: 0.625rem;
+    padding: 0.5rem;
     border-radius: var(--radius-lg);
-    min-width: 44px;
+    min-width: 40px;
     justify-content: center;
+    transition: all var(--transition-fast);
 }
 
 .view-action-close:hover:not(:disabled) {
-    background: #bdc3c7;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-dark-grey);
 }
 
 .view-search-container {
@@ -998,7 +1001,7 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     gap: 0;
-    padding: 1.25rem 1.125rem;
+    padding: 1rem 0.875rem;
     align-items: start;
 }
 
@@ -1010,7 +1013,7 @@
 }
 
 .card-label {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -1027,7 +1030,7 @@
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: break-word;
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.5;
     color: var(--color-dark-grey);
     display: inline;
@@ -1678,7 +1681,7 @@
     .card-item-content {
         grid-template-columns: 1fr;
         gap: 0.875rem;
-        padding: 1rem 0.875rem;
+        padding: 0.875rem 0.75rem;
     }
 
     .card-divider {
@@ -1695,7 +1698,7 @@
     }
 
     .card-text {
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
     }
   
     .grade-buttons {
@@ -1943,7 +1946,7 @@
     }
 
     .card-item-content {
-        padding: 0.875rem 0.75rem;
+        padding: 0.75rem 0.625rem;
         gap: 0.75rem;
     }
 
@@ -1952,11 +1955,11 @@
     }
 
     .card-label {
-        font-size: 0.625rem;
+        font-size: 0.6875rem;
     }
 
     .card-text {
-        font-size: 0.8125rem;
+        font-size: 0.9375rem;
     }
 
     .card-term {
