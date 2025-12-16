@@ -36,6 +36,12 @@ const getLanguageCode = (langName) => {
     return lang ? lang.code : null;
 };
 
+// Helper to get user's timezone offset in minutes
+// This matches JavaScript's Date.getTimezoneOffset() format
+const getUserTimezoneOffset = () => {
+    return new Date().getTimezoneOffset();
+};
+
 const defaultStudyOptions = {
     examDate: null,
     newCardsPerDay: 10,
@@ -850,6 +856,13 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             // This handles the case where the backend might not immediately include user-data in the set response
             setStudyOptions(prev => ({
                 ...prev,
+                // Update all the key fields that could affect the current study session
+                examDate: savedOptions.examDate,
+                newCardsPerDay: savedOptions.newCardsPerDay,
+                cardsPerRound: savedOptions.cardsPerRound,
+                newCardQuestionTypes: savedOptions.newCardQuestionTypes,
+                seenCardQuestionTypes: savedOptions.seenCardQuestionTypes,
+                questionFormat: savedOptions.questionFormat,
                 learningOptions: {
                     ...prev.learningOptions,
                     // Preserve the values we just saved
@@ -859,6 +872,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                     retypeAnswer: savedOptions.learningOptions.retypeAnswer,
                     studyStarredOnly: savedOptions.learningOptions.studyStarredOnly,
                     shuffle: savedOptions.learningOptions.shuffle,
+                    studyRangeOnly: savedOptions.learningOptions.studyRangeOnly,
+                    excludeRange: savedOptions.learningOptions.excludeRange,
                 },
                 exampleSentenceModel: savedOptions.exampleSentenceModel,
                 exampleSentenceTemperature: savedOptions.exampleSentenceTemperature
@@ -1317,10 +1332,12 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setError(null);
 
         // Fetch the current new cards shown counter from the database
+        // Include timezone offset so the server can determine "today" in the user's timezone
         let newCardsShownToday = 0;
         try {
             const token = await getToken();
-            const counterResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${set._id}/new-cards-shown`, {
+            const timezoneOffset = getUserTimezoneOffset();
+            const counterResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${set._id}/new-cards-shown?timezoneOffset=${timezoneOffset}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (counterResponse.ok) {
@@ -1690,13 +1707,14 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 return;
             }
             
+            const timezoneOffset = getUserTimezoneOffset();
             const incrementResponse = await fetch(`${API_BASE_URL}/api/flashcards/sets/${currentSet._id}/new-cards-shown`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ count: 1 })
+                body: JSON.stringify({ count: 1, timezoneOffsetMinutes: timezoneOffset })
             });
             if (!incrementResponse.ok) {
                 // If increment failed, remove from counted set so it can be retried
@@ -1720,7 +1738,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         if (!showAnswer) {
             setHasFlippedOnce(true);
             // Increment counter when user flips a new card for the first time
-            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex >= 0 && currentCardIndex < cardsToStudy.length) {
                 const currentCard = cardsToStudy[currentCardIndex];
                 if (currentCard) {
                     incrementNewCardCounter(currentCard);
@@ -1912,9 +1930,11 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             currentQuestionType === 'written' &&
             studyOptions.learningOptions?.autoplayCorrectAnswer &&
             cardsToStudy.length > 0 &&
+            currentCardIndex >= 0 &&
             currentCardIndex < cardsToStudy.length
         ) {
             const currentCard = cardsToStudy[currentCardIndex];
+            if (!currentCard) return; // Safety check
             const showTerm = studyOptions.questionFormat === 'term';
             const answer = showTerm ? currentCard.term : currentCard.definition;
             const answerLang = showTerm ? currentCard.termLanguage : currentCard.definitionLanguage;
@@ -1941,10 +1961,12 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             viewMode === 'study' &&
             currentQuestionType === 'written' &&
             cardsToStudy.length > 0 &&
+            currentCardIndex >= 0 &&
             currentCardIndex < cardsToStudy.length &&
             writtenAnswer.trim()
         ) {
             const currentCard = cardsToStudy[currentCardIndex];
+            if (!currentCard) return; // Safety check
             const isUnstudied = !currentCard.lastReviewed;
             
             if (isUnstudied && currentSet) {
@@ -1998,13 +2020,15 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             }
         }
         // Reset ref when card changes
-        if (cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+        if (cardsToStudy.length > 0 && currentCardIndex >= 0 && currentCardIndex < cardsToStudy.length) {
             const currentCard = cardsToStudy[currentCardIndex];
-            const showTerm = studyOptions.questionFormat === 'term';
-            const answer = showTerm ? currentCard.term : currentCard.definition;
-            const autoplayKey = `${currentCard._id || currentCardIndex}-${answer?.trim().toLowerCase() || ''}`;
-            if (lastAutoplayedAnswerRef.current && !lastAutoplayedAnswerRef.current.startsWith(`${currentCard._id || currentCardIndex}-`)) {
-                lastAutoplayedAnswerRef.current = null;
+            if (currentCard) {
+                const showTerm = studyOptions.questionFormat === 'term';
+                const answer = showTerm ? currentCard.term : currentCard.definition;
+                const autoplayKey = `${currentCard._id || currentCardIndex}-${answer?.trim().toLowerCase() || ''}`;
+                if (lastAutoplayedAnswerRef.current && !lastAutoplayedAnswerRef.current.startsWith(`${currentCard._id || currentCardIndex}-`)) {
+                    lastAutoplayedAnswerRef.current = null;
+                }
             }
         }
     }, [writtenAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions, currentSet, incrementNewCardCounter]);
@@ -2044,7 +2068,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         
         if (currentQuestionType === 'written') {
             // Increment counter when user clicks "Don't know" for a new card
-            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex < cardsToStudy.length) {
+            if (viewMode === 'study' && cardsToStudy.length > 0 && currentCardIndex >= 0 && currentCardIndex < cardsToStudy.length) {
                 const currentCard = cardsToStudy[currentCardIndex];
                 if (currentCard) {
                     incrementNewCardCounter(currentCard);
@@ -3122,6 +3146,16 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         }
                     }}
                 />
+                {viewMode === 'study' && cardsToStudy.length > 0 && (
+                    <p className="info-text" style={{
+                        color: 'var(--color-orange)',
+                        fontSize: '0.8rem',
+                        marginTop: '4px',
+                        fontStyle: 'italic'
+                    }}>
+                        ⚠️ Current study session will continue using the previous limit. New limit applies to future sessions.
+                    </p>
+                )}
             </div>
             <div className="form-group">
                 <label>Question Types for New Cards</label>
@@ -4030,6 +4064,17 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                             Keep Studying
                         </button>
                     </div>
+                </div>
+            );
+        }
+        
+        // Safety check for valid card index
+        if (currentCardIndex < 0 || currentCardIndex >= cardsToStudy.length) {
+            console.error('Invalid currentCardIndex:', currentCardIndex, 'cardsToStudy.length:', cardsToStudy.length);
+            return (
+                <div className="initial-state-container">
+                    <p className="status-message">An error occurred. Please restart your study session.</p>
+                    <button onClick={() => setViewMode('view')}>Back to Set</button>
                 </div>
             );
         }

@@ -633,82 +633,152 @@ app.put('/api/flashcards/sets/:setId/user-data', ClerkExpressRequireAuth(), asyn
     }
 });
 
+// --- Helper function to get start of day in user's timezone ---
+// timezoneOffsetMinutes: The user's timezone offset in minutes (from Date.getTimezoneOffset())
+// Note: getTimezoneOffset() returns the difference in minutes between UTC and local time
+// e.g., Pacific Time (UTC-8) returns +480, UTC+5:30 returns -330
+// referenceTime: Optional Date object to use as reference (defaults to now)
+const getStartOfDayInUserTimezone = (timezoneOffsetMinutes, referenceTime = null) => {
+    const now = referenceTime || new Date();
+    
+    // If no timezone offset provided, use server time (fallback)
+    if (timezoneOffsetMinutes === undefined || timezoneOffsetMinutes === null || isNaN(timezoneOffsetMinutes)) {
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+        return today;
+    }
+    
+    // Convert the timezone offset to the user's current time
+    // getTimezoneOffset returns positive for west of UTC, negative for east
+    // So we need to subtract the offset to get UTC, then add the user's offset
+    const serverOffsetMinutes = now.getTimezoneOffset();
+    const userLocalTime = new Date(now.getTime() + (serverOffsetMinutes - timezoneOffsetMinutes) * 60000);
+    
+    // Get start of day in user's timezone
+    const startOfDayUserTime = new Date(userLocalTime);
+    startOfDayUserTime.setHours(0, 0, 0, 0);
+    
+    // Convert back to UTC for storage
+    const startOfDayUTC = new Date(startOfDayUserTime.getTime() - (serverOffsetMinutes - timezoneOffsetMinutes) * 60000);
+    
+    return startOfDayUTC;
+};
+
+// --- Check if two dates are the same day in user's timezone ---
+// referenceTime: Optional Date object to use for calculating server offset (defaults to now)
+const isSameDayInUserTimezone = (date1, date2, timezoneOffsetMinutes, referenceTime = null) => {
+    if (!date1 || !date2) return false;
+    
+    const now = referenceTime || new Date();
+    
+    // If no timezone offset provided, compare using server time (fallback)
+    if (timezoneOffsetMinutes === undefined || timezoneOffsetMinutes === null || isNaN(timezoneOffsetMinutes)) {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        d1.setHours(0, 0, 0, 0);
+        d2.setHours(0, 0, 0, 0);
+        return d1.getTime() === d2.getTime();
+    }
+    
+    const serverOffsetMinutes = now.getTimezoneOffset();
+    const offsetDiff = serverOffsetMinutes - timezoneOffsetMinutes;
+    
+    // Convert both dates to user's local time
+    const d1UserTime = new Date(new Date(date1).getTime() + offsetDiff * 60000);
+    const d2UserTime = new Date(new Date(date2).getTime() + offsetDiff * 60000);
+    
+    // Compare year, month, and day
+    return d1UserTime.getFullYear() === d2UserTime.getFullYear() &&
+           d1UserTime.getMonth() === d2UserTime.getMonth() &&
+           d1UserTime.getDate() === d2UserTime.getDate();
+};
+
 // --- GET/UPDATE NEW CARDS SHOWN COUNTER FOR A SET ---
 app.post('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth(), async (req, res) => {
     try {
         const userId = req.auth.userId;
         const { setId } = req.params;
-        const { count } = req.body; // Number of new cards being shown
+        const { count, timezoneOffsetMinutes } = req.body; // Number of new cards being shown + user's timezone offset
 
         if (typeof count !== 'number' || count < 0 || !Number.isInteger(count)) {
             return res.status(400).json({ message: 'Invalid count. Must be a non-negative integer.' });
         }
 
+        // Use a single reference time for all calculations to ensure consistency
+        const now = new Date();
+        const todayStartUTC = getStartOfDayInUserTimezone(timezoneOffsetMinutes, now);
+
         if (count === 0) {
             // No-op, but still return current counter
             const userData = await UserFlashcardSetData.findOne({ userId, setId });
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
             
             if (!userData) {
                 return res.json({ 
                     newCardsShownToday: 0,
-                    newCardsShownDate: today
+                    newCardsShownDate: todayStartUTC
                 });
             }
 
-            const counterDate = new Date(userData.newCardsShownDate);
-            counterDate.setHours(0, 0, 0, 0);
-            
-            if (counterDate.getTime() !== today.getTime()) {
+            // Check if counter date is the same day as today in user's timezone
+            if (!isSameDayInUserTimezone(userData.newCardsShownDate, now, timezoneOffsetMinutes, now)) {
                 return res.json({ 
                     newCardsShownToday: 0,
-                    newCardsShownDate: today
+                    newCardsShownDate: todayStartUTC
                 });
             }
 
+            return res.json({ 
+                newCardsShownToday: userData.newCardsShownToday || 0,
+                newCardsShownDate: userData.newCardsShownDate
+            });
+        }
+
+        // First, check if we have existing data and if it's from today
+        const existingData = await UserFlashcardSetData.findOne({ userId, setId });
+        
+        if (!existingData) {
+            // No existing data - create new with upsert to handle race conditions
+            const userData = await UserFlashcardSetData.findOneAndUpdate(
+                { userId, setId },
+                { 
+                    $setOnInsert: { userId, setId },
+                    $set: { newCardsShownToday: count, newCardsShownDate: todayStartUTC }
+                },
+                { upsert: true, new: true }
+            );
             return res.json({ 
                 newCardsShownToday: userData.newCardsShownToday,
                 newCardsShownDate: userData.newCardsShownDate
             });
         }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today
-
-        // Use atomic findOneAndUpdate to prevent race conditions
-        // First, ensure user data exists and reset counter if it's a new day
-        let userData = await UserFlashcardSetData.findOne({ userId, setId });
         
-        if (!userData) {
-            // Create new user data
-            userData = new UserFlashcardSetData({
-                userId,
-                setId,
-                newCardsShownToday: count,
-                newCardsShownDate: today
-            });
-            await userData.save();
+        // Check if counter needs reset (different day in user's timezone)
+        const isSameDay = isSameDayInUserTimezone(existingData.newCardsShownDate, now, timezoneOffsetMinutes, now);
+        
+        let userData;
+        if (!isSameDay) {
+            // Reset counter to 0 for new day, then set to count (atomic operation)
+            userData = await UserFlashcardSetData.findOneAndUpdate(
+                { userId, setId },
+                { 
+                    $set: { newCardsShownToday: count, newCardsShownDate: todayStartUTC }
+                },
+                { new: true }
+            );
         } else {
-            // Check if counter needs reset (different day)
-            const counterDate = new Date(userData.newCardsShownDate);
-            counterDate.setHours(0, 0, 0, 0);
-            
-            if (counterDate.getTime() !== today.getTime()) {
-                // Reset counter to 0 for new day, then add the new count
-                userData.newCardsShownToday = count;
-                userData.newCardsShownDate = today;
-            } else {
-                // Atomically increment counter
-                userData.newCardsShownToday = (userData.newCardsShownToday || 0) + count;
-            }
-            
-            await userData.save();
+            // Atomically increment counter using $inc
+            userData = await UserFlashcardSetData.findOneAndUpdate(
+                { userId, setId },
+                { 
+                    $inc: { newCardsShownToday: count }
+                },
+                { new: true }
+            );
         }
 
         res.json({ 
-            newCardsShownToday: userData.newCardsShownToday,
-            newCardsShownDate: userData.newCardsShownDate
+            newCardsShownToday: userData?.newCardsShownToday || count,
+            newCardsShownDate: userData?.newCardsShownDate || todayStartUTC
         });
 
     } catch (error) {
@@ -722,9 +792,17 @@ app.get('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth()
     try {
         const userId = req.auth.userId;
         const { setId } = req.params;
+        
+        // Get timezone offset from query parameter (sent by client)
+        // parseInt returns NaN for empty strings or non-numeric values, which is handled by helper functions
+        const rawOffset = req.query.timezoneOffset;
+        const timezoneOffsetMinutes = rawOffset !== undefined && rawOffset !== ''
+            ? parseInt(rawOffset, 10) 
+            : null;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today
+        // Use a single reference time for all calculations to ensure consistency
+        const now = new Date();
+        const todayStartUTC = getStartOfDayInUserTimezone(timezoneOffsetMinutes, now);
 
         let userData = await UserFlashcardSetData.findOne({ userId, setId });
         
@@ -732,27 +810,25 @@ app.get('/api/flashcards/sets/:setId/new-cards-shown', ClerkExpressRequireAuth()
             // Return default if no user data exists
             return res.json({ 
                 newCardsShownToday: 0,
-                newCardsShownDate: today
+                newCardsShownDate: todayStartUTC
             });
         }
 
-        // Check if the counter date is today
-        const counterDate = new Date(userData.newCardsShownDate);
-        counterDate.setHours(0, 0, 0, 0);
-        
-        if (counterDate.getTime() !== today.getTime()) {
-            // Counter is for a different day, reset it in the database and return 0
-            userData.newCardsShownToday = 0;
-            userData.newCardsShownDate = today;
-            await userData.save();
+        // Check if the counter date is the same day as today in user's timezone
+        if (!isSameDayInUserTimezone(userData.newCardsShownDate, now, timezoneOffsetMinutes, now)) {
+            // Counter is for a different day, reset it atomically and return 0
+            await UserFlashcardSetData.findOneAndUpdate(
+                { userId, setId },
+                { $set: { newCardsShownToday: 0, newCardsShownDate: todayStartUTC } }
+            );
             return res.json({ 
                 newCardsShownToday: 0,
-                newCardsShownDate: today
+                newCardsShownDate: todayStartUTC
             });
         }
 
         res.json({ 
-            newCardsShownToday: userData.newCardsShownToday,
+            newCardsShownToday: userData.newCardsShownToday || 0,
             newCardsShownDate: userData.newCardsShownDate
         });
 
