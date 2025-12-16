@@ -1215,12 +1215,12 @@ app.put('/api/flashcards/cards/:setId/:cardIndex/review', ClerkExpressRequireAut
         const fsrs = new FSRS();
         const fsrsUpdate = fsrs.schedule(card, grade);
         
-        // Update the card with new FSRS state
+        // Update the card with new FSRS-6 state
         card.stability = fsrsUpdate.stability;
         card.difficulty = fsrsUpdate.difficulty;
         card.lastReviewed = fsrsUpdate.lastReviewed;
-        card.reviewDate = fsrsUpdate.reviewDate; // This should be nextReviewDate
         card.nextReviewDate = fsrsUpdate.reviewDate;
+        card.interval = fsrsUpdate.interval; // Interval in days
         card.lapses = fsrsUpdate.lapses;
         card.reps = fsrsUpdate.reps;
         card.lastGrade = grade;

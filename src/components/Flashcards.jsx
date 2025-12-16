@@ -5,7 +5,7 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { speakText, stopAllAudio } from '../services/ttsService';
 import { supportedLanguages } from '../utils/languages';
 import '../styles/Flashcards.css';
-import { FSRS, Grade, FSRS_GRADES } from '../services/fsrsService';
+import { FSRS, Grade, FSRS_GRADES, retrievability } from '../services/fsrsService';
 import EditCardModal from './EditCardModal';
 import CollapsibleSection from './CollapsibleSection';
 import { fetchExampleSentences } from '../services/geminiService';
@@ -160,6 +160,25 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const getCardStatus = (card) => {
         if (!card.lastReviewed) {
             return { label: 'New Card', className: 'status-new' };
+        }
+
+        // Show retrievability-based status for reviewed cards
+        if (card.stability) {
+            const now = new Date();
+            const lastReviewed = new Date(card.lastReviewed);
+            const elapsedDays = (now.getTime() - lastReviewed.getTime()) / (1000 * 60 * 60 * 24);
+            const r = retrievability(elapsedDays, card.stability);
+            
+            // Show status based on current retrievability
+            if (r >= 0.9) {
+                return { label: 'Strong', className: 'status-good' };
+            } else if (r >= 0.7) {
+                return { label: 'Good', className: 'status-hard' };
+            } else if (r >= 0.5) {
+                return { label: 'Weak', className: 'status-again' };
+            } else {
+                return { label: 'Forgotten', className: 'status-forgotten' };
+            }
         }
 
         if (card.lastGrade) {
@@ -1375,17 +1394,17 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 rangeCards = rangeCards.filter(card => card.starred);
             }
             
-            // Still apply newCardsPerDay limit even in range mode
+            // Separate cards into review and new
             const rangeReviewCards = rangeCards.filter(card => card.lastReviewed);
             const rangeNewCards = rangeCards.filter(card => !card.lastReviewed);
 
-            // Sort review cards by most overdue (earliest nextReviewDate first; missing date treated as most overdue)
+            // Sort by due time (most overdue first)
             const getDueTime = (card) => card.nextReviewDate ? new Date(card.nextReviewDate).getTime() : 0;
             rangeReviewCards.sort((a, b) => getDueTime(a) - getDueTime(b));
             
             // Shuffle if enabled
             if (studyOptions.learningOptions.shuffle) {
-                // Keep review order prioritized by due date; shuffle only new cards
+                // Shuffle only new cards; keep review cards in due-date order
                 rangeNewCards.sort(() => Math.random() - 0.5);
             }
             
@@ -1429,20 +1448,27 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 dueCards = dueCards.filter(card => card.starred);
             }
 
-            // Separate new cards from review cards
+            // Separate cards into categories:
+            // 1. Review cards (have been reviewed at least once)
+            // 2. New cards (never reviewed)
             let reviewCards = dueCards.filter(card => card.lastReviewed);
             let newCards = dueCards.filter(card => !card.lastReviewed);
 
-            // Sort review cards by most overdue (earliest nextReviewDate first; missing date treated as most overdue)
+            // Sort review cards by most overdue (earliest nextReviewDate first)
+            // Cards with missing nextReviewDate are treated as most overdue
             const getDueTime = (card) => card.nextReviewDate ? new Date(card.nextReviewDate).getTime() : 0;
             reviewCards.sort((a, b) => getDueTime(a) - getDueTime(b));
 
             // Shuffle before picking if the option is enabled
             if (studyOptions.learningOptions.shuffle) {
-                // Keep review order prioritized by due date; shuffle only new cards
+                // Shuffle only new cards; keep review cards in due-date order
                 newCards.sort(() => Math.random() - 0.5);
             }
 
+            // FSRS-6 card selection priority:
+            // 1. Review cards that are due (most overdue first)
+            // 2. New cards (up to daily limit, guarantee at least 1 when available)
+            
             // Guarantee at least one new card (when available and under the daily limit)
             const hasNewCardsAvailable = newCards.length > 0 && remainingNewCardsToday > 0;
             const minNewRequired = hasNewCardsAvailable ? 1 : 0;
@@ -1457,17 +1483,19 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             const newToAdd = Math.min(allowedNew, Math.max(minNewRequired, remainingSlots));
             const selectedNew = newCards.slice(0, newToAdd);
 
+            // Combine: Review cards first (most urgent), then new cards
             cards = [...selectedReview, ...selectedNew];
         }
         
         if (studyOptions.learningOptions.shuffle) {
-            // Re-separate into review and new cards to shuffle them independently
+            // Re-separate into review and new cards to shuffle them
             const reviewCardsInSession = cards.filter(card => card.lastReviewed);
             const newCardsInSession = cards.filter(card => !card.lastReviewed);
             
             const shuffledReview = [...reviewCardsInSession].sort(() => Math.random() - 0.5);
             const shuffledNew = [...newCardsInSession].sort(() => Math.random() - 0.5);
 
+            // Shuffled review cards first, then shuffled new cards
             cards = [...shuffledReview, ...shuffledNew];
         }
         
@@ -1777,11 +1805,16 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 if (!response.ok) throw new Error('Failed to update review');
             }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
 
-            const reviewedCard = cardsToStudy[currentCardIndex];
-            if (grade === Grade.Forgot || grade === Grade.Hard) {
-                setCardsToStudy(prev => [...prev, reviewedCard]);
-            }
-
+            // FSRS-compliant queue management:
+            // Cards are NOT re-added to the current queue. Instead, FSRS schedules them
+            // with appropriate intervals (learning steps for Forgot/Hard, review intervals for Good/Easy).
+            // They will be picked up in the next study round when they become due.
+            // 
+            // This change ensures:
+            // 1. Learning steps are respected (e.g., 1min, 10min for Forgot)
+            // 2. Cards get proper spaced repetition intervals
+            // 3. The study session ends when all cards in the round are processed
+            
             const newCards = cardsToStudy.filter((_, index) => index !== currentCardIndex);
             setCardsToStudy(newCards);
             

@@ -1334,6 +1334,10 @@
     background-color: #3498db; /* Blue */
 }
 
+.status-forgotten {
+    background-color: #8e44ad; /* Deep purple - very low retrievability */
+}
+
 .status-again {
     background-color: #e74c3c; /* Red */
 }

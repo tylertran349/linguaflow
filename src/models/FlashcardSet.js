@@ -8,15 +8,16 @@ const flashcardSchema = new mongoose.Schema({
     definitionLanguage: { type: String }, // Language code for definition TTS
     starred: { type: Boolean, default: false },
     
-    // FSRS (Free Spaced Repetition Scheduler) state fields for individual cards
-    stability: { type: Number, default: null },
-    difficulty: { type: Number, default: null },
-    reps: { type: Number, default: 0 },
-    lapses: { type: Number, default: 0 },
-    lastReviewed: { type: Date, default: null },
-    nextReviewDate: { type: Date, default: null },
-    interval: { type: Number, default: null },
-    lastGrade: { type: Number, default: null },
+    // FSRS-6 (Free Spaced Repetition Scheduler v6) state fields for individual cards
+    // These fields track the memory state and scheduling for each card
+    stability: { type: Number, default: null }, // Memory stability in days (S)
+    difficulty: { type: Number, default: null }, // Card difficulty [1-10] (D)
+    reps: { type: Number, default: 0 }, // Number of successful reviews
+    lapses: { type: Number, default: 0 }, // Number of times forgotten (grade=1)
+    lastReviewed: { type: Date, default: null }, // When the card was last reviewed
+    nextReviewDate: { type: Date, default: null }, // When the card is next due
+    interval: { type: Number, default: null }, // Current interval in days
+    lastGrade: { type: Number, default: null }, // Last grade given (1-4)
     
     // Example sentences generated for this flashcard
     exampleSentences: { type: [{
