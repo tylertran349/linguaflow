@@ -1324,39 +1324,30 @@
     font-size: clamp(0.6rem, 1.5vw, 0.7rem);
     font-weight: 600;
     color: white;
-    text-transform: uppercase;
+    text-transform: capitalize;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .status-new {
-    background-color: #3498db; /* Blue */
-}
-
-.status-forgotten {
-    background-color: #8e44ad; /* Deep purple - very low retrievability */
+    background-color: #6b7280; /* Grey - not yet studied */
 }
 
 .status-again {
-    background-color: #e74c3c; /* Red */
+    background-color: #ef4444; /* Red - needs a lot of studying */
 }
 
 .status-hard {
-    background-color: #f39c12; /* Orange */
-    color: var(--color-dark-grey);
+    background-color: #f59e0b; /* Orange - needs more studying */
 }
 
 .status-good {
-    background-color: #2ecc71; /* Green */
+    background-color: #22c55e; /* Bright green - doing well */
 }
 
 .status-easy {
-    background-color: #9b59b6; /* Purple */
-}
-
-.status-studied {
-    background-color: #95a5a6; /* Grey */
+    background-color: #3b82f6; /* Blue - mastered */
 }
 
 .card-type-label {
@@ -1533,7 +1524,7 @@
     align-items: center;
     justify-content: center;
     padding: 0.75rem 0.5rem;
-    border: 2px solid var(--border-color);
+    border: none;
     border-radius: 10px;
     background-color: var(--background-color-light);
     cursor: pointer;
@@ -1554,12 +1545,26 @@
     box-shadow: none;
 }
 
-.decision-button.forgot .grade-icon { color: white; }
-.decision-button.hard .grade-icon { color: var(--color-yellow); }
+.decision-button.forgot {
+    background-color: #ef4444; /* Red - needs a lot of studying */
+}
+
+.decision-button.forgot .grade-icon,
+.decision-button.forgot .grade-label {
+    color: white;
+}
+
+.decision-button.hard {
+    background-color: #f59e0b; /* Orange - needs more studying */
+}
+
+.decision-button.hard .grade-icon,
+.decision-button.hard .grade-label {
+    color: white;
+}
 
 .decision-button.good {
-    background-color: var(--color-green);
-    border-color: var(--color-green);
+    background-color: #22c55e; /* Bright green - doing well */
 }
 
 .decision-button.good .grade-icon,
@@ -1567,7 +1572,14 @@
     color: white;
 }
 
-.decision-button.easy .grade-icon { color: var(--color-blue); }
+.decision-button.easy {
+    background-color: #3b82f6; /* Blue - mastered */
+}
+
+.decision-button.easy .grade-icon,
+.decision-button.easy .grade-label {
+    color: white;
+}
 
 .grade-label {
     font-weight: 600;

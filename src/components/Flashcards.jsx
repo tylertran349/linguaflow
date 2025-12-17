@@ -159,7 +159,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
     const getCardStatus = (card) => {
         if (!card.lastReviewed) {
-            return { label: 'New Card', className: 'status-new' };
+            return { label: 'New', className: 'status-new' };
         }
 
         // Show retrievability-based status for reviewed cards
@@ -169,15 +169,15 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             const elapsedDays = (now.getTime() - lastReviewed.getTime()) / (1000 * 60 * 60 * 24);
             const r = retrievability(elapsedDays, card.stability);
             
-            // Show status based on current retrievability
+            // Show status based on current retrievability, matching grading button labels
             if (r >= 0.9) {
-                return { label: 'Strong', className: 'status-good' };
+                return { label: 'Easy', className: 'status-easy' };
             } else if (r >= 0.7) {
-                return { label: 'Good', className: 'status-hard' };
+                return { label: 'Good', className: 'status-good' };
             } else if (r >= 0.5) {
-                return { label: 'Weak', className: 'status-again' };
+                return { label: 'Hard', className: 'status-hard' };
             } else {
-                return { label: 'Forgotten', className: 'status-forgotten' };
+                return { label: 'Again', className: 'status-again' };
             }
         }
 
@@ -185,13 +185,13 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
             if (gradeInfo) {
                 return { 
-                    label: `Studied: ${gradeInfo.label}`, 
+                    label: gradeInfo.label, 
                     className: `status-${gradeInfo.label.toLowerCase()}` 
                 };
             }
         }
 
-        return { label: 'Studied', className: 'status-studied' }; // Fallback
+        return { label: 'Again', className: 'status-again' }; // Fallback - default to Again if unknown
     };
 
     // Study options modal
