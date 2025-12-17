@@ -67,7 +67,8 @@ const defaultStudyOptions = {
         retypeAnswer: true,
         soundEffects: true,
         autoAdvance: false,
-        autoplayCorrectAnswer: false
+        autoplayCorrectAnswer: false,
+        autoplayNewCardQuestion: false
     },
     exampleSentenceModel: 'gemini-2.5-flash',
     exampleSentenceTemperature: 2.0
@@ -386,6 +387,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                     autoplayCorrectAnswer: (loadedOptions.learningOptions?.autoplayCorrectAnswer !== undefined && loadedOptions.learningOptions?.autoplayCorrectAnswer !== null)
                         ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
                         : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
+                    autoplayNewCardQuestion: (loadedOptions.learningOptions?.autoplayNewCardQuestion !== undefined && loadedOptions.learningOptions?.autoplayNewCardQuestion !== null)
+                        ? Boolean(loadedOptions.learningOptions.autoplayNewCardQuestion)
+                        : defaultStudyOptions.learningOptions.autoplayNewCardQuestion,
                 },
                 exampleSentenceModel: loadedOptions.exampleSentenceModel || defaultStudyOptions.exampleSentenceModel,
                 exampleSentenceTemperature: (loadedOptions.exampleSentenceTemperature !== undefined && loadedOptions.exampleSentenceTemperature !== null)
@@ -837,6 +841,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                     autoplayCorrectAnswer: studyOptions.learningOptions?.autoplayCorrectAnswer !== undefined 
                         ? Boolean(studyOptions.learningOptions.autoplayCorrectAnswer)
                         : false,
+                    autoplayNewCardQuestion: studyOptions.learningOptions?.autoplayNewCardQuestion !== undefined 
+                        ? Boolean(studyOptions.learningOptions.autoplayNewCardQuestion)
+                        : false,
                 },
                 exampleSentenceModel: studyOptions.exampleSentenceModel ?? 'gemini-2.5-flash',
                 exampleSentenceTemperature: studyOptions.exampleSentenceTemperature ?? 2.0
@@ -886,6 +893,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                     ...prev.learningOptions,
                     // Preserve the values we just saved
                     autoplayCorrectAnswer: savedOptions.learningOptions.autoplayCorrectAnswer,
+                    autoplayNewCardQuestion: savedOptions.learningOptions.autoplayNewCardQuestion,
                     autoAdvance: savedOptions.learningOptions.autoAdvance,
                     soundEffects: savedOptions.learningOptions.soundEffects,
                     retypeAnswer: savedOptions.learningOptions.retypeAnswer,
@@ -1850,6 +1858,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         learningOptions: {
                             ...prev.learningOptions,
                             autoplayCorrectAnswer: preservedOptions.learningOptions?.autoplayCorrectAnswer,
+                            autoplayNewCardQuestion: preservedOptions.learningOptions?.autoplayNewCardQuestion,
                             autoAdvance: preservedOptions.learningOptions?.autoAdvance,
                             soundEffects: preservedOptions.learningOptions?.soundEffects,
                             retypeAnswer: preservedOptions.learningOptions?.retypeAnswer,
@@ -1980,6 +1989,48 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             }
         }
     }, [showDontKnowAnswer, viewMode, currentQuestionType, currentCardIndex, cardsToStudy, studyOptions]);
+
+    // Autoplay question for new unstudied cards when they are displayed
+    const lastAutoplayedNewCardIndexRef = useRef(null);
+    useEffect(() => {
+        if (
+            viewMode === 'study' &&
+            studyOptions.learningOptions?.autoplayNewCardQuestion &&
+            cardsToStudy.length > 0 &&
+            currentCardIndex >= 0 &&
+            currentCardIndex < cardsToStudy.length &&
+            !showAnswer &&
+            !showDontKnowAnswer
+        ) {
+            const currentCard = cardsToStudy[currentCardIndex];
+            if (!currentCard) return;
+            
+            // Only autoplay for unstudied cards
+            const isUnstudied = !currentCard.lastReviewed;
+            if (!isUnstudied) return;
+            
+            // Prevent replaying for the same card index (avoid double-playing)
+            const autoplayKey = `${currentCardIndex}-${currentCard._id || currentCard.term}`;
+            if (lastAutoplayedNewCardIndexRef.current === autoplayKey) return;
+            
+            const showTerm = studyOptions.questionFormat === 'term';
+            const question = showTerm ? currentCard.definition : currentCard.term;
+            const questionLang = showTerm ? currentCard.definitionLanguage : currentCard.termLanguage;
+            
+            if (question && questionLang) {
+                lastAutoplayedNewCardIndexRef.current = autoplayKey;
+                // Small delay to allow card to render before playing audio
+                requestAnimationFrame(() => {
+                    playTTS(question, questionLang);
+                });
+            }
+        }
+        
+        // Reset the ref when exiting study mode
+        if (viewMode !== 'study') {
+            lastAutoplayedNewCardIndexRef.current = null;
+        }
+    }, [viewMode, currentCardIndex, cardsToStudy, studyOptions, showAnswer, showDontKnowAnswer]);
 
     // Autoplay correct answer for unstudied written questions when user types correct answer
     // Also increment counter when user answers unstudied written question correctly
@@ -3073,6 +3124,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         autoplayCorrectAnswer: (loadedOptions.learningOptions?.autoplayCorrectAnswer !== undefined && loadedOptions.learningOptions?.autoplayCorrectAnswer !== null)
                             ? Boolean(loadedOptions.learningOptions.autoplayCorrectAnswer)
                             : defaultStudyOptions.learningOptions.autoplayCorrectAnswer,
+                        autoplayNewCardQuestion: (loadedOptions.learningOptions?.autoplayNewCardQuestion !== undefined && loadedOptions.learningOptions?.autoplayNewCardQuestion !== null)
+                            ? Boolean(loadedOptions.learningOptions.autoplayNewCardQuestion)
+                            : defaultStudyOptions.learningOptions.autoplayNewCardQuestion,
                     },
                     exampleSentenceModel: loadedOptions.exampleSentenceModel || defaultStudyOptions.exampleSentenceModel,
                     exampleSentenceTemperature: (loadedOptions.exampleSentenceTemperature !== undefined && loadedOptions.exampleSentenceTemperature !== null)
@@ -3367,6 +3421,23 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     learningOptions: { 
                                         ...(prev.learningOptions || defaultStudyOptions.learningOptions), 
                                         autoplayCorrectAnswer: e.target.checked 
+                                    } 
+                                }))}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="toggle-switch-container">
+                        <span>Autoplay question for new unstudied cards</span>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={studyOptions.learningOptions?.autoplayNewCardQuestion ?? false}
+                                onChange={(e) => setStudyOptions(prev => ({ 
+                                    ...prev, 
+                                    learningOptions: { 
+                                        ...(prev.learningOptions || defaultStudyOptions.learningOptions), 
+                                        autoplayNewCardQuestion: e.target.checked 
                                     } 
                                 }))}
                             />
