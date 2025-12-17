@@ -1339,7 +1339,7 @@
 }
 
 .status-hard {
-    background-color: #f59e0b; /* Orange - needs more studying */
+    background-color: #d97706; /* Slightly darker orange - needs more studying */
 }
 
 .status-good {
@@ -1555,7 +1555,7 @@
 }
 
 .decision-button.hard {
-    background-color: #f59e0b; /* Orange - needs more studying */
+    background-color: #d97706; /* Slightly darker orange - needs more studying */
 }
 
 .decision-button.hard .grade-icon,
