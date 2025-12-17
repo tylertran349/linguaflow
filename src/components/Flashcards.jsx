@@ -123,7 +123,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const [writtenAnswer, setWrittenAnswer] = useState('');
     const [answerFeedback, setAnswerFeedback] = useState(null); // 'correct' or 'incorrect'
     const [currentQuestionType, setCurrentQuestionType] = useState('flashcards');
-    const [studyAction, setStudyAction] = useState(null);
+    const [studyAction, setStudyAction] = useState(null); // { action: 'start'|'restart', bypassLimit?: boolean }
     const [mcqOptions, setMcqOptions] = useState([]);
     const [hasFlippedOnce, setHasFlippedOnce] = useState(false);
     const [retypeInputValue, setRetypeInputValue] = useState('');
@@ -221,6 +221,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const [exportCustomRowSeparator, setExportCustomRowSeparator] = useState('');
     const [exportAlphabeticalOrder, setExportAlphabeticalOrder] = useState(false);
     const [exportTextCopied, setExportTextCopied] = useState(false);
+
+    // Bypass daily limit modal state
+    const [showBypassLimitModal, setShowBypassLimitModal] = useState(false);
 
     // Fetch all sets
     const fetchSets = async () => {
@@ -1352,7 +1355,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     };
 
     // Start studying
-    const startStudy = useCallback(async (setToUse = null) => {
+    const startStudy = useCallback(async (setToUse = null, bypassLimit = false) => {
         const set = setToUse || currentSet;
         if (!set) return;
         
@@ -1383,7 +1386,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         // Calculate how many new cards can still be shown today
         // Ensure newCardsPerDay is valid (at least 1, or 0 to disable new cards)
         const newCardsPerDay = Math.max(0, studyOptions.newCardsPerDay ?? 10);
-        const remainingNewCardsToday = Math.max(0, newCardsPerDay - newCardsShownToday);
+        const remainingNewCardsToday = bypassLimit ? 999999 : Math.max(0, newCardsPerDay - newCardsShownToday);
 
         // Ensure cardsPerRound is valid (at least 1)
         const cardsPerRound = Math.max(1, studyOptions.cardsPerRound ?? 10);
@@ -1508,8 +1511,18 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         }
         
         if (cards.length === 0) {
-            setError("No cards to study with the current settings. Try adjusting the study options or wait for cards to become due.");
-            return;
+            // Check if this is the scenario where user has hit daily limit but has new cards available
+            const totalNewCards = set.flashcards.filter(card => !card.lastReviewed).length;
+            const newCardsPerDay = Math.max(0, studyOptions.newCardsPerDay ?? 10);
+            const hasHitDailyLimit = newCardsPerDay > 0 && remainingNewCardsToday === 0 && totalNewCards > 0;
+
+            if (hasHitDailyLimit) {
+                setShowBypassLimitModal(true);
+                return;
+            } else {
+                setError("No cards to study with the current settings. Try adjusting the study options or wait for cards to become due.");
+                return;
+            }
         }
 
         const hasNewCards = cards.some(c => !c.lastReviewed);
@@ -1588,8 +1601,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
     useEffect(() => {
         if (studyAction) {
+            const action = studyAction;
             setStudyAction(null);
-            startStudy().catch(err => {
+            startStudy(null, action.bypassLimit || false).catch(err => {
                 console.error('Error starting study:', err);
                 setError('Failed to start study session');
             });
@@ -2799,7 +2813,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     // Render export modal
     const renderExportModal = () => {
         if (!showExportModal || !currentSet) return null;
-        
+
         const handleBackdropClick = (e) => {
             if (e.target === e.currentTarget) {
                 setShowExportModal(false);
@@ -2811,7 +2825,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             setShowExportModal(false);
             setExportTextCopied(false);
         };
-        
+
         return (
             <div className="modal-backdrop" onClick={handleBackdropClick}>
                 <div className="modal-content">
@@ -2930,12 +2944,31 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     className="generate-button"
                                     onClick={async () => {
                                         const text = generateExportText();
-                                        try {
-                                            await navigator.clipboard.writeText(text);
-                                            setExportTextCopied(true);
-                                            setTimeout(() => setExportTextCopied(false), 2000);
-                                        } catch (err) {
-                                            // Fallback for older browsers
+                                        // Try modern clipboard API first
+                                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                                            try {
+                                                await navigator.clipboard.writeText(text);
+                                                setExportTextCopied(true);
+                                                setTimeout(() => setExportTextCopied(false), 2000);
+                                            } catch (err) {
+                                                // Fallback to old method
+                                                const textarea = document.createElement('textarea');
+                                                textarea.value = text;
+                                                textarea.style.position = 'fixed';
+                                                textarea.style.opacity = '0';
+                                                document.body.appendChild(textarea);
+                                                textarea.select();
+                                                try {
+                                                    document.execCommand('copy');
+                                                    setExportTextCopied(true);
+                                                    setTimeout(() => setExportTextCopied(false), 2000);
+                                                } catch (e) {
+                                                    setError('Failed to copy text');
+                                                }
+                                                document.body.removeChild(textarea);
+                                            }
+                                        } else {
+                                            // Fallback to old method
                                             const textarea = document.createElement('textarea');
                                             textarea.value = text;
                                             textarea.style.position = 'fixed';
@@ -2955,13 +2988,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                                 >
                                     {exportTextCopied ? (
-                                        <>
-                                            <Check size={16} /> Copied!
-                                        </>
+                                        <span><Check size={16} /> Copied!</span>
                                     ) : (
-                                        <>
-                                            <Download size={16} /> Copy
-                                        </>
+                                        <span><Download size={16} /> Copy</span>
                                     )}
                                 </button>
                             </div>
@@ -2986,6 +3015,56 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                     <div className="modal-actions">
                         <button onClick={handleClose}>
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render bypass daily limit modal
+    const renderBypassLimitModal = () => {
+        if (!showBypassLimitModal || !currentSet) return null;
+
+        const handleBackdropClick = (e) => {
+            if (e.target === e.currentTarget) {
+                setShowBypassLimitModal(false);
+            }
+        };
+
+        const handleYes = () => {
+            setShowBypassLimitModal(false);
+            // Re-run study initialization with bypass flag
+            setStudyAction({ action: 'start', bypassLimit: true });
+        };
+
+        const handleNo = () => {
+            setShowBypassLimitModal(false);
+            setViewMode('sets'); // Go back to sets list
+        };
+
+        const totalNewCards = currentSet.flashcards.filter(card => !card.lastReviewed).length;
+
+        return (
+            <div className="modal-backdrop" onClick={handleBackdropClick}>
+                <div className="modal-content bypass-limit-modal">
+                    <div className="modal-header">
+                        <h3>Daily Limit Reached</h3>
+                        <button onClick={() => setShowBypassLimitModal(false)} className="close-button">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>You've reached your daily limit for new cards and there are no previously studied cards available to review.</p>
+                        <p>However, you have new cards available to study.</p>
+                        <p>Would you like to bypass the daily limit and continue studying?</p>
+                    </div>
+                    <div className="modal-actions">
+                        <button className="generate-button" onClick={handleYes}>
+                            Yes, Bypass Limit
+                        </button>
+                        <button onClick={handleNo}>
+                            No, Go Back
                         </button>
                     </div>
                 </div>
@@ -3070,7 +3149,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             
             await saveStudyOptions();
             setShowStudyOptionsModal(false);
-            setStudyAction('restart');
+            setStudyAction({ action: 'restart' });
         };
 
         const handleCancel = () => {
@@ -3966,15 +4045,19 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                         <div className="view-actions">
                             <button 
                                 className="view-action-btn view-action-primary"
-                                onClick={async () => { 
-                                    await retryUntilSuccess(async () => {
-                                        const result = await loadSet(currentSet._id);
-                                        if (!result) {
-                                            throw new Error('Failed to fetch flashcard set');
-                                        }
-                                        return result;
-                                    }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
-                                    setStudyAction('start'); 
+                                onClick={async () => {
+                                    try {
+                                        await retryUntilSuccess(async () => {
+                                            const result = await loadSet(currentSet._id);
+                                            if (!result) {
+                                                throw new Error('Failed to fetch flashcard set');
+                                            }
+                                            return result;
+                                        }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+                                        setStudyAction({ action: 'start' });
+                                    } catch (err) {
+                                        console.error('Error loading set:', err);
+                                    }
                                 }}
                             >
                                 <Play size={18} /> Study
@@ -5259,6 +5342,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             {renderDeleteCardConfirmModal()}
             {renderDuplicateConfirmModal()}
             {renderExportModal()}
+            {renderBypassLimitModal()}
         </div>
     );
 }

@@ -2510,6 +2510,19 @@
     width: clamp(350px, 90vw, 800px);
 }
 
+.bypass-limit-modal {
+    width: clamp(320px, 85vw, 500px);
+    max-width: 90vw;
+}
+
+/* Extra small mobile styles for bypass modal */
+@media (max-width: 380px) {
+    .bypass-limit-modal {
+        width: 95vw;
+        margin: 0 var(--spacing-2);
+    }
+}
+
 .modal-scroll-wrapper {
   padding: var(--spacing-2) var(--spacing-6) var(--spacing-6);
   display: flex;
@@ -2560,6 +2573,37 @@
     gap: 1rem;
     padding: var(--spacing-6);
     border-top: 1px solid var(--color-light-grey);
+}
+
+/* Mobile responsive modal actions */
+@media (max-width: 480px) {
+    .modal-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: var(--spacing-4);
+    }
+
+    .modal-actions button {
+        width: 100%;
+        min-height: 44px; /* iOS touch target minimum */
+    }
+
+    .modal-body {
+        padding: var(--spacing-4);
+    }
+
+    .modal-header {
+        padding: var(--spacing-4);
+    }
+
+    .modal-header h3 {
+        font-size: var(--font-size-xl);
+    }
+
+    .close-button {
+        top: 1rem;
+        right: 1rem;
+    }
 }
 
 .modal-header {
