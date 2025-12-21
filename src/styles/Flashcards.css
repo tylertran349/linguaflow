@@ -2456,6 +2456,17 @@
     }
 }
 
+/* Phone-specific adjustments for retype input to prevent text cutoff */
+@media (max-width: 480px) {
+    .retype-answer-input {
+        overflow-y: visible;
+        min-height: 4rem; /* Approximately 64px to accommodate wrapped placeholder text with padding */
+        padding: 1rem; /* Equal padding on all sides for symmetrical spacing */
+        line-height: 1.4; /* Ensure proper line height for multiline text */
+        resize: vertical; /* Allow manual resizing if needed */
+    }
+}
+
 
 .modal-backdrop {
     position: fixed;
