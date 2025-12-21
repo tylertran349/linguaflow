@@ -133,7 +133,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const [isDontKnowRetypeCorrect, setIsDontKnowRetypeCorrect] = useState(false);
     const [primaryAnswerRetypeValue, setPrimaryAnswerRetypeValue] = useState('');
     const [isPrimaryAnswerRetypeCorrect, setIsPrimaryAnswerRetypeCorrect] = useState(false);
-    
+    const [showOtherCorrectAnswers, setShowOtherCorrectAnswers] = useState(false);
+
     // Track which new cards have already been counted for the daily limit
     const [countedNewCardIds, setCountedNewCardIds] = useState(new Set());
     // Ref to track counted cards synchronously (prevents race conditions)
@@ -983,6 +984,11 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setShowExampleSentencesModal(true);
     };
 
+    // Handle toggling display of other correct answers
+    const handleToggleOtherCorrectAnswers = () => {
+        setShowOtherCorrectAnswers(!showOtherCorrectAnswers);
+    };
+
     // Generate example sentences for a flashcard
     const handleGenerateExampleSentences = async (card) => {
         if (!card || !geminiApiKey) {
@@ -1586,6 +1592,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setIsRetypeCorrect(false);
         setShowDontKnowAnswer(false);
         setDontKnowInputValue('');
+        setShowOtherCorrectAnswers(false);
         setIsDontKnowRetypeCorrect(false);
         setPrimaryAnswerRetypeValue('');
         setIsPrimaryAnswerRetypeCorrect(false);
@@ -1856,6 +1863,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 setIsDontKnowRetypeCorrect(false);
                 setPrimaryAnswerRetypeValue('');
                 setIsPrimaryAnswerRetypeCorrect(false);
+                setShowOtherCorrectAnswers(false);
                 setCurrentQuestionType(newCards[nextIndex].questionType);
             }
             
@@ -1907,6 +1915,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setIsDontKnowRetypeCorrect(false);
         setPrimaryAnswerRetypeValue('');
         setIsPrimaryAnswerRetypeCorrect(false);
+        setShowOtherCorrectAnswers(false);
     }, [viewMode, currentCardIndex, cardsToStudy.length]);
 
     // Auto-advance after correct retype in "Don't know" scenario
@@ -2197,6 +2206,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             setIsDontKnowRetypeCorrect(false);
             setPrimaryAnswerRetypeValue('');
             setIsPrimaryAnswerRetypeCorrect(false);
+            setShowOtherCorrectAnswers(false);
             setCurrentQuestionType(newCards[nextIndex].questionType);
         }
     };
@@ -4653,22 +4663,68 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                 </form>
                             )}
 
-                            {currentQuestionType === 'written' && showDontKnowAnswer && (
-                                <div className="retype-answer-form">
-                                    <div className="feedback-group">
-                                        <p className="feedback-label correct">You didn't know the answer, so here is the correct answer for this flashcard:</p>
-                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span>{answer}</span>
-                                                {answer && answerLang && (
-                                                    <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
-                                                        <Volume2 size={24} color="var(--color-green)" />
-                                                    </button>
-                                                )}
+                            {currentQuestionType === 'written' && showDontKnowAnswer && (() => {
+                                const categorized = categorizeAnswers(''); // No user answer for "don't know"
+                                const hasMultipleAnswers = validAnswers.length > 1;
+
+                                return (
+                                    <div className="retype-answer-form">
+                                        <div className="feedback-group">
+                                            <p className="feedback-label correct">You didn't know the answer, so here is the correct answer for this flashcard:</p>
+                                            <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span>{answer}</span>
+                                                    {answer && answerLang && (
+                                                        <button onClick={() => playTTS(answer, answerLang)} className="tts-button-large">
+                                                            <Volume2 size={24} color="var(--color-green)" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <p>Type the correct answer to continue:</p>
+
+                                        {/* Show other correct answers link */}
+                                        {categorized.remainingAnswers.length > 0 && (
+                                            <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                                                <span
+                                                    onClick={handleToggleOtherCorrectAnswers}
+                                                    style={{
+                                                        color: 'var(--color-green)',
+                                                        cursor: 'pointer',
+                                                        fontSize: '1rem',
+                                                        fontWeight: '600'
+                                                    }}
+                                                >
+                                                    {showOtherCorrectAnswers ? 'Hide other correct answers' : 'Show other correct answers'}
+                                                </span>
+                                                {showOtherCorrectAnswers && (
+                                                    <div style={{ marginTop: '12px' }}>
+                                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                            {categorized.remainingAnswers.map((remainingAns, idx) => {
+                                                                const cardWithAnswer = currentSet?.flashcards.find(card =>
+                                                                    showTerm ? card.term?.trim() === remainingAns : card.definition?.trim() === remainingAns
+                                                                );
+                                                                const langToUse = showTerm
+                                                                    ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                    : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                return (
+                                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < categorized.remainingAnswers.length - 1 ? '8px' : '0' }}>
+                                                                        <span>{remainingAns}</span>
+                                                                        {remainingAns && langToUse && (
+                                                                            <button onClick={() => playTTS(remainingAns, langToUse)} className="tts-button-large">
+                                                                                <Volume2 size={24} color="var(--color-green)" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <p>Type the correct answer to continue:</p>
                                     <textarea
                                         value={dontKnowInputValue}
                                         onChange={(e) => {
@@ -4715,7 +4771,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                         </div>
                                     )}
                                 </div>
-                            )}
+                            )})()}
     
                             {currentQuestionType === 'multipleChoice' && (
                                 <div className="mcq-options">
@@ -4833,32 +4889,44 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                                                     </div>
                                                                 )}
                                                                 
-                                                                {/* Remaining correct answers */}
+                                                                {/* Show other correct answers link */}
                                                                 {categorized.remainingAnswers.length > 0 && (
-                                                                    <div style={{ marginTop: '12px' }}>
-                                                                        <p className="feedback-label" style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
-                                                                            Other correct answers:
-                                                                        </p>
-                                                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                                                            {categorized.remainingAnswers.map((remainingAns, idx) => {
-                                                                                const cardWithAnswer = currentSet?.flashcards.find(card => 
-                                                                                    showTerm ? card.term?.trim() === remainingAns : card.definition?.trim() === remainingAns
-                                                                                );
-                                                                                const langToUse = showTerm 
-                                                                                    ? (cardWithAnswer?.termLanguage || answerLang)
-                                                                                    : (cardWithAnswer?.definitionLanguage || answerLang);
-                                                                                return (
-                                                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < categorized.remainingAnswers.length - 1 ? '8px' : '0' }}>
-                                                                                        <span>{remainingAns}</span>
-                                                                                        {remainingAns && langToUse && (
-                                                                                            <button onClick={() => playTTS(remainingAns, langToUse)} className="tts-button-large">
-                                                                                                <Volume2 size={24} color="var(--color-green)" />
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
+                                                                    <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                                                                        <span
+                                                                            onClick={handleToggleOtherCorrectAnswers}
+                                                                            style={{
+                                                                                color: 'var(--color-green)',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '1rem',
+                                                                                fontWeight: '600'
+                                                                            }}
+                                                                        >
+                                                                            {showOtherCorrectAnswers ? 'Hide other correct answers' : 'Show other correct answers'}
+                                                                        </span>
+                                                                        {showOtherCorrectAnswers && (
+                                                                            <div style={{ marginTop: '12px' }}>
+                                                                                <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                                                    {categorized.remainingAnswers.map((remainingAns, idx) => {
+                                                                                        const cardWithAnswer = currentSet?.flashcards.find(card =>
+                                                                                            showTerm ? card.term?.trim() === remainingAns : card.definition?.trim() === remainingAns
+                                                                                        );
+                                                                                        const langToUse = showTerm
+                                                                                            ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                                            : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                                        return (
+                                                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < categorized.remainingAnswers.length - 1 ? '8px' : '0' }}>
+                                                                                                <span>{remainingAns}</span>
+                                                                                                {remainingAns && langToUse && (
+                                                                                                    <button onClick={() => playTTS(remainingAns, langToUse)} className="tts-button-large">
+                                                                                                        <Volume2 size={24} color="var(--color-green)" />
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                                 
@@ -4932,7 +5000,48 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        
+
+                                                        {/* Show other correct answers link */}
+                                                        {categorized.remainingAnswers.length > 0 && (
+                                                            <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                                                                <span
+                                                                    onClick={handleToggleOtherCorrectAnswers}
+                                                                    style={{
+                                                                        color: 'var(--color-green)',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '1rem',
+                                                                        fontWeight: '600'
+                                                                    }}
+                                                                >
+                                                                    {showOtherCorrectAnswers ? 'Hide other correct answers' : 'Show other correct answers'}
+                                                                </span>
+                                                                {showOtherCorrectAnswers && (
+                                                                    <div style={{ marginTop: '12px' }}>
+                                                                        <div className="answer-container correct" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                                            {categorized.remainingAnswers.map((remainingAns, idx) => {
+                                                                                const cardWithAnswer = currentSet?.flashcards.find(card =>
+                                                                                    showTerm ? card.term?.trim() === remainingAns : card.definition?.trim() === remainingAns
+                                                                                );
+                                                                                const langToUse = showTerm
+                                                                                    ? (cardWithAnswer?.termLanguage || answerLang)
+                                                                                    : (cardWithAnswer?.definitionLanguage || answerLang);
+                                                                                return (
+                                                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx < categorized.remainingAnswers.length - 1 ? '8px' : '0' }}>
+                                                                                        <span>{remainingAns}</span>
+                                                                                        {remainingAns && langToUse && (
+                                                                                            <button onClick={() => playTTS(remainingAns, langToUse)} className="tts-button-large">
+                                                                                                <Volume2 size={24} color="var(--color-green)" />
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
                                                         {studyOptions.learningOptions.retypeAnswer && !isUnstudied && (
                                                             <div className="retype-answer-form">
                                                                 <p>Type the correct answer to continue:</p>
