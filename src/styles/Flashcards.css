@@ -1523,7 +1523,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 0.5rem;
+    padding: 0.875rem 0.5rem;
     border: none;
     border-radius: 10px;
     background-color: var(--background-color-light);
@@ -2376,7 +2376,7 @@
     }
     
     .decision-button {
-        padding: 0.625rem 0.5rem;
+        padding: 0.75rem 0.5rem;
         min-height: 58px;
     }
 
@@ -2448,7 +2448,7 @@
     }
 
     .decision-button {
-        padding: 0.6rem 0.4rem;
+        padding: 0.725rem 0.4rem;
         min-height: 56px;
     }
 
