@@ -4010,31 +4010,21 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                    definition.toLowerCase().includes(viewSearchTerm.toLowerCase());
         });
 
-        const groupedCards = { 'New': [] };
-        FSRS_GRADES.forEach(g => {
-            groupedCards[g.label] = [];
-        });
-        const fallbackGroup = 'Studied';
-        groupedCards[fallbackGroup] = [];
+        // Group cards by their current status (using the same getCardStatus function used in study mode)
+        // This ensures the status shown in view mode matches the status shown during study
+        const groupedCards = { 'New': [], 'Again': [], 'Hard': [], 'Good': [], 'Easy': [] };
 
         filteredCards.forEach(card => {
-            if (!card.lastReviewed) {
-                groupedCards['New'].push(card);
-                return;
+            const status = getCardStatus(card);
+            if (groupedCards[status.label]) {
+                groupedCards[status.label].push(card);
+            } else {
+                // Fallback for any unexpected status
+                groupedCards['Again'].push(card);
             }
-            
-            if (card.lastGrade) {
-                const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
-                if (gradeInfo) {
-                    groupedCards[gradeInfo.label].push(card);
-                    return;
-                }
-            }
-            
-            groupedCards[fallbackGroup].push(card);
         });
 
-        const groupOrder = [...FSRS_GRADES.map(g => g.label), fallbackGroup, 'New'];
+        const groupOrder = ['Again', 'Hard', 'Good', 'Easy', 'New'];
         
         // Find the first group with cards to expand it by default
         const firstGroupWithCards = groupOrder.find(groupName => groupedCards[groupName].length > 0);
