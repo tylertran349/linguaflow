@@ -139,6 +139,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
     const [countedNewCardIds, setCountedNewCardIds] = useState(new Set());
     // Ref to track counted cards synchronously (prevents race conditions)
     const countedNewCardIdsRef = useRef(new Set());
+    
+    // Track which cards have been updated in background to prevent duplicate FSRS updates
+    const backgroundUpdatedCardsRef = useRef(new Set());
 
     // Synchronous guard against race conditions from fast clicks
     const isProcessingReviewRef = useRef(false);
@@ -1599,6 +1602,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         // Reset counted cards when starting a new study session
         countedNewCardIdsRef.current = new Set();
         setCountedNewCardIds(new Set());
+        // Reset background updated cards tracking when starting a new study session
+        backgroundUpdatedCardsRef.current = new Set();
         if (cardsWithQuestionTypes.length > 0) {
             setCurrentQuestionType(cardsWithQuestionTypes[0].questionType);
         }
@@ -1695,6 +1700,8 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         setViewMode('view');
         setIsRoundComplete(false);
         setCardsToStudy([]);
+        // Clear background update tracking when exiting study mode
+        backgroundUpdatedCardsRef.current = new Set();
     };
 
     const handleKeepStudying = async () => {
@@ -1824,15 +1831,27 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 cardIndexInSet = fallbackIndex;
             }
 
-            await retryUntilSuccess(async () => {
-                const token = await getToken();
-                const response = await fetch(`${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ grade })
-                });
-                if (!response.ok) throw new Error('Failed to update review');
-            }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+            // Create a unique key for this card to track if it's already been updated
+            const cardKey = `${currentSet._id}-${cardIndexInSet}`;
+            
+            // Only update database if this card hasn't been updated in background yet
+            // OR if the user is choosing a different grade than what was sent in background
+            const wasBackgroundUpdated = backgroundUpdatedCardsRef.current.has(cardKey);
+            
+            if (!wasBackgroundUpdated) {
+                await retryUntilSuccess(async () => {
+                    const token = await getToken();
+                    const response = await fetch(`${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ grade })
+                    });
+                    if (!response.ok) throw new Error('Failed to update review');
+                }, { onError: (e) => setError(`Retrying in ${RETRY_DELAY_MS/1000}s: ${e.message}`) });
+            } else {
+                // Card was already updated in background, just remove it from the tracking set
+                backgroundUpdatedCardsRef.current.delete(cardKey);
+            }
 
             // FSRS-compliant queue management:
             // Cards are NOT re-added to the current queue. Instead, FSRS schedules them
@@ -1897,6 +1916,56 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
         } finally {
             isProcessingReviewRef.current = false;
             setIsProcessingReview(false);
+        }
+    };
+
+    // Separate function to update card status in database without changing UI flow
+    // This is used when answering incorrectly to persist the status immediately
+    const updateCardStatusInBackground = async (card, grade) => {
+        try {
+            let cardIndexInSet = currentSet.flashcards.findIndex(c => c._id === card._id);
+            
+            if (cardIndexInSet === -1) {
+                const fallbackIndex = currentSet.flashcards.findIndex(c => c.term === card.term && c.definition === card.definition);
+                if (fallbackIndex === -1) {
+                    console.error('Card not found in set for background update');
+                    return;
+                }
+                cardIndexInSet = fallbackIndex;
+            }
+
+            // Create a unique key for this card to track that it's been updated
+            const cardKey = `${currentSet._id}-${cardIndexInSet}`;
+            
+            // Mark this card as having been updated in the background
+            backgroundUpdatedCardsRef.current.add(cardKey);
+
+            // Fire and forget - retry until success but don't block UI
+            retryUntilSuccess(async () => {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/api/flashcards/cards/${currentSet._id}/${cardIndexInSet}/review`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ grade })
+                });
+                if (!response.ok) throw new Error('Failed to update review in background');
+            }, { 
+                onError: (e) => {
+                    console.error('Background card update retrying:', e.message);
+                    // Only show retry message, don't clear other errors
+                    setError(prevError => prevError || `Saving card status... (retrying in ${RETRY_DELAY_MS/1000}s)`);
+                }
+            }).then(() => {
+                // Successfully updated - the card will be skipped in handleReviewDecision
+                console.log(`Card ${cardKey} successfully updated in background`);
+            }).catch((err) => {
+                // This should never happen since retryUntilSuccess retries forever
+                console.error('Unexpected error in background card update:', err);
+                // Remove from tracking set since update failed
+                backgroundUpdatedCardsRef.current.delete(cardKey);
+            });
+        } catch (err) {
+            console.error('Error in background card update:', err);
         }
     };
 
@@ -2179,6 +2248,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 const currentCard = cardsToStudy[currentCardIndex];
                 if (currentCard) {
                     incrementNewCardCounter(currentCard);
+                    // Immediately update database in background when user clicks "Don't know"
+                    // This ensures the card status is persisted even if the user exits before completing retype
+                    updateCardStatusInBackground(currentCard, Grade.Forgot);
                 }
             }
             setShowDontKnowAnswer(true);
@@ -4383,6 +4455,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             } else {
                 playErrorSound();
                 setIsRetypeCorrect(false);
+                // Immediately update database in background when user answers incorrectly or with blank answer
+                // This ensures the card status is persisted even if the user exits before completing retype
+                updateCardStatusInBackground(currentCard, Grade.Forgot);
             }
             // Autoplay correct answer if enabled
             if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
@@ -4412,6 +4487,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 playSuccessSound();
             } else {
                 playErrorSound();
+                // Immediately update database in background when user answers incorrectly
+                // This ensures the card status is persisted even if the user exits before grading
+                updateCardStatusInBackground(currentCard, Grade.Forgot);
             }
             // Autoplay correct answer if enabled
             if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
@@ -4431,6 +4509,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 playSuccessSound();
             } else {
                 playErrorSound();
+                // Immediately update database in background when user answers incorrectly
+                // This ensures the card status is persisted even if the user exits before grading
+                updateCardStatusInBackground(currentCard, Grade.Forgot);
             }
             // Autoplay correct answer if enabled
             if (studyOptions.learningOptions?.autoplayCorrectAnswer && answer && answerLang) {
@@ -5135,7 +5216,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
                     {(showAnswer || (currentQuestionType === 'flashcards' && hasFlippedOnce)) || showDontKnowAnswer || (currentQuestionType === 'written' && isUnstudied && isWrittenAnswerCorrect) || (currentQuestionType === 'written' && !isUnstudied && answerFeedback === 'correct' && showAnswer) ? (
                         <div className="grading-container">
-                            {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) && (
+                            {!showDontKnowAnswer && !(currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) && !((currentQuestionType === 'multipleChoice' || currentQuestionType === 'trueFalse') && answerFeedback === 'incorrect' && showAnswer) && (
                                 <div className="grade-buttons">
                                     {FSRS_GRADES.map(item => {
                                         const gradeName = Object.keys(Grade).find(key => Grade[key] === item.grade)?.toLowerCase();
@@ -5173,9 +5254,9 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     })}
                                 </div>
                             )}
-                            {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied)) && (
+                            {(showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect' && showAnswer && !isUnstudied) || ((currentQuestionType === 'multipleChoice' || currentQuestionType === 'trueFalse') && answerFeedback === 'incorrect' && showAnswer)) && (
                                 <button className="generate-button" onClick={handleRealSkip} disabled={isProcessingReview}>
-                                    Skip
+                                    {showDontKnowAnswer || (currentQuestionType === 'written' && answerFeedback === 'incorrect') ? 'Skip' : 'Next'}
                                 </button>
                             )}
                         </div>
