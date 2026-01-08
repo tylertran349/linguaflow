@@ -167,11 +167,26 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
             return { label: 'New', className: 'status-new' };
         }
 
-        // Show retrievability-based status for reviewed cards
+        // If the card was reviewed very recently (e.g., within 5 minutes),
+        // show the actual last grade instead of calculating retrievability.
+        // This prevents "Forgot" cards from immediately appearing as "Easy" because they were just seen.
+        const now = new Date();
+        const lastReviewed = card.lastReviewed ? new Date(card.lastReviewed) : null;
+        const elapsedMinutes = lastReviewed ? (now.getTime() - lastReviewed.getTime()) / (1000 * 60) : Infinity;
+
+        if (card.lastGrade && (elapsedMinutes < 5 || !card.stability)) {
+            const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
+            if (gradeInfo) {
+                return { 
+                    label: gradeInfo.label, 
+                    className: `status-${gradeInfo.label.toLowerCase()}` 
+                };
+            }
+        }
+
+        // Show retrievability-based status for older reviews
         if (card.stability) {
-            const now = new Date();
-            const lastReviewed = new Date(card.lastReviewed);
-            const elapsedDays = (now.getTime() - lastReviewed.getTime()) / (1000 * 60 * 60 * 24);
+            const elapsedDays = elapsedMinutes / (60 * 24);
             const r = retrievability(elapsedDays, card.stability);
             
             // Show status based on current retrievability, matching grading button labels
@@ -183,16 +198,6 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                 return { label: 'Hard', className: 'status-hard' };
             } else {
                 return { label: 'Again', className: 'status-again' };
-            }
-        }
-
-        if (card.lastGrade) {
-            const gradeInfo = FSRS_GRADES.find(g => g.grade === card.lastGrade);
-            if (gradeInfo) {
-                return { 
-                    label: gradeInfo.label, 
-                    className: `status-${gradeInfo.label.toLowerCase()}` 
-                };
             }
         }
 
