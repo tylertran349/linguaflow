@@ -4103,9 +4103,6 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
 
         const groupOrder = ['Again', 'Hard', 'Good', 'Easy', 'New'];
         
-        // Find the first group with cards to expand it by default
-        const firstGroupWithCards = groupOrder.find(groupName => groupedCards[groupName].length > 0);
-
         return (
             <div className="flashcards-view">
                 <div className="view-header">
@@ -4217,7 +4214,7 @@ function Flashcards({ settings, geminiApiKey, onApiKeyMissing, isSavingSettings,
                                     <CollapsibleSection 
                                         key={groupName} 
                                         title={`${groupName} (${cardsInGroup.length})`} 
-                                        initialCollapsed={groupName !== firstGroupWithCards}
+                                        initialCollapsed={true}
                                     >
                                         <div className="cards-list-view">
                                             {cardsInGroup.map((card, index) => (
